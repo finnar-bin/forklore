@@ -13,6 +13,10 @@ dist-ssr
 dev-dist
 *.local
 
+# Environment configs (real secrets) — keep the .example templates tracked
+.env.dev
+.env.prod
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -7,17 +7,31 @@ This migration was authored and reviewed locally but **not applied or tested aga
 1. Create a new project at supabase.com (or `supabase projects create` via the CLI if you're logged in).
 2. Enable Google as an auth provider under Authentication → Providers (needed by Ticket 3, but easiest to flip on now).
 
-## 2. Link and push the migration
+## 2. Configure environments
+
+Copy the templates and fill in real values for each Supabase project (repeat once for dev, once for prod — they're separate projects with separate credentials):
 
 ```sh
-npx supabase login
-npx supabase link --project-ref <your-project-ref>
-npx supabase db push
+cp .env.dev.example .env.dev
+cp .env.prod.example .env.prod
 ```
 
-This applies `migrations/20260819000000_phase1_schema.sql` in full: all Phase 1 tables, the `ingredient_unit` enum, the `handle_new_user` and `recalculate_recipe_kcal` triggers, and RLS policies on every table.
+- `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` — from the project's Settings → API page. Read by the frontend app at runtime (`npm run dev`, `npm run build` / `build:dev` pick the matching file via Vite's `--mode`).
+- `SUPABASE_PROJECT_REF` — the project ref from the same Settings → API page (or the project's URL slug).
+- `SUPABASE_ACCESS_TOKEN` — a personal access token from supabase.com/dashboard/account/tokens, used by the Supabase CLI in place of an interactive `supabase login`.
 
-## 3. Verify
+Both `.env.dev` and `.env.prod` are gitignored — never commit them.
+
+## 3. Push the migration
+
+```sh
+npm run supabase:push:dev   # links to the dev project and runs `supabase db push`
+npm run supabase:push:prod  # same, against the prod project
+```
+
+This runs `scripts/supabase-push.sh`, which reads `SUPABASE_PROJECT_REF`/`SUPABASE_ACCESS_TOKEN` from the matching `.env.<env>` file, runs `supabase link --project-ref`, then `supabase db push`. It applies `migrations/20260819000000_phase1_schema.sql` in full: all Phase 1 tables, the `ingredient_unit` enum, the `handle_new_user` and `recalculate_recipe_kcal` triggers, and RLS policies on every table.
+
+## 4. Verify
 
 - **Tables/enum:** In the Table Editor, confirm every table from `docs/schema.md` exists with matching columns/types, and `ingredient_unit` has exactly the 11 values listed there.
 - **RLS enabled:** Database → Tables → each table should show the RLS badge as "Enabled".

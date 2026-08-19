@@ -4,10 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "vite --mode dev",
+    "build": "tsc -b && vite build --mode prod",
+    "build:dev": "tsc -b && vite build --mode dev",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "supabase:push:dev": "scripts/supabase-push.sh dev",
+    "supabase:push:prod": "scripts/supabase-push.sh prod"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
