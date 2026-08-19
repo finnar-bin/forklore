@@ -46,3 +46,15 @@ This runs `scripts/supabase-push.sh`, which reads `SUPABASE_PROJECT_REF`/`SUPABA
 
 - Policies beyond what `docs/schema.md` spells out verbatim (profiles, weight_logs, group_invites, group_members, and delete policies on ingredients/recipes/recipe_ingredients) are documented as deviations in `docs/pending-deviations.md` under Ticket 2.
 - RPC functions from `docs/rpcs.md` (e.g. `check_ingredient_usage`, `accept_group_invite`) are explicitly out of scope for this ticket — they land with Ticket 11.
+
+## Ticket 3 manual verification (auth + `handle_new_user`)
+
+Same database-connection restriction as above applies — this needs a human running the app against a live project with Google OAuth configured.
+
+1. In the Supabase dashboard, under Authentication → Providers, enable Google and fill in the OAuth client ID/secret (a project/domain of your own — see Google Cloud Console). Ticket 2 flagged enabling the provider but not configuring real credentials.
+2. `npm run dev`, then:
+   - Visit `/` while logged out → confirm it redirects to `/login`.
+   - On `/signup`, click "Continue with Google" → complete the OAuth flow → confirm you land on `/` and, in the Table Editor, that your `profiles` row has `name`/`avatar_url` populated from your Google account.
+   - Log out, sign up again with email/password on `/signup` → confirm the `profiles` row exists with `name` falling back to the email's local part (`avatar_url` null).
+   - While logged in, visit `/login` or `/signup` directly → confirm you're redirected back to `/`.
+3. Record the result somewhere durable (PR description, ticket comment) — same as the Ticket 2 RLS check, this is the acceptance criterion for this ticket, not something provable from the code alone.
