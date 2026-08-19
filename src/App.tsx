@@ -1,57 +1,47 @@
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import Stack from '@mui/material/Stack';
-import Paper from '@mui/material/Paper';
-import Button from '@mui/material/Button';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Box from '@mui/material/Box';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import { useColorScheme } from '@mui/material/styles';
-import { shadows } from './theme/theme';
+import CircularProgress from '@mui/material/CircularProgress';
+import { useAuthSession } from './features/auth/useAuthSession';
+import { LoginPage } from './routes/LoginPage';
+import { SignupPage } from './routes/SignupPage';
+import { HomePage } from './routes/HomePage';
+import { RequireAuth } from './routes/RequireAuth';
+import { RedirectIfAuthed } from './routes/RedirectIfAuthed';
 
 function App() {
-  const { mode, setMode } = useColorScheme();
-  const tokens = mode === 'dark' ? shadows.dark : shadows.light;
+  const { initializing } = useAuthSession();
+
+  if (initializing) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          bgcolor: 'background.default',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <AppBar
-        position="sticky"
-        color="transparent"
-        elevation={0}
-        sx={{ bgcolor: 'background.paper', boxShadow: tokens.sh1 }}
-      >
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 500 }}>
-            Forklore
-          </Typography>
-          <IconButton
-            aria-label="Toggle theme"
-            onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')}
-          >
-            {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
-          </IconButton>
-        </Toolbar>
-      </AppBar>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<RedirectIfAuthed />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+        </Route>
 
-      <Stack spacing={3} sx={{ p: 3, maxWidth: 480, mx: 'auto' }}>
-        <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
-          <Typography variant="subtitle1" fontWeight={500} gutterBottom>
-            Scaffold ready
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Vite + React + TypeScript, MUI v6 themed with the Everforest
-            palette, and a PWA shell that precaches the app on first visit.
-          </Typography>
-        </Paper>
+        <Route element={<RequireAuth />}>
+          <Route path="/" element={<HomePage />} />
+        </Route>
 
-        <Button variant="contained" size="large">
-          Looks like a real app, not MUI defaults
-        </Button>
-      </Stack>
-    </Box>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
