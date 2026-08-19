@@ -58,3 +58,18 @@ Same database-connection restriction as above applies — this needs a human run
    - Log out, sign up again with email/password on `/signup` → confirm the `profiles` row exists with `name` falling back to the email's local part (`avatar_url` null).
    - While logged in, visit `/login` or `/signup` directly → confirm you're redirected back to `/`.
 3. Record the result somewhere durable (PR description, ticket comment) — same as the Ticket 2 RLS check, this is the acceptance criterion for this ticket, not something provable from the code alone.
+
+## Ticket 5 manual verification (onboarding)
+
+Same database-connection restriction as above.
+
+1. Push `migrations/20260820000000_complete_onboarding_rpc.sql` (included in `supabase:push:dev`/`supabase:push:prod`).
+2. `npm run dev`, sign up a new user → confirm you land on `/onboarding`, not `/`.
+3. Submit the onboarding form → confirm you land on `/`, and in the Table Editor: the `profiles` row has `name`/`height_cm`/`goal_weight_kg`/`goal_type` set, and a single `weight_logs` row exists for that user with the entered weight.
+4. Reload the app (or log out and back in) as that same user → confirm you land on `/` directly, skipping `/onboarding`.
+5. As that same onboarded user, navigate to `/onboarding` directly → confirm it redirects to `/`.
+6. Record the result somewhere durable (PR description, ticket comment) — same as prior tickets, this is the acceptance criterion, not something provable from the code alone.
+
+## RLS recursion fix (`group_members`)
+
+If step 2 above 500s with "infinite recursion detected in policy for relation group_members", push `migrations/20260821000000_fix_group_members_rls_recursion.sql` (see `docs/pending-deviations.md`) and retry. Also worth a quick spot-check afterward: as a user who belongs to at least one group, confirm a `groups`/`ingredients` read still succeeds (those policies transitively query `group_members` too).
