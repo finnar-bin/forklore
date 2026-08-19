@@ -18,8 +18,13 @@ import { signOut } from '../features/auth/api';
 // Progress) lands in later tickets. This exists to give RequireAuth something
 // real to gate.
 export function HomePage() {
-  const { mode, setMode } = useColorScheme();
-  const tokens = mode === 'dark' ? shadows.dark : shadows.light;
+  const { mode, systemMode, setMode } = useColorScheme();
+  // `mode` can be the literal string 'system' rather than a resolved scheme —
+  // comparing against it directly means the first click after load (when the
+  // OS is in dark mode) sets mode from 'system' to 'dark' with no visible
+  // change, and only the second click actually flips it to light.
+  const resolvedMode = mode === 'system' ? systemMode : mode;
+  const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
   const [loggingOut, setLoggingOut] = useState(false);
 
   async function handleLogout() {
@@ -41,9 +46,9 @@ export function HomePage() {
           </Typography>
           <IconButton
             aria-label="Toggle theme"
-            onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')}
+            onClick={() => setMode(resolvedMode === 'dark' ? 'light' : 'dark')}
           >
-            {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+            {resolvedMode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
           </IconButton>
           <IconButton aria-label="Log out" onClick={handleLogout} disabled={loggingOut}>
             <LogoutIcon />
