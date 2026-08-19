@@ -4,7 +4,8 @@ import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import { INGREDIENT_UNITS, type IngredientUnit } from '../../types/ingredient';
+import type { IngredientUnit } from '../../types/ingredient';
+import { INGREDIENT_UNITS } from './ingredientUnits';
 import type { IngredientInput } from './api';
 
 interface IngredientFormProps {
