@@ -69,3 +69,7 @@ Same database-connection restriction as above.
 4. Reload the app (or log out and back in) as that same user → confirm you land on `/` directly, skipping `/onboarding`.
 5. As that same onboarded user, navigate to `/onboarding` directly → confirm it redirects to `/`.
 6. Record the result somewhere durable (PR description, ticket comment) — same as prior tickets, this is the acceptance criterion, not something provable from the code alone.
+
+## RLS recursion fix (`group_members`)
+
+If step 2 above 500s with "infinite recursion detected in policy for relation group_members", push `migrations/20260821000000_fix_group_members_rls_recursion.sql` (see `docs/pending-deviations.md`) and retry. Also worth a quick spot-check afterward: as a user who belongs to at least one group, confirm a `groups`/`ingredients` read still succeeds (those policies transitively query `group_members` too).

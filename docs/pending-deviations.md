@@ -47,3 +47,13 @@ Deviations from `schema.md` / `rpcs.md` / `frontend-architecture.md` / `design-s
 **Why:** All four exist to satisfy this ticket's acceptance criteria (route to onboarding before any other screen, atomic profile+weight_logs write, returning users skip onboarding) with no upstream ticket providing the RPC, store shape, or a real post-onboarding landing screen yet.
 
 **Not yet verified:** Same database-connection restriction as Tickets 2/3 — this session's tooling can't connect to a database, so the migration hasn't been pushed or exercised against a live project. Manual follow-up needed (see `supabase/README.md`): push this migration; sign up a new user and confirm they're routed to `/onboarding` (not `/`); submit the form and confirm the `profiles` row picks up `name`/`height_cm`/`goal_weight_kg`/`goal_type` and a single `weight_logs` row is inserted; reload and confirm the same user now lands on `/` directly; visit `/onboarding` directly as that user and confirm it redirects to `/`.
+
+---
+
+## Fix — `group_members` RLS infinite recursion (found during Ticket 5 verification)
+
+**Deviation:** Two of Ticket 2's RLS policies caused Postgres to report "infinite recursion detected in policy for relation group_members" on any read that touched `profiles` or `group_members` (first observed via `GET /rest/v1/profiles?select=height_cm`, i.e. `useOnboardingGate`). `"members read group membership"` (on `group_members`) queried `group_members` from inside its own `USING` clause; `"read own or group-mate profiles"` (on `profiles`) self-joined `group_members` twice, which hit that same recursive policy. Fixed in `supabase/migrations/20260821000000_fix_group_members_rls_recursion.sql` by adding `is_group_member`/`shares_group_with` `security definer` helper functions (same table-owner-bypasses-RLS pattern already used by `accept_group_invite`) and rewriting those two policies via `alter policy ... using (...)` to call them instead of self-referencing subqueries.
+
+**Why:** Not a spec deviation so much as a correctness bug in the Ticket 2 migration's RLS gap-fill — logged here rather than editing that ticket's entry above, since this is a later migration, not a rewrite of history.
+
+**Not yet verified:** Same database-connection restriction as above. Manual follow-up: push this migration, then retry the failing `profiles` read (e.g. reload `/onboarding` as a fresh signup) and confirm it succeeds; also spot-check a `groups`/`ingredients` read for a user in at least one group, since those policies transitively query `group_members` too.
