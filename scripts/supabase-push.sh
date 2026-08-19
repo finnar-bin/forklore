@@ -17,7 +17,6 @@ source "$env_file"
 set +a
 
 : "${SUPABASE_PROJECT_REF:?SUPABASE_PROJECT_REF not set in $env_file}"
-: "${SUPABASE_ACCESS_TOKEN:?SUPABASE_ACCESS_TOKEN not set in $env_file}"
 
 echo "Linking to Supabase project ($env_name): $SUPABASE_PROJECT_REF"
 npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
