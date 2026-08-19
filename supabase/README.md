@@ -18,10 +18,9 @@ cp .env.prod.example .env.prod
 
 - `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` — from the project's Settings → API page. Read by the frontend app at runtime (`npm run dev`, `npm run build` / `build:dev` pick the matching file via Vite's `--mode`).
 - `SUPABASE_PROJECT_REF` — the project ref from the same Settings → API page (or the project's URL slug).
+- `SUPABASE_ACCESS_TOKEN` — a personal access token from supabase.com/dashboard/account/tokens, used by the Supabase CLI in place of an interactive `supabase login`.
 
 Both `.env.dev` and `.env.prod` are gitignored — never commit them.
-
-`scripts/supabase-push.sh` relies on the Supabase CLI already being authenticated — run `npx supabase login` once (interactive) before the first push.
 
 ## 3. Push the migration
 
@@ -30,7 +29,7 @@ npm run supabase:push:dev   # links to the dev project and runs `supabase db pus
 npm run supabase:push:prod  # same, against the prod project
 ```
 
-This runs `scripts/supabase-push.sh`, which reads `SUPABASE_PROJECT_REF` from the matching `.env.<env>` file, runs `supabase link --project-ref`, then `supabase db push`. It applies `migrations/20260819000000_phase1_schema.sql` in full: all Phase 1 tables, the `ingredient_unit` enum, the `handle_new_user` and `recalculate_recipe_kcal` triggers, and RLS policies on every table.
+This runs `scripts/supabase-push.sh`, which reads `SUPABASE_PROJECT_REF`/`SUPABASE_ACCESS_TOKEN` from the matching `.env.<env>` file, runs `supabase link --project-ref`, then `supabase db push`. It applies `migrations/20260819000000_phase1_schema.sql` in full: all Phase 1 tables, the `ingredient_unit` enum, the `handle_new_user` and `recalculate_recipe_kcal` triggers, and RLS policies on every table.
 
 ## 4. Verify
 
