@@ -26,7 +26,9 @@ export function CreateIngredientDialog({
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>Add ingredient</DialogTitle>
-      <DialogContent>
+      {/* Extra top padding — otherwise the first field's floating label
+          clips against the dialog content's scroll edge once focused. */}
+      <DialogContent sx={{ pt: '12px !important' }}>
         <IngredientForm submitLabel="Add ingredient" onSubmit={handleSubmit} />
       </DialogContent>
     </Dialog>

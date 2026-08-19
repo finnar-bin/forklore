@@ -3,6 +3,7 @@ import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -14,7 +15,7 @@ import { signOut } from '../features/auth/api';
 // rather than behind a profile avatar (design-system.md's documented
 // pattern) — Ticket 17's Profile screen doesn't exist yet, so there is
 // nowhere else to put logout. See docs/pending-deviations.md (Ticket 6).
-export function AppHeader({ title }: { title: string }) {
+export function AppHeader({ title, onBack }: { title: string; onBack?: () => void }) {
   const { mode, systemMode, setMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
@@ -33,6 +34,11 @@ export function AppHeader({ title }: { title: string }) {
       sx={{ bgcolor: 'background.paper', boxShadow: tokens.sh1 }}
     >
       <Toolbar>
+        {onBack && (
+          <IconButton aria-label="Back" onClick={onBack} sx={{ mr: 1 }} edge="start">
+            <ArrowBackIcon />
+          </IconButton>
+        )}
         <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 500 }}>
           {title}
         </Typography>
