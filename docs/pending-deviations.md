@@ -57,3 +57,19 @@ Deviations from `schema.md` / `rpcs.md` / `frontend-architecture.md` / `design-s
 **Why:** Not a spec deviation so much as a correctness bug in the Ticket 2 migration's RLS gap-fill — logged here rather than editing that ticket's entry above, since this is a later migration, not a rewrite of history.
 
 **Not yet verified:** Same database-connection restriction as above. Manual follow-up: push this migration, then retry the failing `profiles` read (e.g. reload `/onboarding` as a fresh signup) and confirm it succeeds; also spot-check a `groups`/`ingredients` read for a user in at least one group, since those policies transitively query `group_members` too.
+
+---
+
+## Ticket 6 — Ingredient CRUD (pantry, personal only)
+
+**Deviation:** `check_ingredient_usage` (rpcs.md) hadn't been deployed by any prior migration — `rpcs.md`/`phase-1-tickets.md` group deploying "Phase 1 RPCs... if not already deployed alongside Ticket 2" under Ticket 11's scope, but this ticket's delete flow needs it now. Added `supabase/migrations/20260822000000_check_ingredient_usage_rpc.sql`, deploying the function exactly as specified in `rpcs.md`, no changes to its shape.
+
+**Deviation:** `routes.md` lists only `/pantry` and `/pantry/:ingredientId` for this ticket — no creation route. Rather than inventing an undocumented URL (e.g. `/pantry/new`), the FAB on `/pantry` opens an in-place create dialog (`CreateIngredientDialog`); `/pantry/:ingredientId` is used for viewing, editing, and deleting an existing ingredient.
+
+**Deviation:** Removed the temporary `HomePage`/`"/"` landing screen added in Ticket 3 and flagged in Tickets 3 and 5 as expected to be replaced once Pantry existed. `"/"` now redirects to `/pantry`. `design-system.md` documents profile/account actions (logout, theme toggle) as living behind a header avatar icon that opens `/profile`, but that screen is Ticket 17 and doesn't exist yet — so, matching `HomePage`'s prior treatment, the new shared `AppHeader` (`src/components/AppHeader.tsx`, used by both Pantry routes) inlines a theme-toggle button and a logout button directly instead. Expected to be replaced by the avatar-icon pattern once Ticket 17 lands.
+
+**Deviation:** `design-system.md`'s 4-tab bottom navigation (Pantry/Recipes/Log/Progress) is not implemented yet. Only Pantry has a real screen at this point — Recipes, Log, and Progress don't exist until their own tickets (7, 8, 18) — so a nav bar linking to them would either 404 or link nowhere useful. Expected to land incrementally as those tickets are completed, fully wired by Ticket 16 (navigation animations).
+
+**Why:** All four exist to satisfy this ticket's acceptance criteria (working create/edit/delete, delete confirmation naming affected recipes) given routes/screens that later tickets haven't built yet, without inventing undocumented routes or full nav structure ahead of the screens it would point to.
+
+**Not yet verified:** Same database-connection restriction as Tickets 2/3/5 — this session's tooling can't connect to a database (org policy: must not connect to databases), so the new `check_ingredient_usage` migration hasn't been pushed, and the full CRUD flow hasn't been exercised against the live dev Supabase project. Manual follow-up needed (see `supabase/README.md`): push this migration; create a personal ingredient and confirm it appears only in the creating user's pantry (not another user's); edit it and confirm the change persists; add it to a recipe (once Ticket 7 exists) and confirm deleting it shows the recipe-usage confirmation before proceeding; confirm deleting an ingredient with no recipe usage skips straight to a plain confirmation.
