@@ -10,3 +10,11 @@ export interface Recipe {
   created_at: string;
   updated_at: string;
 }
+
+// Join table — quantity_used is always in the linked ingredient's own unit
+// (schema.md), never user-selectable independently.
+export interface RecipeIngredient {
+  recipe_id: string;
+  ingredient_id: string;
+  quantity_used: number;
+}

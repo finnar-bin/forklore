@@ -8,6 +8,8 @@ import { SignupPage } from './routes/SignupPage';
 import { OnboardingPage } from './routes/OnboardingPage';
 import { PantryPage } from './routes/PantryPage';
 import { IngredientDetailPage } from './routes/IngredientDetailPage';
+import { RecipesPage } from './routes/RecipesPage';
+import { RecipeDetailPage } from './routes/RecipeDetailPage';
 import { RequireAuth } from './routes/RequireAuth';
 import { RedirectIfAuthed } from './routes/RedirectIfAuthed';
 import { RequireOnboarded } from './routes/RequireOnboarded';
@@ -49,6 +51,8 @@ function App() {
             <Route path="/" element={<Navigate to="/pantry" replace />} />
             <Route path="/pantry" element={<PantryPage />} />
             <Route path="/pantry/:ingredientId" element={<IngredientDetailPage />} />
+            <Route path="/recipes" element={<RecipesPage />} />
+            <Route path="/recipes/:recipeId" element={<RecipeDetailPage />} />
           </Route>
         </Route>
 
