@@ -2,9 +2,9 @@ import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import { useAppStore } from '../../store/useAppStore';
-import { createRecipe, type RecipeInput } from './api';
+import { createRecipe } from './api';
 import { RecipeForm } from './RecipeForm';
-import type { Recipe } from '../../types/recipe';
+import type { Recipe, RecipeInput } from '../../types/recipe';
 
 export function CreateRecipeDialog({
   open,

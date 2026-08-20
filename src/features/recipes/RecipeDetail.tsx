@@ -19,10 +19,9 @@ import {
   removeRecipeIngredient,
   updateRecipe,
   updateRecipeIngredientQuantity,
-  type RecipeIngredientDetail,
 } from './api';
 import { RecipeIngredientsList } from './RecipeIngredientsList';
-import type { Recipe } from '../../types/recipe';
+import type { Recipe, RecipeIngredientDetail } from '../../types/recipe';
 import type { Ingredient } from '../../types/ingredient';
 
 // Everything on this screen (recipe fields + ingredient lines) is staged

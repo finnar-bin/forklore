@@ -1,23 +1,5 @@
 import { supabase } from '../../lib/supabase';
-import type { Recipe } from '../../types/recipe';
-import type { IngredientUnit } from '../../types/ingredient';
-
-export interface RecipeInput {
-  name: string;
-  servings: number;
-  photo_url: string | null;
-}
-
-// Joined display shape for one recipe_ingredients row — inherits unit/kcal/
-// quantity from the linked ingredient, never stored independently.
-export interface RecipeIngredientDetail {
-  ingredient_id: string;
-  quantity_used: number;
-  name: string;
-  unit: IngredientUnit;
-  kcal: number;
-  quantity: number;
-}
+import type { Recipe, RecipeInput, RecipeIngredientDetail } from '../../types/recipe';
 
 // Personal recipes only — group_id hardcoded null per this ticket's scope.
 // Group-scoped recipes are Ticket 12.

@@ -10,7 +10,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
 import { AddRecipeIngredientDialog } from './AddRecipeIngredientDialog';
-import type { RecipeIngredientDetail } from './api';
+import type { RecipeIngredientDetail } from '../../types/recipe';
 import type { Ingredient } from '../../types/ingredient';
 
 // Every change here (add/remove/quantity edit) only touches the in-memory
