@@ -6,7 +6,8 @@ import { useOnboardingGate } from './features/onboarding/useOnboardingGate';
 import { LoginPage } from './routes/LoginPage';
 import { SignupPage } from './routes/SignupPage';
 import { OnboardingPage } from './routes/OnboardingPage';
-import { HomePage } from './routes/HomePage';
+import { PantryPage } from './routes/PantryPage';
+import { IngredientDetailPage } from './routes/IngredientDetailPage';
 import { RequireAuth } from './routes/RequireAuth';
 import { RedirectIfAuthed } from './routes/RedirectIfAuthed';
 import { RequireOnboarded } from './routes/RequireOnboarded';
@@ -45,7 +46,9 @@ function App() {
             <Route path="/onboarding" element={<OnboardingPage />} />
           </Route>
           <Route element={<RequireOnboarded />}>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<Navigate to="/pantry" replace />} />
+            <Route path="/pantry" element={<PantryPage />} />
+            <Route path="/pantry/:ingredientId" element={<IngredientDetailPage />} />
           </Route>
         </Route>
 

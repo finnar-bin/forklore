@@ -45,7 +45,7 @@ This runs `scripts/supabase-push.sh`, which reads `SUPABASE_PROJECT_REF`/`SUPABA
 ## Notes
 
 - Policies beyond what `docs/schema.md` spells out verbatim (profiles, weight_logs, group_invites, group_members, and delete policies on ingredients/recipes/recipe_ingredients) are documented as deviations in `docs/pending-deviations.md` under Ticket 2.
-- RPC functions from `docs/rpcs.md` (e.g. `check_ingredient_usage`, `accept_group_invite`) are explicitly out of scope for this ticket — they land with Ticket 11.
+- RPC functions from `docs/rpcs.md` (e.g. `accept_group_invite`) are explicitly out of scope for this ticket — they land with Ticket 11. (`check_ingredient_usage` was pulled forward into Ticket 6, which needed it sooner — see that ticket's migration and `docs/pending-deviations.md`.)
 
 ## Ticket 3 manual verification (auth + `handle_new_user`)
 
@@ -73,3 +73,15 @@ Same database-connection restriction as above.
 ## RLS recursion fix (`group_members`)
 
 If step 2 above 500s with "infinite recursion detected in policy for relation group_members", push `migrations/20260821000000_fix_group_members_rls_recursion.sql` (see `docs/pending-deviations.md`) and retry. Also worth a quick spot-check afterward: as a user who belongs to at least one group, confirm a `groups`/`ingredients` read still succeeds (those policies transitively query `group_members` too).
+
+## Ticket 6 manual verification (pantry / ingredient CRUD)
+
+Same database-connection restriction as above.
+
+1. Push `migrations/20260822000000_check_ingredient_usage_rpc.sql` (included in `supabase:push:dev`/`supabase:push:prod`) — deploys `check_ingredient_usage` ahead of Ticket 11, since this ticket's delete flow needs it now.
+2. `npm run dev`, log in, land on `/pantry`. Tap the FAB, add an ingredient (name, quantity, unit, kcal, optional photo URL) → confirm it appears in the list with the correct card layout (thumbnail/placeholder, quantity+unit subtitle, kcal + per-unit rate).
+3. Tap the card → edit a field, save → confirm the change persists after navigating back to `/pantry` and reopening it.
+4. Delete an ingredient not used in any recipe → confirm the dialog shows a plain confirmation (no recipe list) before deleting.
+5. Once Ticket 7 (recipes) exists, add an ingredient to a recipe, then try deleting that ingredient → confirm the dialog names the affected recipe(s) before proceeding, and that confirming still deletes it (cascade removes it from `recipe_ingredients`).
+6. As a second user, confirm `/pantry` never shows the first user's ingredients (RLS: `group_id is null and created_by = auth.uid()`).
+7. Record the result somewhere durable (PR description, ticket comment) — same as prior tickets, this is the acceptance criterion, not something provable from the code alone.
