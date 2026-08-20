@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
@@ -26,6 +27,7 @@ export function DeleteIngredientDialog({
 }) {
   const [usage, setUsage] = useState<IngredientUsage[] | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Cached once fetched — the dialog is mounted for a single fixed
@@ -34,16 +36,33 @@ export function DeleteIngredientDialog({
     checkIngredientUsage(ingredientId).then(setUsage).catch(() => setUsage([]));
   }, [open, ingredientId, usage]);
 
+  function handleClose() {
+    if (deleting) return;
+    setError(null);
+    onClose();
+  }
+
   async function handleConfirm() {
+    setError(null);
     setDeleting(true);
-    await onConfirm();
-    setDeleting(false);
+    try {
+      await onConfirm();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete this ingredient. Try again.');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
       <DialogTitle>Delete {ingredientName}?</DialogTitle>
       <DialogContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
         {usage === null ? (
           <CircularProgress size={24} />
         ) : usage.length === 0 ? (
@@ -67,7 +86,7 @@ export function DeleteIngredientDialog({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={deleting}>
+        <Button onClick={handleClose} disabled={deleting}>
           Cancel
         </Button>
         <Button

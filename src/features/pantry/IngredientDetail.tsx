@@ -35,8 +35,10 @@ export function IngredientDetail() {
 
   async function handleSubmit(input: IngredientInput) {
     if (!ingredientId) return;
-    const updated = await updateIngredient(ingredientId, input);
-    setIngredient(updated);
+    await updateIngredient(ingredientId, input);
+    // Back to the list on success — it refetches on mount, so it picks up
+    // the change. On error, IngredientForm surfaces it and we stay put.
+    navigate('/pantry', { replace: true });
   }
 
   async function handleDelete() {
