@@ -12,35 +12,33 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { useAppStore } from '../../store/useAppStore';
 import { fetchIngredients } from '../pantry/api';
-import { addRecipeIngredient } from './api';
 import type { Ingredient } from '../../types/ingredient';
 
+// Purely client-side — adds to the in-memory draft only. The parent commits
+// this (along with every other pending change) in one batch when the user
+// hits the page-level Save button.
 export function AddRecipeIngredientDialog({
   open,
-  recipeId,
   excludeIngredientIds,
   onClose,
-  onAdded,
+  onAdd,
 }: {
   open: boolean;
-  recipeId: string;
   excludeIngredientIds: string[];
   onClose: () => void;
-  onAdded: () => void;
+  onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
 }) {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>Add ingredient</DialogTitle>
-      {/* Mounted only while open, so its form state (selected ingredient,
-          quantity, in-flight fetch) starts fresh every time rather than
-          needing a manual reset effect — same delegation pattern as
-          CreateIngredientDialog/IngredientForm. */}
+      {/* Mounted only while open, so its selection/quantity state starts
+          fresh every time rather than needing a manual reset effect — same
+          delegation pattern as CreateIngredientDialog/IngredientForm. */}
       {open && (
         <AddRecipeIngredientForm
-          recipeId={recipeId}
           excludeIngredientIds={excludeIngredientIds}
           onClose={onClose}
-          onAdded={onAdded}
+          onAdd={onAdd}
         />
       )}
     </Dialog>
@@ -50,23 +48,19 @@ export function AddRecipeIngredientDialog({
 // Quantity's unit is inherited from the selected ingredient and shown
 // read-only next to the input — never user-selectable (schema.md).
 function AddRecipeIngredientForm({
-  recipeId,
   excludeIngredientIds,
   onClose,
-  onAdded,
+  onAdd,
 }: {
-  recipeId: string;
   excludeIngredientIds: string[];
   onClose: () => void;
-  onAdded: () => void;
+  onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
 }) {
   const userId = useAppStore((state) => state.userId);
 
   const [options, setOptions] = useState<Ingredient[] | null>(null);
   const [selected, setSelected] = useState<Ingredient | null>(null);
   const [quantity, setQuantity] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -78,25 +72,18 @@ function AddRecipeIngredientForm({
     [options, excludeIngredientIds],
   );
 
-  async function handleSubmit() {
-    if (!selected) return;
-    setError(null);
-    setSubmitting(true);
-    try {
-      await addRecipeIngredient(recipeId, selected.id, Number(quantity));
-      onAdded();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add this ingredient. Try again.');
-      setSubmitting(false);
-    }
+  const parsedQuantity = Number(quantity);
+  const canAdd = selected !== null && Number.isFinite(parsedQuantity) && parsedQuantity > 0;
+
+  function handleAdd() {
+    if (!selected || !canAdd) return;
+    onAdd(selected, parsedQuantity);
   }
 
   return (
     <>
       <DialogContent sx={{ pt: '12px !important' }}>
         <Stack spacing={2.5}>
-          {error && <Alert severity="error">{error}</Alert>}
-
           {options === null ? (
             <CircularProgress size={24} />
           ) : options.length === 0 ? (
@@ -137,15 +124,9 @@ function AddRecipeIngredientForm({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={submitting}>
-          Cancel
-        </Button>
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={!selected || quantity.trim() === '' || submitting}
-        >
-          {submitting ? 'Adding…' : 'Add ingredient'}
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained" onClick={handleAdd} disabled={!canAdd}>
+          Add ingredient
         </Button>
       </DialogActions>
     </>

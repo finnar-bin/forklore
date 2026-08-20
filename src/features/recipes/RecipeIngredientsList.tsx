@@ -9,18 +9,25 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
-import { removeRecipeIngredient, updateRecipeIngredientQuantity } from './api';
 import { AddRecipeIngredientDialog } from './AddRecipeIngredientDialog';
 import type { RecipeIngredientDetail } from './api';
+import type { Ingredient } from '../../types/ingredient';
 
+// Every change here (add/remove/quantity edit) only touches the in-memory
+// draft passed down from RecipeDetail — nothing is written to Supabase until
+// the page-level Save button is clicked.
 export function RecipeIngredientsList({
-  recipeId,
   ingredients,
-  onChanged,
+  disabled,
+  onAdd,
+  onQuantityChange,
+  onRemove,
 }: {
-  recipeId: string;
   ingredients: RecipeIngredientDetail[];
-  onChanged: () => void;
+  disabled: boolean;
+  onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
+  onQuantityChange: (ingredientId: string, quantityUsed: number) => void;
+  onRemove: (ingredientId: string) => void;
 }) {
   const [addOpen, setAddOpen] = useState(false);
 
@@ -34,6 +41,7 @@ export function RecipeIngredientsList({
           size="small"
           startIcon={<AddIcon fontSize="small" />}
           onClick={() => setAddOpen(true)}
+          disabled={disabled}
         >
           Add ingredient
         </Button>
@@ -48,9 +56,10 @@ export function RecipeIngredientsList({
           {ingredients.map((item) => (
             <RecipeIngredientRow
               key={item.ingredient_id}
-              recipeId={recipeId}
               item={item}
-              onChanged={onChanged}
+              disabled={disabled}
+              onQuantityChange={onQuantityChange}
+              onRemove={onRemove}
             />
           ))}
         </Stack>
@@ -58,12 +67,11 @@ export function RecipeIngredientsList({
 
       <AddRecipeIngredientDialog
         open={addOpen}
-        recipeId={recipeId}
         excludeIngredientIds={ingredients.map((i) => i.ingredient_id)}
         onClose={() => setAddOpen(false)}
-        onAdded={() => {
+        onAdd={(ingredient, quantityUsed) => {
+          onAdd(ingredient, quantityUsed);
           setAddOpen(false);
-          onChanged();
         }}
       />
     </Box>
@@ -71,47 +79,34 @@ export function RecipeIngredientsList({
 }
 
 function RecipeIngredientRow({
-  recipeId,
   item,
-  onChanged,
+  disabled,
+  onQuantityChange,
+  onRemove,
 }: {
-  recipeId: string;
   item: RecipeIngredientDetail;
-  onChanged: () => void;
+  disabled: boolean;
+  onQuantityChange: (ingredientId: string, quantityUsed: number) => void;
+  onRemove: (ingredientId: string) => void;
 }) {
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
 
-  const [quantity, setQuantity] = useState(item.quantity_used.toString());
-  const [saving, setSaving] = useState(false);
-  const [removing, setRemoving] = useState(false);
+  // Local raw text, separate from the committed draft value — lets the user
+  // pass through intermediate states like "1." while typing "1.5" without
+  // the controlled input snapping back on every keystroke. Only a valid
+  // positive number is pushed up to the parent (and the realtime kcal total).
+  const [rawQuantity, setRawQuantity] = useState(item.quantity_used.toString());
 
   const kcalContribution =
     item.quantity > 0 ? (item.kcal * item.quantity_used) / item.quantity : 0;
 
-  async function commitQuantity() {
-    const parsed = Number(quantity);
-    if (!Number.isFinite(parsed) || parsed <= 0 || parsed === item.quantity_used) {
-      setQuantity(item.quantity_used.toString());
-      return;
-    }
-    setSaving(true);
-    try {
-      await updateRecipeIngredientQuantity(recipeId, item.ingredient_id, parsed);
-      onChanged();
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleRemove() {
-    setRemoving(true);
-    try {
-      await removeRecipeIngredient(recipeId, item.ingredient_id);
-      onChanged();
-    } finally {
-      setRemoving(false);
+  function handleChange(value: string) {
+    setRawQuantity(value);
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      onQuantityChange(item.ingredient_id, parsed);
     }
   }
 
@@ -139,10 +134,9 @@ function RecipeIngredientRow({
       <TextField
         type="number"
         size="small"
-        value={quantity}
-        onChange={(e) => setQuantity(e.target.value)}
-        onBlur={commitQuantity}
-        disabled={saving || removing}
+        value={rawQuantity}
+        onChange={(e) => handleChange(e.target.value)}
+        disabled={disabled}
         slotProps={{ htmlInput: { min: 0, step: 0.01, style: { textAlign: 'right' } } }}
         sx={{ width: 88 }}
       />
@@ -153,8 +147,8 @@ function RecipeIngredientRow({
       <IconButton
         aria-label={`Remove ${item.name}`}
         size="small"
-        onClick={handleRemove}
-        disabled={removing}
+        onClick={() => onRemove(item.ingredient_id)}
+        disabled={disabled}
       >
         <DeleteOutlineIcon fontSize="small" />
       </IconButton>
