@@ -9,15 +9,14 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import InputAdornment from '@mui/material/InputAdornment';
-import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { useAppStore } from '../../store/useAppStore';
-import { createIngredient, fetchIngredients } from '../pantry/api';
-import { INGREDIENT_UNITS } from '../pantry/ingredientUnits';
-import type { Ingredient, IngredientUnit } from '../../types/ingredient';
+import { createIngredient, fetchIngredients, type IngredientInput } from '../pantry/api';
+import { IngredientForm } from '../pantry/IngredientForm';
+import type { Ingredient } from '../../types/ingredient';
 
 // Purely client-side — adding an *existing* ingredient to the recipe only
 // updates the in-memory draft; the parent commits it (along with every
@@ -180,10 +179,13 @@ function ExistingIngredientForm({
   );
 }
 
-// Creates a brand-new personal pantry ingredient (immediate write, same as
-// CreateIngredientDialog), then stages it onto the recipe with the given
-// "quantity used" — a distinct number from the ingredient's own base
-// quantity (e.g. "500 g package, 620 kcal" vs. "using 150 g here").
+// Two steps, reusing the same IngredientForm the Pantry screen uses (rather
+// than duplicating its fields): (1) define and create the ingredient itself
+// — an immediate write to the personal pantry, same as CreateIngredientDialog
+// — then (2) a recipe-specific "quantity used" step, since that's a distinct
+// number from the ingredient's own base quantity (e.g. "500 g package, 620
+// kcal" vs. "using 150 g here") that IngredientForm has no reason to know
+// about. Only step 2's result is staged onto the recipe draft.
 function NewIngredientForm({
   onClose,
   onAdd,
@@ -192,108 +194,43 @@ function NewIngredientForm({
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
 }) {
   const userId = useAppStore((state) => state.userId);
+  const [created, setCreated] = useState<Ingredient | null>(null);
 
-  const [name, setName] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [unit, setUnit] = useState<IngredientUnit | ''>('');
-  const [kcal, setKcal] = useState('');
-  const [photoUrl, setPhotoUrl] = useState('');
-  const [quantityUsed, setQuantityUsed] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  const parsedQuantity = Number(quantity);
-  const parsedKcal = Number(kcal);
-  const parsedQuantityUsed = Number(quantityUsed);
-  const canSubmit =
-    userId !== null &&
-    name.trim() !== '' &&
-    unit !== '' &&
-    Number.isFinite(parsedQuantity) &&
-    parsedQuantity > 0 &&
-    Number.isFinite(parsedKcal) &&
-    parsedKcal >= 0 &&
-    Number.isFinite(parsedQuantityUsed) &&
-    parsedQuantityUsed > 0;
-
-  async function handleCreate() {
-    if (!userId || !unit || !canSubmit) return;
-    setError(null);
-    setSubmitting(true);
-    try {
-      const created = await createIngredient(userId, {
-        name: name.trim(),
-        quantity: parsedQuantity,
-        unit,
-        kcal: parsedKcal,
-        photo_url: photoUrl.trim() === '' ? null : photoUrl.trim(),
-      });
-      onAdd(created, parsedQuantityUsed);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create this ingredient. Try again.');
-      setSubmitting(false);
-    }
+  async function handleCreate(input: IngredientInput) {
+    if (!userId) return;
+    const ingredient = await createIngredient(userId, input);
+    setCreated(ingredient);
   }
+
+  if (!created) {
+    return (
+      <DialogContent sx={{ pt: '12px !important' }}>
+        <IngredientForm submitLabel="Create ingredient" onSubmit={handleCreate} />
+      </DialogContent>
+    );
+  }
+
+  return <RecipeQuantityStep ingredient={created} onClose={onClose} onAdd={onAdd} />;
+}
+
+function RecipeQuantityStep({
+  ingredient,
+  onClose,
+  onAdd,
+}: {
+  ingredient: Ingredient;
+  onClose: () => void;
+  onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
+}) {
+  const [quantityUsed, setQuantityUsed] = useState('');
+  const parsedQuantityUsed = Number(quantityUsed);
+  const canAdd = Number.isFinite(parsedQuantityUsed) && parsedQuantityUsed > 0;
 
   return (
     <>
       <DialogContent sx={{ pt: '12px !important' }}>
         <Stack spacing={2.5}>
-          {error && <Alert severity="error">{error}</Alert>}
-
-          <TextField
-            label="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            fullWidth
-            autoFocus
-            disabled={submitting}
-          />
-          <Stack direction="row" spacing={2}>
-            <TextField
-              label="Quantity"
-              type="number"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              required
-              fullWidth
-              disabled={submitting}
-              slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
-            />
-            <TextField
-              label="Unit"
-              select
-              value={unit}
-              onChange={(e) => setUnit(e.target.value as IngredientUnit)}
-              required
-              fullWidth
-              disabled={submitting}
-            >
-              {INGREDIENT_UNITS.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Stack>
-          <TextField
-            label="Kcal"
-            type="number"
-            value={kcal}
-            onChange={(e) => setKcal(e.target.value)}
-            required
-            fullWidth
-            disabled={submitting}
-            slotProps={{ htmlInput: { min: 0, step: 0.1 } }}
-          />
-          <TextField
-            label="Photo URL (optional)"
-            value={photoUrl}
-            onChange={(e) => setPhotoUrl(e.target.value)}
-            fullWidth
-            disabled={submitting}
-          />
+          <Alert severity="success">{ingredient.name} added to your pantry.</Alert>
           <TextField
             label="Quantity used in this recipe"
             type="number"
@@ -301,22 +238,22 @@ function NewIngredientForm({
             onChange={(e) => setQuantityUsed(e.target.value)}
             required
             fullWidth
-            disabled={submitting || !unit}
+            autoFocus
             slotProps={{
               htmlInput: { min: 0, step: 0.01 },
-              input: unit
-                ? { endAdornment: <InputAdornment position="end">{unit}</InputAdornment> }
-                : undefined,
+              input: { endAdornment: <InputAdornment position="end">{ingredient.unit}</InputAdornment> },
             }}
           />
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={submitting}>
-          Cancel
-        </Button>
-        <Button variant="contained" onClick={handleCreate} disabled={!canSubmit || submitting}>
-          {submitting ? 'Creating…' : 'Create & add'}
+        <Button onClick={onClose}>Cancel</Button>
+        <Button
+          variant="contained"
+          onClick={() => onAdd(ingredient, parsedQuantityUsed)}
+          disabled={!canAdd}
+        >
+          Add to recipe
         </Button>
       </DialogActions>
     </>
