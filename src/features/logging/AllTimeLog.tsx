@@ -6,6 +6,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useAppStore } from '../../store/useAppStore';
 import { fetchAllLogEntries } from './api';
+import { EditLogEntryDialog } from './EditLogEntryDialog';
 import { LogEntryCard } from './LogEntryCard';
 import type { LogEntry } from '../../types/log';
 
@@ -17,6 +18,7 @@ export function AllTimeLog() {
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingEntry, setEditingEntry] = useState<LogEntry | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -79,11 +81,28 @@ export function AllTimeLog() {
                   hour: 'numeric',
                   minute: '2-digit',
                 })}
+                onClick={() => setEditingEntry(entry)}
               />
             ))}
           </Stack>
         );
       })}
+
+      {editingEntry && (
+        <EditLogEntryDialog
+          open={editingEntry !== null}
+          entry={editingEntry}
+          onClose={() => setEditingEntry(null)}
+          onSaved={(updated) => {
+            setEntries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+            setEditingEntry(null);
+          }}
+          onDeleted={(entryId) => {
+            setEntries((prev) => prev.filter((e) => e.id !== entryId));
+            setEditingEntry(null);
+          }}
+        />
+      )}
     </Stack>
   );
 }

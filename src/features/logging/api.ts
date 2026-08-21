@@ -55,3 +55,24 @@ export async function createLogEntry(userId: string, input: LogEntryInput): Prom
   if (error) throw error;
   return data;
 }
+
+export interface LogEntrySnapshotInput {
+  snapshot_name: string;
+  snapshot_kcal: number;
+  snapshot_quantity: number | null;
+}
+
+// Fast-follow mentioned (but explicitly out of scope) in Ticket 8: editing an
+// already-logged entry's own snapshot values. Only the snapshot fields are
+// editable — source_ingredient_id/source_recipe_id and logged_at are left
+// alone, since this edits the log entry itself, not what it was logged from.
+export async function updateLogEntry(id: string, input: LogEntrySnapshotInput): Promise<LogEntry> {
+  const { data, error } = await supabase.from('log_entries').update(input).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteLogEntry(id: string): Promise<void> {
+  const { error } = await supabase.from('log_entries').delete().eq('id', id);
+  if (error) throw error;
+}

@@ -8,7 +8,15 @@ import type { LogEntry } from '../../types/log';
 // Card / list item pattern from design-system.md, applied to Log as
 // documented. Log entries have no photo of their own, so the thumbnail
 // always renders the generic "no photo" placeholder.
-export function LogEntryCard({ entry, subtitle }: { entry: LogEntry; subtitle: string }) {
+export function LogEntryCard({
+  entry,
+  subtitle,
+  onClick,
+}: {
+  entry: LogEntry;
+  subtitle: string;
+  onClick?: () => void;
+}) {
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
@@ -16,6 +24,7 @@ export function LogEntryCard({ entry, subtitle }: { entry: LogEntry; subtitle: s
 
   return (
     <Box
+      onClick={onClick}
       sx={{
         bgcolor: 'background.paper',
         borderRadius: '14px',
@@ -24,6 +33,7 @@ export function LogEntryCard({ entry, subtitle }: { entry: LogEntry; subtitle: s
         display: 'flex',
         gap: 1.5,
         alignItems: 'center',
+        cursor: onClick ? 'pointer' : undefined,
       }}
     >
       <PhotoThumbnail photoUrl={null} alt={entry.snapshot_name} />

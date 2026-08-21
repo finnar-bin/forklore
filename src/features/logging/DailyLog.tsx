@@ -14,6 +14,7 @@ import { shadows } from '../../theme/theme';
 import { useAppStore } from '../../store/useAppStore';
 import { fetchTodayLogEntries } from './api';
 import { AddLogEntryDialog } from './AddLogEntryDialog';
+import { EditLogEntryDialog } from './EditLogEntryDialog';
 import { LogEntryCard } from './LogEntryCard';
 import type { LogEntry } from '../../types/log';
 
@@ -28,6 +29,7 @@ export function DailyLog() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<LogEntry | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -77,6 +79,7 @@ export function DailyLog() {
               hour: 'numeric',
               minute: '2-digit',
             })}
+            onClick={() => setEditingEntry(entry)}
           />
         ))}
       </Stack>
@@ -104,6 +107,22 @@ export function DailyLog() {
           setAddOpen(false);
         }}
       />
+
+      {editingEntry && (
+        <EditLogEntryDialog
+          open={editingEntry !== null}
+          entry={editingEntry}
+          onClose={() => setEditingEntry(null)}
+          onSaved={(updated) => {
+            setEntries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+            setEditingEntry(null);
+          }}
+          onDeleted={(entryId) => {
+            setEntries((prev) => prev.filter((e) => e.id !== entryId));
+            setEditingEntry(null);
+          }}
+        />
+      )}
     </Box>
   );
 }
