@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Alert from '@mui/material/Alert';
+import { useLiveQuery } from 'dexie-react-hooks';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Fab from '@mui/material/Fab';
@@ -11,24 +11,18 @@ import { useAppStore } from '../../store/useAppStore';
 import { fetchIngredients } from './api';
 import { IngredientCard } from './IngredientCard';
 import { CreateIngredientDialog } from './CreateIngredientDialog';
-import type { Ingredient } from '../../types/ingredient';
 
 export function PantryList() {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
 
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
-  useEffect(() => {
-    if (!userId) return;
-    fetchIngredients(userId)
-      .then(setIngredients)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load your pantry.'))
-      .finally(() => setLoading(false));
-  }, [userId]);
+  // Reads from Dexie, not Supabase — re-renders automatically on local
+  // writes (this device) and pulled remote changes alike, so no manual
+  // refetch/merge is needed after create/delete.
+  const ingredients = useLiveQuery(() => (userId ? fetchIngredients(userId) : []), [userId]);
+  const loading = ingredients === undefined;
 
   return (
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
@@ -43,15 +37,13 @@ export function PantryList() {
           </Box>
         )}
 
-        {error && <Alert severity="error">{error}</Alert>}
-
-        {!loading && !error && ingredients.length === 0 && (
+        {!loading && ingredients?.length === 0 && (
           <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
             Your pantry is empty. Add your first ingredient to get started.
           </Typography>
         )}
 
-        {ingredients.map((ingredient) => (
+        {(ingredients ?? []).map((ingredient) => (
           <IngredientCard
             key={ingredient.id}
             ingredient={ingredient}
@@ -80,12 +72,7 @@ export function PantryList() {
       <CreateIngredientDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onCreated={(created) => {
-          setIngredients((prev) =>
-            [...prev, created].sort((a, b) => a.name.localeCompare(b.name)),
-          );
-          setCreateOpen(false);
-        }}
+        onCreated={() => setCreateOpen(false)}
       />
     </Box>
   );

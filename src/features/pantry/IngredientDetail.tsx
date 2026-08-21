@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -11,7 +12,12 @@ import { shadows } from '../../theme/theme';
 import { deleteIngredient, fetchIngredient, updateIngredient, type IngredientInput } from './api';
 import { IngredientForm } from './IngredientForm';
 import { DeleteIngredientDialog } from './DeleteIngredientDialog';
-import type { Ingredient } from '../../types/ingredient';
+
+// Distinguishes "still loading" from "query resolved, nothing found" —
+// fetchIngredient resolves to undefined in both cases, so useLiveQuery needs
+// a distinct default value to tell them apart (Dexie's documented pattern
+// for this: https://dexie.org/docs/dexie-react-hooks/useLiveQuery()).
+const LOADING = Symbol('loading');
 
 export function IngredientDetail() {
   const { ingredientId } = useParams<{ ingredientId: string }>();
@@ -20,24 +26,21 @@ export function IngredientDetail() {
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
 
-  const [ingredient, setIngredient] = useState<Ingredient | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  useEffect(() => {
-    if (!ingredientId) return;
-    fetchIngredient(ingredientId)
-      .then(setIngredient)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Ingredient not found.'))
-      .finally(() => setLoading(false));
-  }, [ingredientId]);
+  const result = useLiveQuery(
+    () => (ingredientId ? fetchIngredient(ingredientId) : undefined),
+    [ingredientId],
+    LOADING,
+  );
+  const loading = result === LOADING;
+  const ingredient = result === LOADING ? undefined : result;
 
   async function handleSubmit(input: IngredientInput) {
     if (!ingredientId) return;
     await updateIngredient(ingredientId, input);
-    // Back to the list on success — it refetches on mount, so it picks up
-    // the change. On error, IngredientForm surfaces it and we stay put.
+    // Back to the list on success — its live query picks up the change
+    // automatically. On error, IngredientForm surfaces it and we stay put.
     navigate('/pantry', { replace: true });
   }
 
@@ -55,10 +58,10 @@ export function IngredientDetail() {
     );
   }
 
-  if (error || !ingredient) {
+  if (!ingredient) {
     return (
       <Box sx={{ p: 2, maxWidth: 480, mx: 'auto' }}>
-        <Alert severity="error">{error ?? 'Ingredient not found.'}</Alert>
+        <Alert severity="error">Ingredient not found.</Alert>
       </Box>
     );
   }
