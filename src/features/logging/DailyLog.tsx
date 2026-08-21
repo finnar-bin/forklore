@@ -42,8 +42,10 @@ export function DailyLog() {
   const totalKcal = entries.reduce((sum, entry) => sum + entry.snapshot_kcal, 0);
 
   return (
-    // FAB is anchored to this root box, not a nested wrapper — see the
-    // positioning bug called out in design-system.md.
+    // Root box, not a nested wrapper — see design-system.md's FAB positioning
+    // note. The FAB itself uses position: fixed (anchored to the viewport),
+    // not absolute — absolute anchored it to this box, which grows with the
+    // list, pushing the FAB off-screen once the list got long.
     <Box sx={{ position: 'relative', minHeight: 'calc(100vh - 64px)' }}>
       <Stack spacing={1.5} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 10 }}>
         <Paper sx={{ p: 2, borderRadius: '14px', boxShadow: tokens.sh2, textAlign: 'center' }}>
@@ -89,7 +91,7 @@ export function DailyLog() {
         aria-label="Log an entry"
         onClick={() => setAddOpen(true)}
         sx={{
-          position: 'absolute',
+          position: 'fixed',
           right: 16,
           bottom: 24,
           boxShadow: (theme) =>
