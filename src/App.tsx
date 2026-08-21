@@ -10,6 +10,8 @@ import { PantryPage } from './routes/PantryPage';
 import { IngredientDetailPage } from './routes/IngredientDetailPage';
 import { RecipesPage } from './routes/RecipesPage';
 import { RecipeDetailPage } from './routes/RecipeDetailPage';
+import { LogPage } from './routes/LogPage';
+import { LogsPage } from './routes/LogsPage';
 import { RequireAuth } from './routes/RequireAuth';
 import { RedirectIfAuthed } from './routes/RedirectIfAuthed';
 import { RequireOnboarded } from './routes/RequireOnboarded';
@@ -53,6 +55,8 @@ function App() {
             <Route path="/pantry/:ingredientId" element={<IngredientDetailPage />} />
             <Route path="/recipes" element={<RecipesPage />} />
             <Route path="/recipes/:recipeId" element={<RecipeDetailPage />} />
+            <Route path="/log" element={<LogPage />} />
+            <Route path="/logs" element={<LogsPage />} />
           </Route>
         </Route>
 

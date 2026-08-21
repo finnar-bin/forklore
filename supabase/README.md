@@ -85,3 +85,13 @@ Same database-connection restriction as above.
 5. Once Ticket 7 (recipes) exists, add an ingredient to a recipe, then try deleting that ingredient → confirm the dialog names the affected recipe(s) before proceeding, and that confirming still deletes it (cascade removes it from `recipe_ingredients`).
 6. As a second user, confirm `/pantry` never shows the first user's ingredients (RLS: `group_id is null and created_by = auth.uid()`).
 7. Record the result somewhere durable (PR description, ticket comment) — same as prior tickets, this is the acceptance criterion, not something provable from the code alone.
+
+## Ticket 8 fast-follow manual verification (log entry edit/delete)
+
+Same database-connection restriction as above.
+
+1. Push `migrations/20260823000000_log_entries_delete_policy.sql` (included in `supabase:push:dev`/`supabase:push:prod`) — `log_entries` had select/insert/update policies from the Ticket 2 migration but no delete policy; this adds one mirroring the existing update policy's shape.
+2. `npm run dev`, log in, log an ingredient or recipe from `/log`. Tap the resulting card → edit the name/kcal/quantity, save → confirm the change persists after reloading `/log` and `/logs`.
+3. Tap a card, then "Delete entry", confirm → confirm it disappears from both `/log` and `/logs`, and today's running total updates accordingly.
+4. As a second user, confirm they cannot update or delete the first user's log entries directly against the API (RLS: `logged_by = auth.uid()`).
+5. Record the result somewhere durable (PR description, ticket comment) — same as prior tickets, this is the acceptance criterion, not something provable from the code alone.
