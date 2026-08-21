@@ -25,4 +25,10 @@ db.version(1).stores({
   outbox: 'id, created_at',
 });
 
+// outbox.ts queries by status (draining `pending`/`waiting_for_connectivity`
+// items, counting `failed` ones) — needs an index, not just id/created_at.
+db.version(2).stores({
+  outbox: 'id, created_at, status',
+});
+
 export { db };

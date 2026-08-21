@@ -176,3 +176,11 @@ Also converted `profiles.goal_type` from `text check (...)` to a proper `goal_ty
 **Why:** Matches the doc's stated pattern ("Reads go through dexie-react-hooks' useLiveQuery... not manual polling") rather than introducing a one-off polling/manual-refresh mechanism for this screen alone.
 
 **Not yet verified:** No browser automation tooling available in this environment to drive the real auth-gated app — verification was `tsc -b`, `oxlint`, and `vite build`, all clean, plus manual reading of the rendered JSX against `design-system.md`'s card pattern. Manual follow-up: log in, populate `waiting_for_connectivity` and `failed` outbox items (e.g. via DevTools offline mode and a simulated RLS denial), confirm both sections render with the correct copy/color treatment, and confirm "Retry now"/"Discard" behave as described (single attempt, no silent re-retry) and the empty state shows once the outbox is clear.
+
+---
+
+## Ticket 9 — Outbox pattern with backoff and reconnect retry (fix, found during manual testing)
+
+**Deviation:** `frontend-architecture.md`'s Dexie schema sample indexes the `outbox` table as `'id, created_at'` only. `outbox.ts` queries it with `db.outbox.where('status').equals(...)` in three places (draining `pending`/`waiting_for_connectivity` items on reconnect/startup, counting `failed` items for `useSyncStore`) — Dexie requires a field to be indexed to `.where()` on it, so this threw `SchemaError: KeyPath status on object store outbox is not indexed` at runtime (surfaced when reconnecting after an offline test, in the `online`-event handler's `.where('status')` call). Fixed by adding a `db.version(2).stores({ outbox: 'id, created_at, status' })` bump in `src/lib/db.ts`, on top of the existing `version(1)` block — Dexie auto-upgrades a browser's existing v1 database in place, no data loss, no custom upgrade function needed since this only adds an index.
+
+**Why:** The doc's schema sample doesn't anticipate `status`-based queries; without the index, every reconnect and every startup drain throws instead of retrying.
