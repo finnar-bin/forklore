@@ -44,6 +44,14 @@ export async function updateRecipe(id: string, input: RecipeInput): Promise<Reci
   return data;
 }
 
+// Cascades to remove this recipe's own recipe_ingredients rows and nulls
+// source_recipe_id on any log_entries that were logged from it — existing
+// log entries keep their snapshot values untouched (see schema.md).
+export async function deleteRecipe(id: string): Promise<void> {
+  const { error } = await supabase.from('recipes').delete().eq('id', id);
+  if (error) throw error;
+}
+
 export async function fetchRecipeIngredients(recipeId: string): Promise<RecipeIngredientDetail[]> {
   const { data, error } = await supabase
     .from('recipe_ingredients')

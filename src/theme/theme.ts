@@ -38,6 +38,16 @@ export const theme = createTheme({
         },
       },
     },
+    // AppBar is Paper-based and otherwise inherits theme.shape.borderRadius
+    // (12px, meant for cards) on all four corners — visible as rounded
+    // notches at the top edge since AppHeader sits flush against the screen.
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
   },
 });
 

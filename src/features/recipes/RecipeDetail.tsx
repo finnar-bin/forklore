@@ -1,11 +1,9 @@
 import { useMemo, useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
 import Paper from '@mui/material/Paper';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
@@ -14,17 +12,16 @@ import Typography from '@mui/material/Typography';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
 import { PhotoThumbnail } from '../../components/PhotoThumbnail';
-import { useAppStore } from '../../store/useAppStore';
-import { createLogEntry, type LogEntryInput } from '../logging/api';
-import { LogRecipeStep } from '../logging/LogRecipeStep';
 import {
   addRecipeIngredient,
+  deleteRecipe,
   fetchRecipe,
   fetchRecipeIngredients,
   removeRecipeIngredient,
   updateRecipe,
   updateRecipeIngredientQuantity,
 } from './api';
+import { DeleteRecipeDialog } from './DeleteRecipeDialog';
 import { RecipeIngredientsList } from './RecipeIngredientsList';
 import type { Recipe, RecipeIngredientDetail } from '../../types/recipe';
 import type { Ingredient } from '../../types/ingredient';
@@ -37,7 +34,7 @@ import type { Ingredient } from '../../types/ingredient';
 // and to know whether there's anything to save at all.
 export function RecipeDetail() {
   const { recipeId } = useParams<{ recipeId: string }>();
-  const userId = useAppStore((state) => state.userId);
+  const navigate = useNavigate();
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
@@ -57,8 +54,7 @@ export function RecipeDetail() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
 
-  const [logOpen, setLogOpen] = useState(false);
-  const [justLogged, setJustLogged] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (!recipeId) return;
@@ -130,11 +126,10 @@ export function RecipeDetail() {
     setIngredients((prev) => prev.filter((item) => item.ingredient_id !== ingredientId));
   }
 
-  async function handleLog(input: LogEntryInput) {
-    if (!userId) return;
-    await createLogEntry(userId, input);
-    setLogOpen(false);
-    setJustLogged(true);
+  async function handleDelete() {
+    if (!recipeId) return;
+    await deleteRecipe(recipeId);
+    navigate('/recipes', { replace: true });
   }
 
   async function handleSave() {
@@ -293,10 +288,6 @@ export function RecipeDetail() {
         onRemove={handleRemoveIngredient}
       />
 
-      <Button variant="outlined" size="large" onClick={() => setLogOpen(true)}>
-        Log this recipe
-      </Button>
-
       {saveError && <Alert severity="error">{saveError}</Alert>}
 
       <Button
@@ -308,24 +299,22 @@ export function RecipeDetail() {
         {saving ? 'Saving…' : 'Save changes'}
       </Button>
 
+      <Button color="error" variant="outlined" size="large" onClick={() => setDeleteOpen(true)}>
+        Delete recipe
+      </Button>
+
+      <DeleteRecipeDialog
+        open={deleteOpen}
+        recipeName={savedRecipe.name}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDelete}
+      />
+
       <Snackbar
         open={justSaved}
         autoHideDuration={3000}
         onClose={() => setJustSaved(false)}
         message="Recipe saved"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      />
-
-      <Dialog open={logOpen} onClose={() => setLogOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Log this recipe</DialogTitle>
-        {logOpen && <LogRecipeStep recipe={savedRecipe} onLog={handleLog} onCancel={() => setLogOpen(false)} />}
-      </Dialog>
-
-      <Snackbar
-        open={justLogged}
-        autoHideDuration={3000}
-        onClose={() => setJustLogged(false)}
-        message="Logged to today's log"
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
     </Stack>
