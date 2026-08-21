@@ -4,7 +4,7 @@ import type { Group } from '../types/group';
 import type { Ingredient } from '../types/ingredient';
 import type { Recipe } from '../types/recipe';
 import type { LogEntry } from '../types/log';
-import type { OutboxItem } from '../types/sync';
+import type { OutboxItem, SyncMetaEntry } from '../types/sync';
 
 // See frontend-architecture.md "Dexie schema" — source of truth when offline.
 const db = new Dexie('calorie-app') as Dexie & {
@@ -14,6 +14,7 @@ const db = new Dexie('calorie-app') as Dexie & {
   recipes: EntityTable<Recipe, 'id'>;
   log_entries: EntityTable<LogEntry, 'id'>;
   outbox: EntityTable<OutboxItem, 'id'>;
+  sync_meta: EntityTable<SyncMetaEntry, 'key'>;
 };
 
 db.version(1).stores({
@@ -29,6 +30,13 @@ db.version(1).stores({
 // items, counting `failed` ones) — needs an index, not just id/created_at.
 db.version(2).stores({
   outbox: 'id, created_at, status',
+});
+
+// sync/pull.ts's per-table "changes since last sync" cursor — not in
+// frontend-architecture.md's Dexie schema sample. See docs/pending-deviations.md
+// (Ticket 10).
+db.version(3).stores({
+  sync_meta: 'key',
 });
 
 export { db };

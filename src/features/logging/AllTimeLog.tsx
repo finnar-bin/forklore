@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import Alert from '@mui/material/Alert';
+import { useMemo, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
@@ -15,22 +15,16 @@ import type { LogEntry } from '../../types/log';
 export function AllTimeLog() {
   const userId = useAppStore((state) => state.userId);
 
-  const [entries, setEntries] = useState<LogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<LogEntry | null>(null);
 
-  useEffect(() => {
-    if (!userId) return;
-    fetchAllLogEntries(userId)
-      .then(setEntries)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load your log history.'))
-      .finally(() => setLoading(false));
-  }, [userId]);
+  // Reads from Dexie, not Supabase — re-renders automatically on
+  // create/edit/delete (this device) and pulled remote changes alike.
+  const entries = useLiveQuery(() => (userId ? fetchAllLogEntries(userId) : []), [userId]);
+  const loading = entries === undefined;
 
   const groups = useMemo(() => {
     const byDate = new Map<string, LogEntry[]>();
-    for (const entry of entries) {
+    for (const entry of entries ?? []) {
       const group = byDate.get(entry.logged_at);
       if (group) {
         group.push(entry);
@@ -49,9 +43,7 @@ export function AllTimeLog() {
         </Box>
       )}
 
-      {error && <Alert severity="error">{error}</Alert>}
-
-      {!loading && !error && groups.length === 0 && (
+      {!loading && groups.length === 0 && (
         <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
           Nothing logged yet. Entries you log will show up here.
         </Typography>
@@ -93,14 +85,8 @@ export function AllTimeLog() {
           open={editingEntry !== null}
           entry={editingEntry}
           onClose={() => setEditingEntry(null)}
-          onSaved={(updated) => {
-            setEntries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
-            setEditingEntry(null);
-          }}
-          onDeleted={(entryId) => {
-            setEntries((prev) => prev.filter((e) => e.id !== entryId));
-            setEditingEntry(null);
-          }}
+          onSaved={() => setEditingEntry(null)}
+          onDeleted={() => setEditingEntry(null)}
         />
       )}
     </Stack>

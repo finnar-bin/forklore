@@ -3,6 +3,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useAuthSession } from './features/auth/useAuthSession';
 import { useOnboardingGate } from './features/onboarding/useOnboardingGate';
+import { useSyncEngine } from './sync/useSyncEngine';
 import { LoginPage } from './routes/LoginPage';
 import { SignupPage } from './routes/SignupPage';
 import { OnboardingPage } from './routes/OnboardingPage';
@@ -21,6 +22,7 @@ import { RedirectIfOnboarded } from './routes/RedirectIfOnboarded';
 function App() {
   const { initializing } = useAuthSession();
   const { checking } = useOnboardingGate();
+  useSyncEngine();
 
   if (initializing || checking) {
     return (

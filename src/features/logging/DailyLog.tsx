@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Alert from '@mui/material/Alert';
+import { useLiveQuery } from 'dexie-react-hooks';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -25,21 +25,15 @@ export function DailyLog() {
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
 
-  const [entries, setEntries] = useState<LogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<LogEntry | null>(null);
 
-  useEffect(() => {
-    if (!userId) return;
-    fetchTodayLogEntries(userId)
-      .then(setEntries)
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load today's log."))
-      .finally(() => setLoading(false));
-  }, [userId]);
+  // Reads from Dexie, not Supabase — re-renders automatically on
+  // create/edit/delete (this device) and pulled remote changes alike.
+  const entries = useLiveQuery(() => (userId ? fetchTodayLogEntries(userId) : []), [userId]);
+  const loading = entries === undefined;
 
-  const totalKcal = entries.reduce((sum, entry) => sum + entry.snapshot_kcal, 0);
+  const totalKcal = (entries ?? []).reduce((sum, entry) => sum + entry.snapshot_kcal, 0);
 
   return (
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
@@ -65,15 +59,13 @@ export function DailyLog() {
           </Box>
         )}
 
-        {error && <Alert severity="error">{error}</Alert>}
-
-        {!loading && !error && entries.length === 0 && (
+        {!loading && entries?.length === 0 && (
           <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
             Nothing logged yet today. Add your first entry to get started.
           </Typography>
         )}
 
-        {entries.map((entry) => (
+        {(entries ?? []).map((entry) => (
           <LogEntryCard
             key={entry.id}
             entry={entry}
@@ -101,28 +93,15 @@ export function DailyLog() {
         <AddIcon />
       </Fab>
 
-      <AddLogEntryDialog
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        onLogged={(created) => {
-          setEntries((prev) => [created, ...prev]);
-          setAddOpen(false);
-        }}
-      />
+      <AddLogEntryDialog open={addOpen} onClose={() => setAddOpen(false)} onLogged={() => setAddOpen(false)} />
 
       {editingEntry && (
         <EditLogEntryDialog
           open={editingEntry !== null}
           entry={editingEntry}
           onClose={() => setEditingEntry(null)}
-          onSaved={(updated) => {
-            setEntries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
-            setEditingEntry(null);
-          }}
-          onDeleted={(entryId) => {
-            setEntries((prev) => prev.filter((e) => e.id !== entryId));
-            setEditingEntry(null);
-          }}
+          onSaved={() => setEditingEntry(null)}
+          onDeleted={() => setEditingEntry(null)}
         />
       )}
     </Box>

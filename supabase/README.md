@@ -95,3 +95,15 @@ Same database-connection restriction as above.
 3. Tap a card, then "Delete entry", confirm → confirm it disappears from both `/log` and `/logs`, and today's running total updates accordingly.
 4. As a second user, confirm they cannot update or delete the first user's log entries directly against the API (RLS: `logged_by = auth.uid()`).
 5. Record the result somewhere durable (PR description, ticket comment) — same as prior tickets, this is the acceptance criterion, not something provable from the code alone.
+
+## Ticket 10 manual verification (Dexie + outbox wiring)
+
+Same database-connection restriction as above — no migration to push for this ticket (it wires existing screens to existing tables), but the offline/reconnect behavior itself needs a human with real DevTools network throttling.
+
+1. `npm run dev`, log in, visit `/pantry`, `/recipes`, and `/log` once each while online, so Dexie has a first pull cached (check DevTools → Application → IndexedDB → `calorie-app` → `ingredients`/`recipes`/`log_entries` have rows).
+2. Open DevTools → Network → set throttling to "Offline." Add a new ingredient → confirm it appears in the pantry list immediately, and a corresponding row shows up in IndexedDB's `outbox` table with `status: "pending"`.
+3. While still offline, edit that ingredient's kcal, then reload the page → confirm the pantry list still shows the ingredient (including the offline edit) — this is "opening the app offline shows cached data," except it's the same session/tab rather than a true cold offline load, which this environment can't simulate without a second device.
+4. Set throttling back to "Online" (or "No throttling") → confirm the outbox drains (rows disappear from IndexedDB's `outbox` table) within a few seconds, and the ingredient/edit now appears in Supabase's Table Editor.
+5. Repeat a create+offline+reconnect cycle for a recipe's own fields (name/servings) on `/recipes/:id` and for a log entry on `/log` → confirm the same outbox/drain behavior. Then, while online, edit a recipe's ingredient list (add/remove/change quantity) with throttling set to "Offline" → confirm it fails with a clear error (this part requires connectivity by design — see `docs/pending-deviations.md`, Ticket 10) rather than silently queuing.
+6. Visit `/sync-status` during step 2 (while offline mutations are queued) → confirm queued items show up appropriately once they age past the retry backoff (or force this by throttling to "Offline" for over ~30s so the item reaches `waiting_for_connectivity`).
+7. Record the result somewhere durable (PR description, ticket comment) — same as prior tickets, this is the acceptance criterion, not something provable from the code alone.

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Alert from '@mui/material/Alert';
+import { useLiveQuery } from 'dexie-react-hooks';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Fab from '@mui/material/Fab';
@@ -11,24 +11,17 @@ import { useAppStore } from '../../store/useAppStore';
 import { fetchRecipes } from './api';
 import { RecipeCard } from './RecipeCard';
 import { CreateRecipeDialog } from './CreateRecipeDialog';
-import type { Recipe } from '../../types/recipe';
 
 export function RecipeList() {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
 
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
-  useEffect(() => {
-    if (!userId) return;
-    fetchRecipes(userId)
-      .then(setRecipes)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load your recipes.'))
-      .finally(() => setLoading(false));
-  }, [userId]);
+  // Reads from Dexie, not Supabase — re-renders automatically on local
+  // writes (this device) and pulled remote changes alike.
+  const recipes = useLiveQuery(() => (userId ? fetchRecipes(userId) : []), [userId]);
+  const loading = recipes === undefined;
 
   return (
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
@@ -43,15 +36,13 @@ export function RecipeList() {
           </Box>
         )}
 
-        {error && <Alert severity="error">{error}</Alert>}
-
-        {!loading && !error && recipes.length === 0 && (
+        {!loading && recipes?.length === 0 && (
           <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
             Your recipes are empty. Add your first recipe to get started.
           </Typography>
         )}
 
-        {recipes.map((recipe) => (
+        {(recipes ?? []).map((recipe) => (
           <RecipeCard
             key={recipe.id}
             recipe={recipe}

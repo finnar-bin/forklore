@@ -1,5 +1,6 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -17,6 +18,7 @@ import {
   deleteRecipe,
   fetchRecipe,
   fetchRecipeIngredients,
+  refreshRecipeFromServer,
   removeRecipeIngredient,
   updateRecipe,
   updateRecipeIngredientQuantity,
@@ -26,18 +28,35 @@ import { RecipeIngredientsList } from './RecipeIngredientsList';
 import type { Recipe, RecipeIngredientDetail } from '../../types/recipe';
 import type { Ingredient } from '../../types/ingredient';
 
+// Distinguishes "still loading" from "query resolved, nothing found" — see
+// the same pattern in IngredientDetail.tsx.
+const LOADING = Symbol('loading');
+
 // Everything on this screen (recipe fields + ingredient lines) is staged
 // client-side in `name`/`servings`/`photoUrl`/`ingredients` and only written
-// to Supabase as one batch when Save is clicked — nothing here makes a
-// network call on its own. `savedRecipe`/`savedIngredients` hold the last
-// persisted snapshot, used both to diff what actually changed at save time
-// and to know whether there's anything to save at all.
+// on Save. The recipe's own fields (name/servings/photo) read from and write
+// to Dexie — offline-capable, per this ticket. The ingredient lines
+// (recipe_ingredients) are not mirrored in Dexie and still read/write
+// straight to Supabase — total_kcal is only ever correct once recalculated
+// by the server-side trigger, so there's no offline-correct way to stage
+// those edits locally. See docs/pending-deviations.md (Ticket 10).
+// `savedRecipe`/`savedIngredients` hold the last persisted snapshot, used
+// both to diff what actually changed at save time and to know whether
+// there's anything to save at all.
 export function RecipeDetail() {
   const { recipeId } = useParams<{ recipeId: string }>();
   const navigate = useNavigate();
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
+
+  const recipeResult = useLiveQuery(
+    () => (recipeId ? fetchRecipe(recipeId) : undefined),
+    [recipeId],
+    LOADING,
+  );
+  const recipeLoading = recipeResult === LOADING;
+  const recipe = recipeResult === LOADING ? undefined : recipeResult;
 
   const [savedRecipe, setSavedRecipe] = useState<Recipe | null>(null);
   const [savedIngredients, setSavedIngredients] = useState<RecipeIngredientDetail[]>([]);
@@ -47,8 +66,8 @@ export function RecipeDetail() {
   const [photoUrl, setPhotoUrl] = useState('');
   const [ingredients, setIngredients] = useState<RecipeIngredientDetail[]>([]);
 
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [ingredientsLoading, setIngredientsLoading] = useState(true);
+  const [ingredientsError, setIngredientsError] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -56,19 +75,43 @@ export function RecipeDetail() {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  function applyRecipeBaseline(next: Recipe) {
+    setSavedRecipe(next);
+    setName(next.name);
+    setServings(next.servings.toString());
+    setPhotoUrl(next.photo_url ?? '');
+  }
+
+  // Seeds the draft from Dexie once per recipe, not on every live-query
+  // update — a background pull landing mid-edit must not clobber unsaved
+  // changes. Adjusted directly during render (React's documented pattern for
+  // resetting state when an id changes) rather than in an effect, since
+  // `recipe` is already available synchronously — no extra render/effect
+  // round trip needed. Re-seeding after our own save happens explicitly, in
+  // handleSave.
+  if (recipe && savedRecipe?.id !== recipe.id) {
+    applyRecipeBaseline(recipe);
+  }
+
+  // recipe_ingredients isn't mirrored in Dexie (see file header) — this is a
+  // one-shot network load per recipe, independent of the Dexie-backed recipe
+  // fields above so a slow/offline connection doesn't block the rest of the
+  // page from rendering.
   useEffect(() => {
     if (!recipeId) return;
-    Promise.all([fetchRecipe(recipeId), fetchRecipeIngredients(recipeId)])
-      .then(([nextRecipe, nextIngredients]) => {
-        setSavedRecipe(nextRecipe);
-        setSavedIngredients(nextIngredients);
-        setName(nextRecipe.name);
-        setServings(nextRecipe.servings.toString());
-        setPhotoUrl(nextRecipe.photo_url ?? '');
-        setIngredients(nextIngredients);
+    setIngredientsLoading(true);
+    setIngredientsError(null);
+    fetchRecipeIngredients(recipeId)
+      .then((rows) => {
+        setSavedIngredients(rows);
+        setIngredients(rows);
       })
-      .catch((err) => setLoadError(err instanceof Error ? err.message : 'Recipe not found.'))
-      .finally(() => setLoading(false));
+      .catch((err) =>
+        setIngredientsError(
+          err instanceof Error ? err.message : "Couldn't load this recipe's ingredients.",
+        ),
+      )
+      .finally(() => setIngredientsLoading(false));
   }, [recipeId]);
 
   const servingsNum = Number(servings);
@@ -137,17 +180,20 @@ export function RecipeDetail() {
     setSaving(true);
     setSaveError(null);
     try {
-      const ops: Promise<unknown>[] = [];
-
+      // Recipe-field-only changes go through Dexie + the outbox — this
+      // succeeds offline, same as the Pantry/Log screens.
       const normalizedPhoto = photoUrl.trim() === '' ? null : photoUrl.trim();
       const fieldsChanged =
         name !== savedRecipe.name ||
         servingsNum !== savedRecipe.servings ||
         normalizedPhoto !== savedRecipe.photo_url;
       if (fieldsChanged) {
-        ops.push(updateRecipe(recipeId, { name, servings: servingsNum, photo_url: normalizedPhoto }));
+        const updated = await updateRecipe(recipeId, { name, servings: servingsNum, photo_url: normalizedPhoto });
+        applyRecipeBaseline(updated);
       }
 
+      // Ingredient-line changes require connectivity (see file header).
+      const ops: Promise<unknown>[] = [];
       const draftIds = new Set(ingredients.map((i) => i.ingredient_id));
       for (const saved of savedIngredients) {
         if (!draftIds.has(saved.ingredient_id)) {
@@ -163,48 +209,43 @@ export function RecipeDetail() {
         }
       }
 
-      const results = await Promise.allSettled(ops);
-      const failed = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
-      if (failed.length > 0) {
-        throw new Error(
-          `${failed.length} of ${ops.length} change${ops.length === 1 ? '' : 's'} failed to save. Try again.`,
-        );
+      if (ops.length > 0) {
+        const results = await Promise.allSettled(ops);
+        const failed = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+
+        // Refetch regardless of partial failure — some ops may have landed
+        // even if others didn't, and total_kcal is only ever correct once
+        // the server's trigger has recalculated it.
+        try {
+          const [nextRecipe, nextIngredients] = await Promise.all([
+            refreshRecipeFromServer(recipeId),
+            fetchRecipeIngredients(recipeId),
+          ]);
+          applyRecipeBaseline(nextRecipe);
+          setSavedIngredients(nextIngredients);
+          setIngredients(nextIngredients);
+        } catch {
+          // Offline or a Supabase error refreshing — keep whatever baseline
+          // we already have; the field-only update above (if any) already
+          // landed via the outbox regardless of this failing.
+        }
+
+        if (failed.length > 0) {
+          throw new Error(
+            `${failed.length} of ${ops.length} ingredient change${ops.length === 1 ? '' : 's'} failed to save — this usually means you're offline. Try again once you're back online.`,
+          );
+        }
       }
 
-      // Refetch rather than trust the payload we just sent — total_kcal is
-      // recalculated server-side by the recalculate_recipe_kcal trigger.
-      const [nextRecipe, nextIngredients] = await Promise.all([
-        fetchRecipe(recipeId),
-        fetchRecipeIngredients(recipeId),
-      ]);
-      setSavedRecipe(nextRecipe);
-      setSavedIngredients(nextIngredients);
-      setName(nextRecipe.name);
-      setServings(nextRecipe.servings.toString());
-      setPhotoUrl(nextRecipe.photo_url ?? '');
-      setIngredients(nextIngredients);
       setJustSaved(true);
     } catch (err) {
-      // Some ops may have landed before the failure — refresh the saved
-      // baseline (not the user's in-progress draft) so a retry only
-      // reapplies whatever's actually still outstanding.
-      try {
-        const [nextRecipe, nextIngredients] = await Promise.all([
-          fetchRecipe(recipeId),
-          fetchRecipeIngredients(recipeId),
-        ]);
-        setSavedRecipe(nextRecipe);
-        setSavedIngredients(nextIngredients);
-      } catch {
-        // Keep the previous baseline if even this fails.
-      }
       setSaveError(err instanceof Error ? err.message : 'Failed to save changes. Try again.');
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) {
+  if (recipeLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
         <CircularProgress />
@@ -212,10 +253,10 @@ export function RecipeDetail() {
     );
   }
 
-  if (loadError || !savedRecipe) {
+  if (!savedRecipe) {
     return (
       <Box sx={{ p: 2, maxWidth: 480, mx: 'auto' }}>
-        <Alert severity="error">{loadError ?? 'Recipe not found.'}</Alert>
+        <Alert severity="error">Recipe not found.</Alert>
       </Box>
     );
   }
@@ -280,13 +321,21 @@ export function RecipeDetail() {
         </Stack>
       </Paper>
 
-      <RecipeIngredientsList
-        ingredients={ingredients}
-        disabled={saving}
-        onAdd={handleAddIngredient}
-        onQuantityChange={handleQuantityChange}
-        onRemove={handleRemoveIngredient}
-      />
+      {ingredientsLoading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+          <CircularProgress size={24} />
+        </Box>
+      ) : ingredientsError ? (
+        <Alert severity="error">{ingredientsError}</Alert>
+      ) : (
+        <RecipeIngredientsList
+          ingredients={ingredients}
+          disabled={saving}
+          onAdd={handleAddIngredient}
+          onQuantityChange={handleQuantityChange}
+          onRemove={handleRemoveIngredient}
+        />
+      )}
 
       {saveError && <Alert severity="error">{saveError}</Alert>}
 
