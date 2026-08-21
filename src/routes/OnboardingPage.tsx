@@ -1,10 +1,10 @@
-import { OnboardingForm } from '../features/onboarding/OnboardingForm';
+import { OnboardingStepper } from '../features/onboarding/OnboardingStepper';
 import { AuthLayout } from './AuthLayout';
 
 export function OnboardingPage() {
   return (
     <AuthLayout>
-      <OnboardingForm />
+      <OnboardingStepper />
     </AuthLayout>
   );
 }

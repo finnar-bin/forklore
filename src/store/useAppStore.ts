@@ -3,7 +3,7 @@ import { create } from 'zustand';
 // Session + active group context — see frontend-architecture.md "Zustand stores".
 // `onboardingComplete` is a Ticket 5 addition beyond that doc's AppState shape —
 // see docs/pending-deviations.md (Ticket 5). null = not yet checked, otherwise
-// mirrors whether profiles.height_cm is set for the current user.
+// mirrors whether profiles.daily_kcal_target is set for the current user.
 interface AppState {
   userId: string | null;
   activeGroupId: string | null; // null = personal context
