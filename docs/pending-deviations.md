@@ -158,3 +158,21 @@ Also converted `profiles.goal_type` from `text check (...)` to a proper `goal_ty
 **Why:** Requested directly, since this ticket's own acceptance criteria left snapshot editing unowned and no ticket in the Phase 1 backlog picks it up, and deleting a mis-logged entry is the more common real-world need of the two.
 
 **Not yet verified:** Same database-connection restriction as above — not exercised against a live Supabase project. Manual follow-up in `supabase/README.md` under "Ticket 8 fast-follow manual verification."
+
+---
+
+## Ticket 9 — Outbox pattern with backoff and reconnect retry
+
+**Deviation:** Added a full `/sync-status` screen (list of outbox items by status, manual retry/discard) rather than just a basic sync indicator.
+
+**Why:** Ticket 9 referenced a "sync issues" screen as a fast-follow, but no ticket was ever created for it — folding it in here instead of leaving the gap unaddressed.
+
+**Deviation:** `routes.md` does not actually list `/sync-status` (checked directly — no mention anywhere in the file). Added the route under the same `RequireAuth`/`RequireOnboarded` guard as the four main tabs, reachable at `/sync-status`, with its `AppHeader` back arrow returning to `/pantry` (matching the fixed-parent-route convention `/logs` and the detail routes already use, since there's no single obvious parent tab for a cross-cutting sync screen). `routes.md` itself was left unedited per this ticket's standing instruction not to edit core docs to match code.
+
+**Why:** The route needed to exist somewhere for the screen to be reachable; documenting its actual shape here (rather than assuming the doc already covered it) keeps this log accurate for whoever reconciles `routes.md` after Phase 1.
+
+**Deviation:** Added `dexie-react-hooks` as a new dependency, used by `SyncStatusList` (`useLiveQuery(() => db.outbox.toArray())`) so the screen reflects retries/discards/reconnect-driven changes live. `frontend-architecture.md` names this package for all Dexie reads but it wasn't installed yet — no prior ticket had wired a screen to read from Dexie directly until now (existing CRUD screens still read from Supabase directly; Dexie-backed reads land in Ticket 10).
+
+**Why:** Matches the doc's stated pattern ("Reads go through dexie-react-hooks' useLiveQuery... not manual polling") rather than introducing a one-off polling/manual-refresh mechanism for this screen alone.
+
+**Not yet verified:** No browser automation tooling available in this environment to drive the real auth-gated app — verification was `tsc -b`, `oxlint`, and `vite build`, all clean, plus manual reading of the rendered JSX against `design-system.md`'s card pattern. Manual follow-up: log in, populate `waiting_for_connectivity` and `failed` outbox items (e.g. via DevTools offline mode and a simulated RLS denial), confirm both sections render with the correct copy/color treatment, and confirm "Retry now"/"Discard" behave as described (single attempt, no silent re-retry) and the empty state shows once the outbox is clear.

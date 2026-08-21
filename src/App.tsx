@@ -12,6 +12,7 @@ import { RecipesPage } from './routes/RecipesPage';
 import { RecipeDetailPage } from './routes/RecipeDetailPage';
 import { LogPage } from './routes/LogPage';
 import { LogsPage } from './routes/LogsPage';
+import { SyncStatusPage } from './routes/SyncStatusPage';
 import { RequireAuth } from './routes/RequireAuth';
 import { RedirectIfAuthed } from './routes/RedirectIfAuthed';
 import { RequireOnboarded } from './routes/RequireOnboarded';
@@ -57,6 +58,7 @@ function App() {
             <Route path="/recipes/:recipeId" element={<RecipeDetailPage />} />
             <Route path="/log" element={<LogPage />} />
             <Route path="/logs" element={<LogsPage />} />
+            <Route path="/sync-status" element={<SyncStatusPage />} />
           </Route>
         </Route>
 

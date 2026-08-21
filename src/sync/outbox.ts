@@ -10,22 +10,26 @@ const MAX_DELAY_MS = 30000;
 
 // Codes that will fail identically on every retry (RLS denial, malformed/invalid
 // data) — worth distinguishing from connectivity blips, which are worth retrying.
-const PERMANENT_ERROR_CODES = new Set([
-  '42501', // insufficient_privilege (RLS denial)
-  '23502', // not_null_violation
-  '23503', // foreign_key_violation
-  '23505', // unique_violation
-  '23514', // check_violation
-  '22P02', // invalid_text_representation (malformed input, e.g. bad UUID)
-]);
+// Mapped to a user-facing explanation — surfaced on /sync-status, so these must
+// read as plain language, not a raw Postgres/PostgREST error string.
+const PERMANENT_ERROR_MESSAGES: Record<string, string> = {
+  '42501': "You don't have permission to make this change.", // insufficient_privilege (RLS denial)
+  '23502': 'Some required information is missing.', // not_null_violation
+  '23503': 'This refers to something that no longer exists.', // foreign_key_violation
+  '23505': 'This already exists.', // unique_violation
+  '23514': "This change doesn't meet the app's rules.", // check_violation
+  '22P02': 'This change contains invalid data.', // invalid_text_representation (e.g. malformed UUID)
+};
 
 function isPermanentError(err: unknown): boolean {
   const code = (err as { code?: string } | null)?.code;
-  return !!code && PERMANENT_ERROR_CODES.has(code);
+  return !!code && code in PERMANENT_ERROR_MESSAGES;
 }
 
-function errorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
+function describeError(err: unknown): string {
+  const code = (err as { code?: string } | null)?.code;
+  if (code && code in PERMANENT_ERROR_MESSAGES) return PERMANENT_ERROR_MESSAGES[code];
+  return "Couldn't save this change. Check your connection and try again.";
 }
 
 async function syncItem(item: OutboxItem): Promise<void> {
@@ -73,7 +77,7 @@ async function drainOutboxWithRetry(item: OutboxItem, attempt = 0): Promise<void
     await endAttempt();
   } catch (err) {
     if (isPermanentError(err)) {
-      await db.outbox.update(item.id, { status: 'failed', error: errorMessage(err) });
+      await db.outbox.update(item.id, { status: 'failed', error: describeError(err) });
       await endAttempt();
       return;
     }
@@ -114,6 +118,31 @@ export async function enqueueMutation(
 export async function drainPendingOutbox(): Promise<void> {
   const items = await db.outbox.where('status').equals('pending').sortBy('created_at');
   items.forEach((item) => void drainOutboxWithRetry(item));
+}
+
+// Manual, single-shot retry for a `failed` item, driven by the /sync-status
+// screen's "Retry now" action. A `failed` item never re-enters the automatic
+// backoff chain on its own — retrying it is always something the user asked
+// for, never a silent background attempt.
+export async function retryFailedItem(itemId: string): Promise<void> {
+  const item = await db.outbox.get(itemId);
+  if (!item) return;
+
+  beginAttempt();
+  try {
+    await syncItem(item);
+    await db.outbox.delete(item.id);
+  } catch (err) {
+    await db.outbox.update(item.id, { status: 'failed', error: describeError(err) });
+  } finally {
+    await endAttempt();
+  }
+}
+
+// The /sync-status screen's "Discard" action — accepts the data loss instead
+// of continuing to retry a mutation that keeps failing.
+export async function discardFailedItem(itemId: string): Promise<void> {
+  await db.outbox.delete(itemId);
 }
 
 async function retryWaitingForConnectivity(): Promise<void> {
