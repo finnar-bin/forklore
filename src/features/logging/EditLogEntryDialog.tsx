@@ -29,7 +29,7 @@ export function EditLogEntryDialog({
 }) {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>Edit entry</DialogTitle>
+      <DialogTitle>Edit log entry</DialogTitle>
       {/* Mounted only while open, so its draft state starts fresh (matching
           the source entry) every time it's reopened for a different entry. */}
       {open && (
@@ -118,15 +118,35 @@ function EditLogEntryForm({
           />
         </Stack>
       </DialogContent>
-      <DialogActions sx={{ justifyContent: 'space-between', px: 3, pb: 2 }}>
-        <Button color="error" onClick={() => setDeleteOpen(true)} disabled={saving}>
-          Delete entry
+      <DialogActions
+        sx={{
+          flexDirection: { xs: 'column-reverse', sm: 'row' },
+          justifyContent: { sm: 'space-between' },
+          gap: 1,
+          px: 3,
+          pb: 2,
+        }}
+      >
+        <Button
+          color="error"
+          variant="outlined"
+          onClick={() => setDeleteOpen(true)}
+          disabled={saving}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        >
+          Delete log entry
         </Button>
-        <Stack direction="row" spacing={1}>
-          <Button onClick={onClose} disabled={saving}>
+        <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <Button onClick={onClose} disabled={saving} sx={{ flex: { xs: 1, sm: 'initial' } }}>
             Cancel
           </Button>
-          <Button type="submit" form="edit-log-entry-form" variant="contained" disabled={!isValid || saving}>
+          <Button
+            type="submit"
+            form="edit-log-entry-form"
+            variant="contained"
+            disabled={!isValid || saving}
+            sx={{ flex: { xs: 1, sm: 'initial' } }}
+          >
             {saving ? 'Saving…' : 'Save changes'}
           </Button>
         </Stack>
