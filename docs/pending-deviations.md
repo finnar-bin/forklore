@@ -137,6 +137,14 @@ Also converted `profiles.goal_type` from `text check (...)` to a proper `goal_ty
 
 **Not yet verified:** Same database-connection restriction as above — not exercised against a live Supabase project. Manual follow-up: creating a new ingredient from this dialog should make it show up in `/pantry` afterward (it's a real personal ingredient, not recipe-scoped), and should immediately appear in the recipe's draft ingredient list with the given "quantity used," contributing to the realtime kcal total before Save is even clicked.
 
+**Deviation (added after initial review):** Implements the "delete recipe" feature this ticket's own log above explicitly deferred, for the reason stated there (no `delete` RLS policy existed for `public.recipes`). Added `supabase/migrations/20260825000000_recipes_delete_policy.sql` (mirrors the existing recipes select/insert/update policies' ownership shape), `deleteRecipe(id)` in `src/features/recipes/api.ts`, and `DeleteRecipeDialog.tsx` — a plain confirm (no usage check, unlike ingredient delete) since deleting a recipe only cascades its own `recipe_ingredients` rows and nulls `log_entries.source_recipe_id` on entries logged from it, per `schema.md`'s "Deleting an ingredient or recipe never affects existing log entries." Wired into `RecipeDetail.tsx` as an outlined error-colored "Delete recipe" button below Save, navigating to `/recipes` on success.
+
+**Deviation (added after initial review):** Removed the "Log this recipe" button and its dialog from `RecipeDetail.tsx` (added in Ticket 8 as a second logging entry point) at the user's direction — logging should only happen from the log screens (`/log`'s FAB), not recipe detail. `LogRecipeStep.tsx` itself is untouched since `AddLogEntryDialog` (the `/log` FAB's dialog) still uses it.
+
+**Why:** The recipe-delete gap was a real, user-facing omission from "Recipe CRUD" with no other ticket owning it (same situation Ticket 8 addressed for log entries); the "Log this recipe" removal was a direct product-scope correction, not a technical necessity.
+
+**Not yet verified:** Migration not applied to any live Supabase project (same database-connection restriction as every prior ticket). Manual follow-up: push the migration, then confirm deleting a recipe from `/recipes/:recipeId` removes it, redirects to `/recipes`, and that a log entry previously logged from that recipe still shows its original snapshot values with no source link.
+
 ---
 
 ## Ticket 8 — Logging (daily log + all-time log, personal only)
