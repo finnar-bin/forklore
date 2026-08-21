@@ -52,6 +52,11 @@ async function syncItem(item: OutboxItem): Promise<void> {
   if (error) throw error;
 }
 
+// Item ids currently mid-drain — guards against the same item being synced
+// twice concurrently (e.g. the browser firing `online` more than once for a
+// single reconnect, which happens in practice, not just in DevTools).
+const draining = new Set<string>();
+
 // Tracks mutations currently in a retry chain (including ones waiting out a
 // backoff delay) so useSyncStore reflects "still working on it" accurately.
 let activeAttempts = 0;
@@ -69,21 +74,28 @@ async function endAttempt(): Promise<void> {
 }
 
 async function drainOutboxWithRetry(item: OutboxItem, attempt = 0): Promise<void> {
-  if (attempt === 0) beginAttempt();
+  if (attempt === 0) {
+    if (draining.has(item.id)) return;
+    draining.add(item.id);
+    beginAttempt();
+  }
 
   try {
     await syncItem(item);
     await db.outbox.delete(item.id);
+    draining.delete(item.id);
     await endAttempt();
   } catch (err) {
     if (isPermanentError(err)) {
       await db.outbox.update(item.id, { status: 'failed', error: describeError(err) });
+      draining.delete(item.id);
       await endAttempt();
       return;
     }
 
     if (attempt >= MAX_RETRY_ATTEMPTS) {
       await db.outbox.update(item.id, { status: 'waiting_for_connectivity' });
+      draining.delete(item.id);
       await endAttempt();
       return;
     }
@@ -125,9 +137,11 @@ export async function drainPendingOutbox(): Promise<void> {
 // backoff chain on its own — retrying it is always something the user asked
 // for, never a silent background attempt.
 export async function retryFailedItem(itemId: string): Promise<void> {
+  if (draining.has(itemId)) return;
   const item = await db.outbox.get(itemId);
   if (!item) return;
 
+  draining.add(itemId);
   beginAttempt();
   try {
     await syncItem(item);
@@ -135,6 +149,7 @@ export async function retryFailedItem(itemId: string): Promise<void> {
   } catch (err) {
     await db.outbox.update(item.id, { status: 'failed', error: describeError(err) });
   } finally {
+    draining.delete(itemId);
     await endAttempt();
   }
 }
