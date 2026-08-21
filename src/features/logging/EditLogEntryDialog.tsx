@@ -5,7 +5,6 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { deleteLogEntry, updateLogEntry } from './api';
@@ -123,6 +122,7 @@ function EditLogEntryForm({
         sx={{
           flexDirection: { xs: 'column-reverse', sm: 'row' },
           justifyContent: { sm: 'space-between' },
+          gap: 3,
           px: 3,
           pb: 2,
         }}
@@ -136,7 +136,6 @@ function EditLogEntryForm({
         >
           Delete log entry
         </Button>
-        <Divider sx={{ py: 1, width: '100%', display: { xs: 'block', sm: 'none' } }} />
         <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
           <Button onClick={onClose} disabled={saving} sx={{ flex: { xs: 1, sm: 'initial' } }}>
             Cancel
