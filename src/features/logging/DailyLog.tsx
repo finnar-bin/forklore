@@ -63,9 +63,15 @@ export function DailyLog({ groupId }: { groupId: string | null }) {
           <Button onClick={() => navigate('/logs')} sx={{ flex: 1 }}>
             View all-time history
           </Button>
-          <Button onClick={() => navigate('/logs/groups')} sx={{ flex: 1 }}>
-            View group logs
-          </Button>
+          {groupId ? (
+            <Button onClick={() => navigate('/log')} sx={{ flex: 1 }}>
+              View personal logs
+            </Button>
+          ) : (
+            <Button onClick={() => navigate('/logs/groups')} sx={{ flex: 1 }}>
+              View group logs
+            </Button>
+          )}
         </Stack>
 
         {loading && (
