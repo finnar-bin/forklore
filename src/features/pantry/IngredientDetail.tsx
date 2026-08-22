@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
+import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
@@ -15,6 +16,7 @@ import { useProfileNames } from '../profiles/useProfileNames';
 import { deleteIngredient, fetchIngredient, updateIngredient, type IngredientInput } from './api';
 import { IngredientForm } from './IngredientForm';
 import { DeleteIngredientDialog } from './DeleteIngredientDialog';
+import { CopyIngredientDialog } from './CopyIngredientDialog';
 
 // Distinguishes "still loading" from "query resolved, nothing found" —
 // fetchIngredient resolves to undefined in both cases, so useLiveQuery needs
@@ -31,6 +33,8 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
 
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [copyOpen, setCopyOpen] = useState(false);
+  const [justCopied, setJustCopied] = useState(false);
 
   const result = useLiveQuery(
     () => (ingredientId ? fetchIngredient(ingredientId) : undefined),
@@ -106,6 +110,10 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
         />
       </Paper>
 
+      <Button variant="outlined" size="large" onClick={() => setCopyOpen(true)}>
+        Copy to…
+      </Button>
+
       <Button color="error" variant="outlined" size="large" onClick={() => setDeleteOpen(true)}>
         Delete ingredient
       </Button>
@@ -116,6 +124,26 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
         ingredientName={ingredient.name}
         onClose={() => setDeleteOpen(false)}
         onConfirm={handleDelete}
+      />
+
+      <CopyIngredientDialog
+        open={copyOpen}
+        ingredientId={ingredient.id}
+        ingredientName={ingredient.name}
+        groupId={groupId}
+        onClose={() => setCopyOpen(false)}
+        onCopied={() => {
+          setCopyOpen(false);
+          setJustCopied(true);
+        }}
+      />
+
+      <Snackbar
+        open={justCopied}
+        autoHideDuration={3000}
+        onClose={() => setJustCopied(false)}
+        message="Ingredient copied"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
     </Stack>
   );

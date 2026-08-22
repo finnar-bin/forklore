@@ -27,6 +27,7 @@ import {
   updateRecipe,
   updateRecipeIngredientQuantity,
 } from './api';
+import { CopyRecipeDialog } from './CopyRecipeDialog';
 import { DeleteRecipeDialog } from './DeleteRecipeDialog';
 import { RecipeIngredientsList } from './RecipeIngredientsList';
 import type { Recipe, RecipeIngredientDetail, WeightUnit } from '../../types/recipe';
@@ -84,6 +85,8 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   const [justSaved, setJustSaved] = useState(false);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [copyOpen, setCopyOpen] = useState(false);
+  const [justCopied, setJustCopied] = useState(false);
 
   // Group-context metadata only, read from the last-persisted baseline
   // (not the live draft) — see docs/pending-deviations.md (Ticket 12). `!=
@@ -438,6 +441,19 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         {saving ? 'Saving…' : 'Save changes'}
       </Button>
 
+      {/* Disabled while dirty — copying always uses the last-persisted
+          version (savedRecipe/savedIngredients), so an unsaved edit copying
+          silently instead of what's on screen would be surprising. See
+          docs/pending-deviations.md (Ticket 14). */}
+      <Button
+        variant="outlined"
+        size="large"
+        onClick={() => setCopyOpen(true)}
+        disabled={isDirty}
+      >
+        Copy to…
+      </Button>
+
       <Button color="error" variant="outlined" size="large" onClick={() => setDeleteOpen(true)}>
         Delete recipe
       </Button>
@@ -449,11 +465,31 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         onConfirm={handleDelete}
       />
 
+      <CopyRecipeDialog
+        open={copyOpen}
+        recipeId={savedRecipe.id}
+        recipeName={savedRecipe.name}
+        groupId={groupId}
+        onClose={() => setCopyOpen(false)}
+        onCopied={() => {
+          setCopyOpen(false);
+          setJustCopied(true);
+        }}
+      />
+
       <Snackbar
         open={justSaved}
         autoHideDuration={3000}
         onClose={() => setJustSaved(false)}
         message="Recipe saved"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
+
+      <Snackbar
+        open={justCopied}
+        autoHideDuration={3000}
+        onClose={() => setJustCopied(false)}
+        message="Recipe copied"
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
     </Stack>
