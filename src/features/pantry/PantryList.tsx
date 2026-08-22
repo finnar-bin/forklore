@@ -8,6 +8,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import { useAppStore } from '../../store/useAppStore';
+import { FloatingPortal } from '../../components/FloatingPortal';
 import { useProfileNames } from '../profiles/useProfileNames';
 import { fetchIngredients } from './api';
 import { IngredientCard } from './IngredientCard';
@@ -37,9 +38,13 @@ export function PantryList({ groupId }: { groupId: string | null }) {
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
     // note. The FAB itself uses position: fixed (anchored to the viewport),
     // not absolute — absolute anchored it to this box, which grows with the
-    // list, pushing the FAB off-screen once the list got long.
+    // list, pushing the FAB off-screen once the list got long. It's also
+    // wrapped in FloatingPortal (Ticket 16) so AnimatedAppShell's animated
+    // transform doesn't hijack its fixed positioning.
     <Box sx={{ position: 'relative', minHeight: 'calc(100vh - 64px)' }}>
-      <Stack spacing={1.5} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 10 }}>
+      {/* pb clears both the FAB (bottom: 80) and BottomNav below it — see
+          docs/pending-deviations.md (Ticket 16). */}
+      <Stack spacing={1.5} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 18 }}>
         {loading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress />
@@ -64,22 +69,26 @@ export function PantryList({ groupId }: { groupId: string | null }) {
         ))}
       </Stack>
 
-      <Fab
-        color="primary"
-        aria-label="Add ingredient"
-        onClick={() => setCreateOpen(true)}
-        sx={{
-          position: 'fixed',
-          right: 16,
-          bottom: 24,
-          boxShadow: (theme) =>
-            theme.palette.mode === 'dark'
-              ? '0 6px 14px rgba(0,0,0,.5)'
-              : '0 6px 14px rgba(93,110,1,.35)',
-        }}
-      >
-        <AddIcon />
-      </Fab>
+      <FloatingPortal>
+        <Fab
+          color="primary"
+          aria-label="Add ingredient"
+          onClick={() => setCreateOpen(true)}
+          sx={{
+            position: 'fixed',
+            // Pantry is a bottom-tab root, so it clears BottomNav — see
+            // docs/pending-deviations.md (Ticket 16).
+            right: 16,
+            bottom: 80,
+            boxShadow: (theme) =>
+              theme.palette.mode === 'dark'
+                ? '0 6px 14px rgba(0,0,0,.5)'
+                : '0 6px 14px rgba(93,110,1,.35)',
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      </FloatingPortal>
 
       <CreateIngredientDialog
         open={createOpen}

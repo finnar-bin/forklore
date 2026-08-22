@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import AddIcon from '@mui/icons-material/Add';
 import { useAppStore } from '../../store/useAppStore';
+import { FloatingPortal } from '../../components/FloatingPortal';
 import { fetchMyGroups } from './api';
 import { GroupCard } from './GroupCard';
 import { CreateGroupDialog } from './CreateGroupDialog';
@@ -51,7 +52,10 @@ export function GroupList() {
 
   return (
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
-    // note (same reasoning as RecipeList/PantryList).
+    // note (same reasoning as RecipeList/PantryList). Also wrapped in
+    // FloatingPortal (Ticket 16) — /groups isn't a bottom-tab root so there's
+    // no nav bar to clear, but it still sits under AnimatedAppShell's
+    // animated transform.
     <Box sx={{ position: 'relative', minHeight: 'calc(100vh - 64px)' }}>
       <Stack spacing={1.5} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 10 }}>
         {error && <Alert severity="error">{error}</Alert>}
@@ -78,22 +82,24 @@ export function GroupList() {
         ))}
       </Stack>
 
-      <Fab
-        color="primary"
-        aria-label="Create group"
-        onClick={() => setCreateOpen(true)}
-        sx={{
-          position: 'fixed',
-          right: 16,
-          bottom: 24,
-          boxShadow: (theme) =>
-            theme.palette.mode === 'dark'
-              ? '0 6px 14px rgba(0,0,0,.5)'
-              : '0 6px 14px rgba(93,110,1,.35)',
-        }}
-      >
-        <AddIcon />
-      </Fab>
+      <FloatingPortal>
+        <Fab
+          color="primary"
+          aria-label="Create group"
+          onClick={() => setCreateOpen(true)}
+          sx={{
+            position: 'fixed',
+            right: 16,
+            bottom: 24,
+            boxShadow: (theme) =>
+              theme.palette.mode === 'dark'
+                ? '0 6px 14px rgba(0,0,0,.5)'
+                : '0 6px 14px rgba(93,110,1,.35)',
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      </FloatingPortal>
 
       <CreateGroupDialog
         open={createOpen}

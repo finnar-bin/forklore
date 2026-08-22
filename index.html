@@ -9,6 +9,12 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Portal target for FABs and other floating elements — sibling to
+         #root, not nested inside it, so they stay anchored to the viewport
+         even when a screen's content is wrapped in a transformed (animated)
+         container. See design-system.md's FAB positioning note and
+         docs/pending-deviations.md (Ticket 16). -->
+    <div id="floating-root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
