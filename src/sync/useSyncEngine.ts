@@ -45,8 +45,15 @@ export function useSyncEngine(): void {
       }
     }
 
-    void drainPendingOutbox();
-    void runPull();
+    // Awaited so a pending local push always has a chance to land before the
+    // first pull can bulkPut a stale server row over it — previously fired
+    // with no ordering between the two, a race with no deliberate rationale
+    // (see issue #34's audit). The periodic/online-triggered runPull calls
+    // below don't re-drain, so only this initial-mount ordering changes.
+    void (async () => {
+      await drainPendingOutbox();
+      void runPull();
+    })();
 
     const intervalId = setInterval(() => void runPull(), PULL_INTERVAL_MS);
     const handleOnline = () => void runPull();

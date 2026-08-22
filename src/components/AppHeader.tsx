@@ -13,8 +13,9 @@ import GroupIcon from '@mui/icons-material/Group';
 import { useColorScheme } from '@mui/material/styles';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { shadows } from '../theme/theme';
-import { signOut } from '../features/auth/api';
+import { attemptLogout, performLogout } from '../features/auth/api';
 import { useSyncStore } from '../store/useSyncStore';
+import { LogoutConfirmDialog } from './LogoutConfirmDialog';
 
 // Sticky top bar for feature screens. Includes theme toggle + logout inline
 // rather than behind a profile avatar (design-system.md's documented
@@ -34,13 +35,23 @@ export function AppHeader({ title, onBack }: { title: string; onBack?: () => voi
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
   const [loggingOut, setLoggingOut] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const syncStatus = useSyncStore((state) => state.status);
 
   async function handleLogout() {
     setLoggingOut(true);
-    await signOut();
+    try {
+      const result = await attemptLogout();
+      if (result.needsConfirmation) {
+        setPendingCount(result.pendingCount);
+        setConfirmOpen(true);
+      }
+    } finally {
+      setLoggingOut(false);
+    }
   }
 
   return (
@@ -95,6 +106,15 @@ export function AppHeader({ title, onBack }: { title: string; onBack?: () => voi
           <LogoutIcon />
         </IconButton>
       </Toolbar>
+      <LogoutConfirmDialog
+        open={confirmOpen}
+        pendingCount={pendingCount}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={async () => {
+          await performLogout();
+          setConfirmOpen(false);
+        }}
+      />
     </AppBar>
   );
 }

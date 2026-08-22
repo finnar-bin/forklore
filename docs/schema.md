@@ -98,7 +98,7 @@ create table public.group_invites (
   id uuid primary key default gen_random_uuid(),
   group_id uuid not null references public.groups(id) on delete cascade,
   invited_by uuid not null references public.profiles(id),
-  invite_code text not null unique default substr(md5(random()::text), 1, 8),
+  invite_code text not null unique default encode(extensions.gen_random_bytes(6), 'hex'),
   expires_at timestamptz not null default (now() + interval '7 days'),
   accepted_by uuid references public.profiles(id),
   accepted_at timestamptz,
@@ -187,7 +187,8 @@ create table public.log_entries (
   snapshot_kcal numeric not null,
   snapshot_quantity numeric,
   logged_at date not null default current_date,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create index idx_log_entries_logged_by_date on public.log_entries (logged_by, logged_at);
@@ -204,6 +205,13 @@ The `/logs` (all-time, cross-context) view queries `where logged_by = :userId` w
 create or replace function recalculate_recipe_kcal()
 returns trigger as $$
 begin
+  -- Explicit row lock before recomputing — otherwise two near-simultaneous
+  -- edits to the same recipe's ingredients can each read the sum before
+  -- either writes back, and the second commit silently discards the first's
+  -- contribution to total_kcal. See supabase/migrations/
+  -- 20260902000000_recalc_recipe_kcal_locking.sql.
+  perform 1 from public.recipes where id = coalesce(new.recipe_id, old.recipe_id) for update;
+
   update public.recipes
   set total_kcal = (
     select coalesce(sum(i.kcal * ri.quantity_used / i.quantity), 0)
@@ -262,7 +270,7 @@ using (
 );
 ```
 
-Apply the same three-policy shape (select/insert/update) to `recipes` and `log_entries`. `recipe_ingredients` policies should check the parent recipe's ownership via a subquery join rather than duplicating the ownership columns.
+Apply the same three-policy shape (select/insert/update) to `recipes` and `log_entries` — **except** `log_entries`' update/delete policies must be owner-only (`logged_by = auth.uid()`), not the group-inclusive OR shown above: `log_entries` represents an individual's own intake history, unlike `ingredients`/`recipes` where "any group member can edit" is the intended behavior. Only `log_entries`' select policy keeps the group-inclusive OR — a group member still needs to be able to view the shared log. `recipe_ingredients` policies should check the parent recipe's ownership via a subquery join rather than duplicating the ownership columns.
 
 Groups: only members can read; only the owner can update or delete.
 

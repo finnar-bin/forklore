@@ -172,6 +172,8 @@ Logging out **clears the entire local Dexie database** — forces a fresh sync o
 
 **Unsynced changes at logout time:** if the outbox has pending items, do not block logout (that would trap an offline user who just wants to log out). Instead, show a warning naming the actual pending count ("You have 3 unsynced changes. Logging out now will discard them.") and let the user confirm or cancel.
 
+(No `setActiveGroup` call below — that store field/setter was removed in a Ticket 12 follow-up once the sync engine started pulling every one of the caller's groups instead of just an "active" one; see `docs/pending-deviations.md`.)
+
 ```ts
 async function attemptLogout() {
   const pendingCount = await db.outbox.count();
@@ -186,7 +188,6 @@ async function performLogout() {
   await supabase.auth.signOut();
   await db.delete();
   useAppStore.getState().setSession(null);
-  useAppStore.getState().setActiveGroup(null);
 }
 ```
 

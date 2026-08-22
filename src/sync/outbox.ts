@@ -57,6 +57,26 @@ async function syncItem(item: OutboxItem): Promise<void> {
 // single reconnect, which happens in practice, not just in DevTools).
 const draining = new Set<string>();
 
+// Serializes every automatic/manual drain kickoff for the same target record
+// so two outbox items for the same (table, id) — e.g. a rapid edit followed
+// by another edit, or an edit racing a delete — always reach the server in
+// enqueue order, even if the first item is mid-backoff and would otherwise
+// let a later-enqueued item's request land first. Never evicted: bounded by
+// the number of distinct records touched in one tab session, which resets
+// on reload — an acceptable simplification at this app's scale.
+const recordChains = new Map<string, Promise<void>>();
+
+function chainKey(item: OutboxItem): string {
+  return `${item.table}:${item.payload.id as string}`;
+}
+
+function runChained(item: OutboxItem, task: () => Promise<void>): void {
+  const key = chainKey(item);
+  const prior = recordChains.get(key) ?? Promise.resolve();
+  const next = prior.then(task, task);
+  recordChains.set(key, next.catch(() => {}));
+}
+
 // Tracks mutations currently in a retry chain (including ones waiting out a
 // backoff delay) so useSyncStore reflects "still working on it" accurately.
 let activeAttempts = 0;
@@ -121,7 +141,7 @@ export async function enqueueMutation(
     created_at: new Date().toISOString(),
   };
   await db.outbox.add(item);
-  void drainOutboxWithRetry(item);
+  runChained(item, () => drainOutboxWithRetry(item));
   return item.id;
 }
 
@@ -129,40 +149,59 @@ export async function enqueueMutation(
 // previous session (e.g. the tab closed mid-backoff). Safe to call repeatedly.
 export async function drainPendingOutbox(): Promise<void> {
   const items = await db.outbox.where('status').equals('pending').sortBy('created_at');
-  items.forEach((item) => void drainOutboxWithRetry(item));
+  items.forEach((item) => runChained(item, () => drainOutboxWithRetry(item)));
 }
 
 // Manual, single-shot retry for a `failed` item, driven by the /sync-status
 // screen's "Retry now" action. A `failed` item never re-enters the automatic
 // backoff chain on its own — retrying it is always something the user asked
-// for, never a silent background attempt.
+// for, never a silent background attempt. Still routed through the same
+// per-record chain as the automatic kickoffs below — a manual retry racing
+// an automatic retry chain for the same record is exactly the ordering bug
+// this chain exists to prevent.
 export async function retryFailedItem(itemId: string): Promise<void> {
   if (draining.has(itemId)) return;
   const item = await db.outbox.get(itemId);
   if (!item) return;
 
-  draining.add(itemId);
-  beginAttempt();
-  try {
-    await syncItem(item);
-    await db.outbox.delete(item.id);
-  } catch (err) {
-    await db.outbox.update(item.id, { status: 'failed', error: describeError(err) });
-  } finally {
-    draining.delete(itemId);
-    await endAttempt();
-  }
+  runChained(item, async () => {
+    draining.add(itemId);
+    beginAttempt();
+    try {
+      await syncItem(item);
+      await db.outbox.delete(item.id);
+    } catch (err) {
+      await db.outbox.update(item.id, { status: 'failed', error: describeError(err) });
+    } finally {
+      draining.delete(itemId);
+      await endAttempt();
+    }
+  });
 }
 
 // The /sync-status screen's "Discard" action — accepts the data loss instead
-// of continuing to retry a mutation that keeps failing.
+// of continuing to retry a mutation that keeps failing. For a discarded
+// `insert`, the optimistic local row was never confirmed to exist
+// server-side, so it's removed too — otherwise it stays visible in the UI
+// forever as a "ghost" record the user believes is saved. `update`/`delete`
+// discards are left as-is: the local row still reflects the user's real
+// intent (an edited value, or something already removed locally), and
+// there's no cheap single-record re-pull to reconcile it against the
+// server's actual state (pull.ts only supports whole-scope/whole-table
+// pulls) — a smaller, lower-priority gap than a phantom record, and out of
+// scope to fix here.
 export async function discardFailedItem(itemId: string): Promise<void> {
+  const item = await db.outbox.get(itemId);
   await db.outbox.delete(itemId);
+  if (item?.operation === 'insert') {
+    const id = item.payload.id as string | undefined;
+    if (id) await db.table(item.table).delete(id);
+  }
 }
 
 async function retryWaitingForConnectivity(): Promise<void> {
   const items = await db.outbox.where('status').equals('waiting_for_connectivity').toArray();
-  items.forEach((item) => void drainOutboxWithRetry(item));
+  items.forEach((item) => runChained(item, () => drainOutboxWithRetry(item)));
 }
 
 window.addEventListener('online', () => void retryWaitingForConnectivity());

@@ -69,13 +69,15 @@ export async function createLogEntry(
   groupId: string | null,
   input: LogEntryInput,
 ): Promise<LogEntry> {
+  const now = new Date().toISOString();
   const entry: LogEntry = {
     id: crypto.randomUUID(),
     group_id: groupId,
     logged_by: userId,
     ...input,
     logged_at: todayLocalDate(),
-    created_at: new Date().toISOString(),
+    created_at: now,
+    updated_at: now,
   };
   await db.log_entries.add(entry);
   await enqueueMutation('log_entries', 'insert', { ...entry });
@@ -93,10 +95,11 @@ export interface LogEntrySnapshotInput {
 // editable — source_ingredient_id/source_recipe_id and logged_at are left
 // alone, since this edits the log entry itself, not what it was logged from.
 export async function updateLogEntry(id: string, input: LogEntrySnapshotInput): Promise<LogEntry> {
-  await db.log_entries.update(id, input);
+  const updated_at = new Date().toISOString();
+  await db.log_entries.update(id, { ...input, updated_at });
   const entry = await db.log_entries.get(id);
   if (!entry) throw new Error('Log entry not found.');
-  await enqueueMutation('log_entries', 'update', { id, ...input });
+  await enqueueMutation('log_entries', 'update', { id, ...input, updated_at });
   return entry;
 }
 

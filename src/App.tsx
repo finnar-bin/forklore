@@ -21,6 +21,7 @@ import { RequireAuth } from './routes/RequireAuth';
 import { RedirectIfAuthed } from './routes/RedirectIfAuthed';
 import { RequireOnboarded } from './routes/RequireOnboarded';
 import { RedirectIfOnboarded } from './routes/RedirectIfOnboarded';
+import { RequireGroupMember } from './routes/RequireGroupMember';
 
 function App() {
   const { initializing } = useAuthSession();
@@ -71,13 +72,18 @@ function App() {
             <Route path="/logs/groups" element={<GroupLogsPage />} />
             {/* Same component as the personal routes above, just with a
                 :groupId param present — see routes.md's "Personal vs. group"
-                note and docs/pending-deviations.md (Ticket 12). */}
-            <Route path="/groups/:groupId/pantry" element={<PantryPage />} />
-            <Route path="/groups/:groupId/pantry/:ingredientId" element={<IngredientDetailPage />} />
-            <Route path="/groups/:groupId/recipes" element={<RecipesPage />} />
-            <Route path="/groups/:groupId/recipes/:recipeId" element={<RecipeDetailPage />} />
-            <Route path="/groups/:groupId/log" element={<LogPage />} />
-            <Route path="/groups/:groupId/logs" element={<LogsPage />} />
+                note and docs/pending-deviations.md (Ticket 12).
+                RequireGroupMember guards every route under this parent —
+                see issue #34's audit ("group routes trust the local cache
+                with no server-side membership check"). */}
+            <Route path="/groups/:groupId" element={<RequireGroupMember />}>
+              <Route path="pantry" element={<PantryPage />} />
+              <Route path="pantry/:ingredientId" element={<IngredientDetailPage />} />
+              <Route path="recipes" element={<RecipesPage />} />
+              <Route path="recipes/:recipeId" element={<RecipeDetailPage />} />
+              <Route path="log" element={<LogPage />} />
+              <Route path="logs" element={<LogsPage />} />
+            </Route>
             <Route path="/groups" element={<GroupsPage />} />
             <Route path="/sync-status" element={<SyncStatusPage />} />
           </Route>
