@@ -140,8 +140,13 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   const parsedWeight = Number(weight);
   // Always the grams value that would actually be saved, regardless of
   // which unit is currently selected — used for the dirty check, validity,
-  // and the live per-gram kcal calculation below.
-  const weightG = weightUnit === 'kg' ? parsedWeight * 1000 : parsedWeight;
+  // and the live per-gram kcal calculation below. Rounded to the nearest
+  // gram — a plain `* 1000` can land on a floating-point artifact (e.g.
+  // 1.005 * 1000 === 1004.9999999999999) that would otherwise get stored
+  // and displayed as-is, and would also make the dirty-check spuriously
+  // true after a save (savedRecipe.weight_g comes back as the same rounded
+  // integer the server actually stored).
+  const weightG = weightUnit === 'kg' ? Math.round(parsedWeight * 1000) : parsedWeight;
 
   // Realtime — recomputed on every keystroke/add/remove from the draft
   // ingredient list, not read from the persisted recipe row. Uses the same

@@ -31,7 +31,10 @@ export function RecipeForm({ initialValues, submitLabel, onSubmit }: RecipeFormP
     setSubmitting(true);
     try {
       const parsedWeight = Number(weight);
-      const weight_g = weightUnit === 'kg' ? parsedWeight * 1000 : parsedWeight;
+      // Rounded to the nearest gram — a plain `* 1000` can land on a
+      // floating-point artifact (e.g. 1.005 * 1000 === 1004.9999999999999)
+      // that would otherwise get stored and displayed as-is.
+      const weight_g = weightUnit === 'kg' ? Math.round(parsedWeight * 1000) : parsedWeight;
       await onSubmit({
         name,
         weight_g,

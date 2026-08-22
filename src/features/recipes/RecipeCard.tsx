@@ -49,7 +49,7 @@ export function RecipeCard({
       </Box>
       <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
         <Typography fontSize={14} fontWeight={500} color="primary.main">
-          {recipe.total_kcal} kcal
+          {recipe.total_kcal.toFixed(0)} kcal
         </Typography>
         <Typography fontSize={11} color="text.secondary">
           {perGram.toFixed(2)}/g
