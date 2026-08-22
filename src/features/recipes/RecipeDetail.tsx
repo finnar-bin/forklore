@@ -229,25 +229,45 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
       }
 
       // Ingredient-line changes require connectivity (see file header).
-      const ops: Promise<unknown>[] = [];
+      // Built as thunks and run sequentially below — NOT fired concurrently
+      // (the previous `ops.push(someCall(...))` shape started every call
+      // immediately as its own independent request/transaction, then just
+      // waited on all of them via Promise.allSettled). Each of these fires
+      // the server-side recalculate_recipe_kcal trigger, which recomputes
+      // total_kcal from scratch by re-reading every recipe_ingredients row
+      // for this recipe at the moment it runs — running them concurrently
+      // is a race where whichever transaction commits last wins, but if its
+      // own read ran before an earlier op's write had committed, it
+      // overwrites the correct combined total with a partial one (e.g.
+      // adding two ingredients in one save could leave total_kcal
+      // reflecting only one of them, even though both rows exist). See
+      // docs/pending-deviations.md (Ticket 12 follow-up, "recipe totals
+      // racing on multi-ingredient saves").
+      const ops: Array<() => Promise<void>> = [];
       const draftIds = new Set(ingredients.map((i) => i.ingredient_id));
       for (const saved of savedIngredients) {
         if (!draftIds.has(saved.ingredient_id)) {
-          ops.push(removeRecipeIngredient(recipeId, saved.ingredient_id));
+          ops.push(() => removeRecipeIngredient(recipeId, saved.ingredient_id));
         }
       }
       for (const item of ingredients) {
         const prev = savedIngredients.find((s) => s.ingredient_id === item.ingredient_id);
         if (!prev) {
-          ops.push(addRecipeIngredient(recipeId, item.ingredient_id, item.quantity_used));
+          ops.push(() => addRecipeIngredient(recipeId, item.ingredient_id, item.quantity_used));
         } else if (prev.quantity_used !== item.quantity_used) {
-          ops.push(updateRecipeIngredientQuantity(recipeId, item.ingredient_id, item.quantity_used));
+          ops.push(() => updateRecipeIngredientQuantity(recipeId, item.ingredient_id, item.quantity_used));
         }
       }
 
       if (ops.length > 0) {
-        const results = await Promise.allSettled(ops);
-        const failed = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+        let failedCount = 0;
+        for (const op of ops) {
+          try {
+            await op();
+          } catch {
+            failedCount += 1;
+          }
+        }
 
         // Refetch regardless of partial failure — some ops may have landed
         // even if others didn't, and total_kcal is only ever correct once
@@ -266,9 +286,9 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
           // landed via the outbox regardless of this failing.
         }
 
-        if (failed.length > 0) {
+        if (failedCount > 0) {
           throw new Error(
-            `${failed.length} of ${ops.length} ingredient change${ops.length === 1 ? '' : 's'} failed to save — this usually means you're offline. Try again once you're back online.`,
+            `${failedCount} of ${ops.length} ingredient change${ops.length === 1 ? '' : 's'} failed to save — this usually means you're offline. Try again once you're back online.`,
           );
         }
       }
