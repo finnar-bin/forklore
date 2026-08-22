@@ -38,9 +38,16 @@ export function LogEntryCard({
     >
       <PhotoThumbnail photoUrl={null} alt={entry.snapshot_name} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography fontSize={14} fontWeight={500} noWrap>
-          {entry.snapshot_name}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, minWidth: 0 }}>
+          <Typography fontSize={14} fontWeight={500} noWrap sx={{ minWidth: 0 }}>
+            {entry.snapshot_name}
+          </Typography>
+          {entry.snapshot_quantity !== null && (
+            <Typography fontSize={12} color="text.secondary" noWrap sx={{ flexShrink: 0 }}>
+              {entry.snapshot_quantity} {entry.snapshot_unit}
+            </Typography>
+          )}
+        </Box>
         <Typography fontSize={12} color="text.secondary" noWrap>
           {subtitle}
         </Typography>

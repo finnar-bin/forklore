@@ -52,6 +52,9 @@ export function LogRecipeStep({
         snapshot_name: recipe.name,
         snapshot_kcal: kcal,
         snapshot_quantity: parsedGramsEaten,
+        // Recipes are always logged in grams — see Ticket 12's
+        // servings -> weight change (docs/pending-deviations.md).
+        snapshot_unit: 'g',
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to log this recipe.');

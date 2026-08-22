@@ -46,6 +46,7 @@ export function LogIngredientStep({
         snapshot_name: ingredient.name,
         snapshot_kcal: kcal,
         snapshot_quantity: parsedQuantity,
+        snapshot_unit: ingredient.unit,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to log this ingredient.');

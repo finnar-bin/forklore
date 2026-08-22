@@ -5,6 +5,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import InputAdornment from '@mui/material/InputAdornment';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { deleteLogEntry, updateLogEntry } from './api';
@@ -114,7 +115,15 @@ function EditLogEntryForm({
             onChange={(e) => setQuantity(e.target.value)}
             fullWidth
             disabled={saving}
-            slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
+            slotProps={{
+              htmlInput: { min: 0, step: 0.01 },
+              // Unit isn't editable here — it's fixed to how the entry was
+              // originally logged (an ingredient's own unit, or 'g' for a
+              // recipe), same as source_ingredient_id/source_recipe_id
+              // being left alone by this dialog. Shown read-only so editing
+              // the number doesn't lose track of what it's a number of.
+              input: { endAdornment: <InputAdornment position="end">{entry.snapshot_unit}</InputAdornment> },
+            }}
           />
         </Stack>
       </DialogContent>

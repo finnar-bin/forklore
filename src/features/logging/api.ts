@@ -1,5 +1,6 @@
 import { db } from '../../lib/db';
 import { enqueueMutation } from '../../sync/outbox';
+import type { IngredientUnit } from '../../types/ingredient';
 import type { LogEntry } from '../../types/log';
 
 export interface LogEntryInput {
@@ -8,6 +9,7 @@ export interface LogEntryInput {
   snapshot_name: string;
   snapshot_kcal: number;
   snapshot_quantity: number | null;
+  snapshot_unit: IngredientUnit;
 }
 
 // Local (not UTC) calendar date — logged_at is a plain `date` column and
