@@ -1,6 +1,6 @@
 import { db } from '../../lib/db';
 import { supabase } from '../../lib/supabase';
-import type { Group, GroupInvite, GroupMembership } from '../../types/group';
+import type { Group, GroupInvite, GroupMember, GroupMembership } from '../../types/group';
 
 export interface GroupInput {
   name: string;
@@ -74,6 +74,58 @@ export async function previewGroupInvite(inviteCode: string): Promise<InvitePrev
   if (error) throw error;
   const row = (data as { group_id: string; group_name: string }[] | null)?.[0];
   return row ? { groupId: row.group_id, groupName: row.group_name } : null;
+}
+
+// Plain update — RLS's "owner manages group" policy (schema.md) is
+// `using (owner_id = auth.uid())` with no `with check`, so this is a
+// straight client update, no RPC needed (rename/description aren't a
+// multi-table write). Mirrored into Dexie the same way createGroup already
+// does, for the same "at least reflect what this device has seen" reason.
+export async function updateGroup(groupId: string, input: GroupInput): Promise<Group> {
+  const { data, error } = await supabase
+    .from('groups')
+    .update({ name: input.name, description: input.description })
+    .eq('id', groupId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  const group = data as Group;
+  await db.groups.put(group);
+  return group;
+}
+
+// Cascades to group_members/ingredients/recipes/log_entries via the
+// `on delete cascade` foreign keys already defined in schema.md — no RPC
+// needed, RLS's "owner deletes group" policy covers the row itself.
+export async function deleteGroup(groupId: string): Promise<void> {
+  const { error } = await supabase.from('groups').delete().eq('id', groupId);
+  if (error) throw error;
+  await db.groups.delete(groupId);
+}
+
+// group_members isn't mirrored in Dexie (same as fetchMyGroups above) — a
+// live Supabase read gated by the "members read group membership" RLS
+// policy (schema.md, via the is_group_member security-definer helper).
+export async function fetchGroupMembers(groupId: string): Promise<GroupMember[]> {
+  const { data, error } = await supabase
+    .from('group_members')
+    .select('*')
+    .eq('group_id', groupId)
+    .order('joined_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// RLS restricts group_members deletes to the group's owner (schema.md /
+// docs/pending-deviations.md, Ticket 2) — plain client delete, no RPC
+// needed since removing one membership row isn't a multi-table write.
+export async function removeGroupMember(groupId: string, userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('group_members')
+    .delete()
+    .eq('group_id', groupId)
+    .eq('user_id', userId);
+  if (error) throw error;
 }
 
 // Returns the joined group's id. rpcs.md's own note says redirect to

@@ -22,6 +22,8 @@ import { RedirectIfAuthed } from './routes/RedirectIfAuthed';
 import { RequireOnboarded } from './routes/RequireOnboarded';
 import { RedirectIfOnboarded } from './routes/RedirectIfOnboarded';
 import { RequireGroupMember } from './routes/RequireGroupMember';
+import { RequireGroupOwner } from './routes/RequireGroupOwner';
+import { GroupSettingsPage } from './routes/GroupSettingsPage';
 
 function App() {
   const { initializing } = useAuthSession();
@@ -83,6 +85,11 @@ function App() {
               <Route path="recipes/:recipeId" element={<RecipeDetailPage />} />
               <Route path="log" element={<LogPage />} />
               <Route path="logs" element={<LogsPage />} />
+              {/* Owner-only, nested inside the membership check above — see
+                  docs/pending-deviations.md (Ticket 13). */}
+              <Route element={<RequireGroupOwner />}>
+                <Route path="settings" element={<GroupSettingsPage />} />
+              </Route>
             </Route>
             <Route path="/groups" element={<GroupsPage />} />
             <Route path="/sync-status" element={<SyncStatusPage />} />

@@ -6,14 +6,16 @@ import TextField from '@mui/material/TextField';
 import type { GroupInput } from './api';
 
 export function GroupForm({
+  initialValues,
   submitLabel,
   onSubmit,
 }: {
+  initialValues?: GroupInput;
   submitLabel: string;
   onSubmit: (input: GroupInput) => Promise<void>;
 }) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState(initialValues?.name ?? '');
+  const [description, setDescription] = useState(initialValues?.description ?? '');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -28,6 +30,13 @@ export function GroupForm({
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
+    } finally {
+      // try/finally (not just the catch branch) — unlike CreateGroupDialog,
+      // which unmounts this form on success, GroupSettings' inline edit
+      // keeps it mounted after a successful save, so `submitting` must
+      // reset on that path too or the button gets stuck on "Saving…" (same
+      // bug shape as IngredientForm's, fixed for RecipeDetail in
+      // docs/pending-deviations.md, Ticket 7).
       setSubmitting(false);
     }
   }
@@ -54,7 +63,7 @@ export function GroupForm({
       />
 
       <Button type="submit" variant="contained" size="large" disabled={submitting || name.trim() === ''}>
-        {submitting ? 'Creating…' : submitLabel}
+        {submitting ? 'Saving…' : submitLabel}
       </Button>
     </Stack>
   );
