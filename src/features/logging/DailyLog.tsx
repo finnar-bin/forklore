@@ -59,7 +59,14 @@ export function DailyLog({ groupId }: { groupId: string | null }) {
           </Typography>
         </Paper>
 
-        <Button onClick={() => navigate('/logs')}>View all-time history</Button>
+        <Stack direction="row" spacing={1}>
+          <Button onClick={() => navigate('/logs')} sx={{ flex: 1 }}>
+            View all-time history
+          </Button>
+          <Button onClick={() => navigate('/logs/groups')} sx={{ flex: 1 }}>
+            View group logs
+          </Button>
+        </Stack>
 
         {loading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -106,7 +113,6 @@ export function DailyLog({ groupId }: { groupId: string | null }) {
 
       <AddLogEntryDialog
         open={addOpen}
-        groupId={groupId}
         onClose={() => setAddOpen(false)}
         onLogged={() => setAddOpen(false)}
       />

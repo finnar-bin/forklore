@@ -16,8 +16,9 @@ import { fetchMyGroups } from '../features/groups/api';
 import type { GroupMembership } from '../types/group';
 
 // design-system.md "Context switcher chip" — pill-shaped, sits below the
-// header on Pantry/Recipes/Log screens only (Progress ignores it — see
-// routes.md). Personal vs. group is a route concern, not a Zustand one (see
+// header on Pantry/Recipes screens (Progress ignores it — see routes.md; Log
+// dropped it too, see this file's tab type note below). Personal vs. group
+// is a route concern, not a Zustand one (see
 // routes.md's own note on why /pantry and /groups/:groupId/pantry stay two
 // route entries) — this component navigates between them directly rather
 // than writing to useAppStore itself.
@@ -25,7 +26,10 @@ export function ContextSwitcher({
   tab,
   activeGroupId,
 }: {
-  tab: 'pantry' | 'recipes' | 'log';
+  // No 'log' here — the Log screen replaced this switcher with the
+  // GroupLogPicker flow. See docs/pending-deviations.md (Ticket 12
+  // follow-up, "/log shows everything").
+  tab: 'pantry' | 'recipes';
   activeGroupId: string | null;
 }) {
   const userId = useAppStore((state) => state.userId);

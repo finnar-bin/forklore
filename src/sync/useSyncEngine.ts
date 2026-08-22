@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { useSyncStore } from '../store/useSyncStore';
+import { fetchMyGroups } from '../features/groups/api';
 import { drainPendingOutbox } from './outbox';
 import { pullScope, type PullScope } from './pull';
 
@@ -15,7 +16,6 @@ const PULL_INTERVAL_MS = 60_000;
 // `online` listener for the push side.
 export function useSyncEngine(): void {
   const userId = useAppStore((state) => state.userId);
-  const activeGroupId = useAppStore((state) => state.activeGroupId);
 
   useEffect(() => {
     if (!userId) return;
@@ -24,14 +24,20 @@ export function useSyncEngine(): void {
     let cancelled = false;
 
     async function runPull() {
-      // Personal scope is always pulled — screens outside the active group
-      // context (the /logs cross-context view, switching back to Personal)
-      // still read whatever Dexie already has, so it shouldn't go stale just
-      // because the user is currently looking at a group. The active
-      // group's scope (Ticket 12) is pulled alongside it, not instead of it.
-      // Each scope's failure (e.g. offline) doesn't block the other.
-      const scopes: PullScope[] = [{ userId: currentUserId, groupId: null }];
-      if (activeGroupId) scopes.push({ userId: currentUserId, groupId: activeGroupId });
+      // Personal scope, plus every group the caller currently belongs to —
+      // not just whichever one is being actively viewed (Ticket 12's
+      // original scoping). The log entry dialog (Ticket 12 follow-up, "/log
+      // shows everything") lets the user log any ingredient/recipe from any
+      // of their groups regardless of which screen they're on, so Dexie
+      // needs all of them available locally, not just the group currently
+      // on screen. Membership is refetched each cycle so a newly joined
+      // group starts pulling without needing a full reload. Each scope's
+      // failure (e.g. offline) doesn't block the others.
+      const groups = await fetchMyGroups(currentUserId).catch(() => []);
+      const scopes: PullScope[] = [
+        { userId: currentUserId, groupId: null },
+        ...groups.map((membership) => ({ userId: currentUserId, groupId: membership.group.id })),
+      ];
 
       const results = await Promise.allSettled(scopes.map((scope) => pullScope(scope)));
       if (!cancelled && results.some((r) => r.status === 'fulfilled')) {
@@ -51,5 +57,5 @@ export function useSyncEngine(): void {
       clearInterval(intervalId);
       window.removeEventListener('online', handleOnline);
     };
-  }, [userId, activeGroupId]);
+  }, [userId]);
 }

@@ -13,6 +13,7 @@ import { RecipesPage } from './routes/RecipesPage';
 import { RecipeDetailPage } from './routes/RecipeDetailPage';
 import { LogPage } from './routes/LogPage';
 import { LogsPage } from './routes/LogsPage';
+import { GroupLogsPage } from './routes/GroupLogsPage';
 import { GroupsPage } from './routes/GroupsPage';
 import { InvitePage } from './routes/InvitePage';
 import { SyncStatusPage } from './routes/SyncStatusPage';
@@ -67,6 +68,7 @@ function App() {
             <Route path="/recipes/:recipeId" element={<RecipeDetailPage />} />
             <Route path="/log" element={<LogPage />} />
             <Route path="/logs" element={<LogsPage />} />
+            <Route path="/logs/groups" element={<GroupLogsPage />} />
             {/* Same component as the personal routes above, just with a
                 :groupId param present — see routes.md's "Personal vs. group"
                 note and docs/pending-deviations.md (Ticket 12). */}

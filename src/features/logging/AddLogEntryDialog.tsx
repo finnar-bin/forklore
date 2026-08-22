@@ -12,13 +12,16 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Typography from '@mui/material/Typography';
 import { useAppStore } from '../../store/useAppStore';
-import { fetchIngredients } from '../pantry/api';
-import { fetchRecipes } from '../recipes/api';
+import { fetchAllIngredients } from '../pantry/api';
+import { fetchAllRecipes } from '../recipes/api';
+import { fetchMyGroups } from '../groups/api';
 import { createLogEntry, type LogEntryInput } from './api';
 import { formatIngredientLabel, formatRecipeLabel } from './formatItemLabel';
 import { LogIngredientStep } from './LogIngredientStep';
 import { LogRecipeStep } from './LogRecipeStep';
+import type { GroupMembership } from '../../types/group';
 import type { Ingredient } from '../../types/ingredient';
 import type { LogEntry } from '../../types/log';
 import type { Recipe } from '../../types/recipe';
@@ -27,14 +30,20 @@ import type { Recipe } from '../../types/recipe';
 // (Ticket 8 scope). Same toggle + select-then-detail shape as
 // AddRecipeIngredientDialog's "From pantry" step, applied to a type toggle
 // instead of an existing/new toggle.
+//
+// Cross-context by design (Ticket 12 follow-up, "/log shows everything"):
+// unlike the pantry/recipes tabs, this dialog doesn't take a groupId — it
+// lists every ingredient/recipe the caller can see, personal and every
+// group they're in, each labeled with where it lives (see groupLabel
+// below). Which log the resulting entry lands on is decided by what gets
+// picked (the item's own group_id), not by whichever screen the dialog was
+// opened from. See docs/pending-deviations.md (Ticket 12).
 export function AddLogEntryDialog({
   open,
-  groupId,
   onClose,
   onLogged,
 }: {
   open: boolean;
-  groupId: string | null;
   onClose: () => void;
   onLogged: (entry: LogEntry) => void;
 }) {
@@ -42,23 +51,22 @@ export function AddLogEntryDialog({
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>Log an entry</DialogTitle>
       {/* Mounted only while open, so selection state starts fresh each time. */}
-      {open && <AddLogEntryForm groupId={groupId} onClose={onClose} onLogged={onLogged} />}
+      {open && <AddLogEntryForm onClose={onClose} onLogged={onLogged} />}
     </Dialog>
   );
 }
 
 function AddLogEntryForm({
-  groupId,
   onClose,
   onLogged,
 }: {
-  groupId: string | null;
   onClose: () => void;
   onLogged: (entry: LogEntry) => void;
 }) {
   const userId = useAppStore((state) => state.userId);
   const [type, setType] = useState<'ingredient' | 'recipe'>('ingredient');
 
+  const [groups, setGroups] = useState<GroupMembership[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[] | null>(null);
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
@@ -66,11 +74,24 @@ function AddLogEntryForm({
 
   useEffect(() => {
     if (!userId) return;
-    fetchIngredients(userId, groupId).then(setIngredients).catch(() => setIngredients([]));
-    fetchRecipes(userId, groupId).then(setRecipes).catch(() => setRecipes([]));
-  }, [userId, groupId]);
+    fetchMyGroups(userId)
+      .then(setGroups)
+      .catch(() => setGroups([]));
+  }, [userId]);
 
-  async function handleLog(input: LogEntryInput) {
+  useEffect(() => {
+    if (!userId) return;
+    const groupIds = groups.map((membership) => membership.group.id);
+    fetchAllIngredients(userId, groupIds).then(setIngredients).catch(() => setIngredients([]));
+    fetchAllRecipes(userId, groupIds).then(setRecipes).catch(() => setRecipes([]));
+  }, [userId, groups]);
+
+  function groupLabel(groupId: string | null): string {
+    if (groupId === null) return 'Personal';
+    return groups.find((membership) => membership.group.id === groupId)?.group.name ?? 'Group';
+  }
+
+  async function handleLog(groupId: string | null, input: LogEntryInput) {
     if (!userId) return;
     const entry = await createLogEntry(userId, groupId, input);
     onLogged(entry);
@@ -80,14 +101,20 @@ function AddLogEntryForm({
     return (
       <LogIngredientStep
         ingredient={selectedIngredient}
-        onLog={handleLog}
+        onLog={(input) => handleLog(selectedIngredient.group_id, input)}
         onCancel={() => setSelectedIngredient(null)}
       />
     );
   }
 
   if (type === 'recipe' && selectedRecipe) {
-    return <LogRecipeStep recipe={selectedRecipe} onLog={handleLog} onCancel={() => setSelectedRecipe(null)} />;
+    return (
+      <LogRecipeStep
+        recipe={selectedRecipe}
+        onLog={(input) => handleLog(selectedRecipe.group_id, input)}
+        onCancel={() => setSelectedRecipe(null)}
+      />
+    );
   }
 
   return (
@@ -111,15 +138,25 @@ function AddLogEntryForm({
               <CircularProgress size={24} />
             </Box>
           ) : ingredients.length === 0 ? (
-            <Alert severity="info">
-              {groupId ? "This group's pantry" : 'Your pantry'} is empty. Add an ingredient first.
-            </Alert>
+            <Alert severity="info">Your pantry is empty. Add an ingredient first.</Alert>
           ) : (
             <Autocomplete
               options={ingredients}
               getOptionLabel={formatIngredientLabel}
               onChange={(_, value) => setSelectedIngredient(value)}
               isOptionEqualToValue={(option, value) => option.id === value.id}
+              renderOption={({ key, ...props }, option) => (
+                <Box component="li" key={key} {...props}>
+                  <Stack sx={{ minWidth: 0 }}>
+                    <Typography fontSize={14} noWrap>
+                      {formatIngredientLabel(option)}
+                    </Typography>
+                    <Typography fontSize={11} color="text.secondary" noWrap>
+                      {groupLabel(option.group_id)}
+                    </Typography>
+                  </Stack>
+                </Box>
+              )}
               renderInput={(params) => <TextField {...params} label="Ingredient" autoFocus />}
             />
           )
@@ -128,15 +165,25 @@ function AddLogEntryForm({
             <CircularProgress size={24} />
           </Box>
         ) : recipes.length === 0 ? (
-          <Alert severity="info">
-            {groupId ? "This group's recipes" : 'Your recipes'} are empty. Add a recipe first.
-          </Alert>
+          <Alert severity="info">Your recipes are empty. Add a recipe first.</Alert>
         ) : (
           <Autocomplete
             options={recipes}
             getOptionLabel={formatRecipeLabel}
             onChange={(_, value) => setSelectedRecipe(value)}
             isOptionEqualToValue={(option, value) => option.id === value.id}
+            renderOption={({ key, ...props }, option) => (
+              <Box component="li" key={key} {...props}>
+                <Stack sx={{ minWidth: 0 }}>
+                  <Typography fontSize={14} noWrap>
+                    {formatRecipeLabel(option)}
+                  </Typography>
+                  <Typography fontSize={11} color="text.secondary" noWrap>
+                    {groupLabel(option.group_id)}
+                  </Typography>
+                </Stack>
+              </Box>
+            )}
             renderInput={(params) => <TextField {...params} label="Recipe" autoFocus />}
           />
         )}

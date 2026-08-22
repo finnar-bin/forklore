@@ -22,18 +22,18 @@ export function todayLocalDate(): string {
 }
 
 // Reads come from Dexie, not Supabase — see frontend-architecture.md
-// "Offline sync — outbox pattern". `groupId: null` is the personal log
-// (scoped to the caller via `logged_by`); a group id shows that group's
-// shared log — every entry logged into it by any member, per schema.md's
-// "filter by group_id for the group view" note. See
+// "Offline sync — outbox pattern". `groupId: null` is the cross-context
+// "today" view — everything the caller logged today, personal and every
+// group combined, same query shape as fetchAllLogEntries below (Ticket 12
+// follow-up, "/log shows everything"); a group id instead shows that one
+// group's shared log — every entry logged into it by any member, per
+// schema.md's "filter by group_id for the group view" note. See
 // docs/pending-deviations.md (Ticket 12).
 export async function fetchTodayLogEntries(userId: string, groupId: string | null): Promise<LogEntry[]> {
   const today = todayLocalDate();
   const rows =
     groupId === null
-      ? (await db.log_entries.where('logged_by').equals(userId).toArray()).filter(
-          (e) => e.group_id === null,
-        )
+      ? await db.log_entries.where('logged_by').equals(userId).toArray()
       : await db.log_entries.where('group_id').equals(groupId).toArray();
   return rows.filter((e) => e.logged_at === today).sort((a, b) => b.created_at.localeCompare(a.created_at));
 }

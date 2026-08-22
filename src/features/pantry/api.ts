@@ -33,6 +33,19 @@ export async function fetchIngredients(userId: string, groupId: string | null): 
   return rows.sort((a, b) => a.name.localeCompare(b.name));
 }
 
+// Cross-context read for the log entry dialog (Ticket 12 follow-up, "log
+// entry dialog shows every ingredient") — the caller's own personal
+// ingredients plus every ingredient belonging to any group in `groupIds`
+// (their memberships), combined into one flat, name-sorted list rather than
+// the strict personal-xor-one-group split fetchIngredients above enforces.
+export async function fetchAllIngredients(userId: string, groupIds: string[]): Promise<Ingredient[]> {
+  const personal = (await db.ingredients.where('created_by').equals(userId).toArray()).filter(
+    (i) => i.group_id === null,
+  );
+  const grouped = groupIds.length > 0 ? await db.ingredients.where('group_id').anyOf(groupIds).toArray() : [];
+  return [...personal, ...grouped].sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export async function fetchIngredient(id: string): Promise<Ingredient | undefined> {
   return db.ingredients.get(id);
 }

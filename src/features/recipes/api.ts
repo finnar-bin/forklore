@@ -16,6 +16,17 @@ export async function fetchRecipes(userId: string, groupId: string | null): Prom
   return rows.sort((a, b) => a.name.localeCompare(b.name));
 }
 
+// Cross-context read for the log entry dialog — see fetchAllIngredients
+// (pantry/api.ts) for why this exists alongside the strict fetchRecipes
+// above. See docs/pending-deviations.md (Ticket 12 follow-up).
+export async function fetchAllRecipes(userId: string, groupIds: string[]): Promise<Recipe[]> {
+  const personal = (await db.recipes.where('created_by').equals(userId).toArray()).filter(
+    (r) => r.group_id === null,
+  );
+  const grouped = groupIds.length > 0 ? await db.recipes.where('group_id').anyOf(groupIds).toArray() : [];
+  return [...personal, ...grouped].sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export async function fetchRecipe(id: string): Promise<Recipe | undefined> {
   return db.recipes.get(id);
 }
