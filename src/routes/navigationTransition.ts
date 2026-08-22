@@ -12,6 +12,15 @@
 //   /pantry/:id) -> 'push': drilling into a detail screen.
 // - Previous path is a descendant of the next one (the reverse) -> 'pop':
 //   backing out of a detail screen.
+// - Next path is a bottom-tab root and the previous path isn't -> 'pop':
+//   covers "back" affordances that return to a tab root without the new path
+//   being a literal parent of the old one (e.g. /sync-status -> /pantry,
+//   /logs -> /log, /logs/groups -> /log, /groups/:id/settings ->
+//   /groups/:id/pantry). BottomNav only renders on tab roots (see
+//   AnimatedAppShell), so the only way to *arrive* at one from a non-tab
+//   screen is that screen's own explicit back navigation — never a fresh
+//   forward push — making this safe as a general rule rather than a
+//   per-route special case.
 // - Anything else (e.g. opening /groups or /sync-status from the header) is
 //   treated as 'push' — a new screen being opened, not a sibling swap.
 export type TransitionVariant = 'push' | 'pop' | 'tab';
@@ -36,5 +45,6 @@ export function classifyTransition(prevPath: string, nextPath: string): Transiti
   if (getBottomTab(prevPath) && getBottomTab(nextPath)) return 'tab';
   if (nextPath.startsWith(`${prevPath}/`)) return 'push';
   if (prevPath.startsWith(`${nextPath}/`)) return 'pop';
+  if (getBottomTab(nextPath) && !getBottomTab(prevPath)) return 'pop';
   return 'push';
 }
