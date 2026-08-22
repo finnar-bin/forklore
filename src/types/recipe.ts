@@ -1,5 +1,11 @@
 import type { IngredientUnit } from './ingredient';
 
+// Entry-convenience unit for the recipe weight fields (RecipeForm,
+// RecipeDetail) — never persisted; weight_g is always converted to grams
+// before it reaches the server. See docs/pending-deviations.md (Ticket 12
+// follow-up, "servings -> weight").
+export type WeightUnit = 'g' | 'kg';
+
 export interface Recipe {
   id: string;
   group_id: string | null;
@@ -9,7 +15,11 @@ export interface Recipe {
   // from "edited" (show updated_at/updated_by) without comparing timestamps.
   updated_by: string | null;
   name: string;
-  servings: number;
+  // Total recipe weight in grams — replaces the old serving count. Always
+  // grams; the form's g/kg unit picker only exists for entry convenience,
+  // converting kg to g before it ever reaches this field (see
+  // docs/pending-deviations.md, Ticket 12 follow-up).
+  weight_g: number;
   total_kcal: number;
   photo_url: string | null;
   forked_from_recipe_id: string | null;
@@ -27,7 +37,7 @@ export interface RecipeIngredient {
 
 export interface RecipeInput {
   name: string;
-  servings: number;
+  weight_g: number;
   photo_url: string | null;
 }
 

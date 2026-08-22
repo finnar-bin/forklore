@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
+import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -28,7 +29,7 @@ import {
 } from './api';
 import { DeleteRecipeDialog } from './DeleteRecipeDialog';
 import { RecipeIngredientsList } from './RecipeIngredientsList';
-import type { Recipe, RecipeIngredientDetail } from '../../types/recipe';
+import type { Recipe, RecipeIngredientDetail, WeightUnit } from '../../types/recipe';
 import type { Ingredient } from '../../types/ingredient';
 
 // Distinguishes "still loading" from "query resolved, nothing found" — see
@@ -36,9 +37,9 @@ import type { Ingredient } from '../../types/ingredient';
 const LOADING = Symbol('loading');
 
 // Everything on this screen (recipe fields + ingredient lines) is staged
-// client-side in `name`/`servings`/`photoUrl`/`ingredients` and only written
-// on Save. The recipe's own fields (name/servings/photo) read from and write
-// to Dexie — offline-capable, per this ticket. The ingredient lines
+// client-side in `name`/`weight`/`weightUnit`/`photoUrl`/`ingredients` and
+// only written on Save. The recipe's own fields (name/weight/photo) read
+// from and write to Dexie — offline-capable, per this ticket. The ingredient lines
 // (recipe_ingredients) are not mirrored in Dexie and still read/write
 // straight to Supabase — total_kcal is only ever correct once recalculated
 // by the server-side trigger, so there's no offline-correct way to stage
@@ -66,7 +67,12 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   const [savedIngredients, setSavedIngredients] = useState<RecipeIngredientDetail[]>([]);
 
   const [name, setName] = useState('');
-  const [servings, setServings] = useState('1');
+  // weight/weightUnit: entry-convenience state, not persisted directly —
+  // weightUnit always resets to 'g' when a baseline (re)loads, since the
+  // server only ever stores grams (see docs/pending-deviations.md, Ticket
+  // 12 follow-up, "servings -> weight").
+  const [weight, setWeight] = useState('0');
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>('g');
   const [photoUrl, setPhotoUrl] = useState('');
   const [ingredients, setIngredients] = useState<RecipeIngredientDetail[]>([]);
 
@@ -94,7 +100,8 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   function applyRecipeBaseline(next: Recipe) {
     setSavedRecipe(next);
     setName(next.name);
-    setServings(next.servings.toString());
+    setWeight(next.weight_g.toString());
+    setWeightUnit('g');
     setPhotoUrl(next.photo_url ?? '');
   }
 
@@ -130,7 +137,11 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
       .finally(() => setIngredientsLoading(false));
   }, [recipeId]);
 
-  const servingsNum = Number(servings);
+  const parsedWeight = Number(weight);
+  // Always the grams value that would actually be saved, regardless of
+  // which unit is currently selected — used for the dirty check, validity,
+  // and the live per-gram kcal calculation below.
+  const weightG = weightUnit === 'kg' ? parsedWeight * 1000 : parsedWeight;
 
   // Realtime — recomputed on every keystroke/add/remove from the draft
   // ingredient list, not read from the persisted recipe row. Uses the same
@@ -144,22 +155,22 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
       ),
     [ingredients],
   );
-  const perServing = servingsNum > 0 ? totalKcal / servingsNum : 0;
+  const perGram = weightG > 0 ? totalKcal / weightG : 0;
 
   const isDirty = useMemo(() => {
     if (!savedRecipe) return false;
     const normalizedPhoto = photoUrl.trim() === '' ? null : photoUrl.trim();
     if (name !== savedRecipe.name) return true;
-    if (servingsNum !== savedRecipe.servings) return true;
+    if (weightG !== savedRecipe.weight_g) return true;
     if (normalizedPhoto !== savedRecipe.photo_url) return true;
     if (ingredients.length !== savedIngredients.length) return true;
     return ingredients.some((item) => {
       const prev = savedIngredients.find((s) => s.ingredient_id === item.ingredient_id);
       return !prev || prev.quantity_used !== item.quantity_used;
     });
-  }, [name, servingsNum, photoUrl, ingredients, savedRecipe, savedIngredients]);
+  }, [name, weightG, photoUrl, ingredients, savedRecipe, savedIngredients]);
 
-  const isValid = name.trim() !== '' && Number.isFinite(servingsNum) && servingsNum >= 1;
+  const isValid = name.trim() !== '' && Number.isFinite(weightG) && weightG > 0;
 
   function handleAddIngredient(ingredient: Ingredient, quantityUsed: number) {
     setIngredients((prev) => [
@@ -201,12 +212,12 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
       const normalizedPhoto = photoUrl.trim() === '' ? null : photoUrl.trim();
       const fieldsChanged =
         name !== savedRecipe.name ||
-        servingsNum !== savedRecipe.servings ||
+        weightG !== savedRecipe.weight_g ||
         normalizedPhoto !== savedRecipe.photo_url;
       if (fieldsChanged) {
         const updated = await updateRecipe(recipeId, userId, {
           name,
-          servings: servingsNum,
+          weight_g: weightG,
           photo_url: normalizedPhoto,
         });
         applyRecipeBaseline(updated);
@@ -298,10 +309,11 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
       )}
 
       {/* Stat tiles matching the total/per-serving kcal pattern from
-          docs/mocks/recipe-detail-*.png. Computed live from the draft
-          ingredient list (see totalKcal above) rather than read from
-          savedRecipe.total_kcal, so it updates as the user edits, before
-          anything is saved. */}
+          docs/mocks/recipe-detail-*.png, updated to per-gram (see
+          docs/pending-deviations.md, Ticket 12 follow-up). Computed live
+          from the draft ingredient list (see totalKcal above) rather than
+          read from savedRecipe.total_kcal, so it updates as the user edits,
+          before anything is saved. */}
       <Stack direction="row" spacing={1.5}>
         <Paper sx={{ flex: 1, p: 1.5, textAlign: 'center', borderRadius: '12px', boxShadow: tokens.sh1 }}>
           <Typography fontSize={18} fontWeight={500} color="primary.main">
@@ -313,10 +325,10 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         </Paper>
         <Paper sx={{ flex: 1, p: 1.5, textAlign: 'center', borderRadius: '12px', boxShadow: tokens.sh1 }}>
           <Typography fontSize={18} fontWeight={500} color="primary.main">
-            {perServing.toFixed(0)}
+            {perGram.toFixed(2)}
           </Typography>
           <Typography fontSize={11} color="text.secondary">
-            per serving
+            kcal per gram
           </Typography>
         </Paper>
       </Stack>
@@ -331,16 +343,30 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
             fullWidth
             disabled={saving}
           />
-          <TextField
-            label="Servings"
-            type="number"
-            value={servings}
-            onChange={(e) => setServings(e.target.value)}
-            required
-            fullWidth
-            disabled={saving}
-            slotProps={{ htmlInput: { min: 1, step: 1 } }}
-          />
+          <Stack direction="row" spacing={2}>
+            <TextField
+              label="Weight"
+              type="number"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              required
+              fullWidth
+              disabled={saving}
+              slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
+            />
+            <TextField
+              label="Unit"
+              select
+              value={weightUnit}
+              onChange={(e) => setWeightUnit(e.target.value as WeightUnit)}
+              required
+              fullWidth
+              disabled={saving}
+            >
+              <MenuItem value="g">g</MenuItem>
+              <MenuItem value="kg">kg</MenuItem>
+            </TextField>
+          </Stack>
           <TextField
             label="Photo URL (optional)"
             value={photoUrl}

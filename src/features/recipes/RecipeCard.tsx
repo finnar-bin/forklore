@@ -21,7 +21,7 @@ export function RecipeCard({
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
-  const perServing = recipe.servings > 0 ? recipe.total_kcal / recipe.servings : 0;
+  const perGram = recipe.weight_g > 0 ? recipe.total_kcal / recipe.weight_g : 0;
 
   return (
     <Box
@@ -43,7 +43,7 @@ export function RecipeCard({
           {recipe.name}
         </Typography>
         <Typography fontSize={12} color="text.secondary" noWrap>
-          {recipe.servings} serving{recipe.servings === 1 ? '' : 's'}
+          {recipe.weight_g} g
           {creatorName && ` · Added by ${creatorName}`}
         </Typography>
       </Box>
@@ -52,7 +52,7 @@ export function RecipeCard({
           {recipe.total_kcal} kcal
         </Typography>
         <Typography fontSize={11} color="text.secondary">
-          {perServing.toFixed(0)}/serving
+          {perGram.toFixed(2)}/g
         </Typography>
       </Box>
     </Box>
