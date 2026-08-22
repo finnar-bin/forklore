@@ -9,8 +9,9 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SyncIcon from '@mui/icons-material/Sync';
 import SyncProblemIcon from '@mui/icons-material/SyncProblem';
+import GroupIcon from '@mui/icons-material/Group';
 import { useColorScheme } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { shadows } from '../theme/theme';
 import { signOut } from '../features/auth/api';
 import { useSyncStore } from '../store/useSyncStore';
@@ -23,12 +24,18 @@ import { useSyncStore } from '../store/useSyncStore';
 // Also doubles as the app's only entry point to /sync-status: a small icon
 // appears only when there's something to say (syncing/error), tapping it
 // navigates there — see docs/pending-deviations.md (Ticket 9).
+//
+// Also the app's only entry point to /groups (not a bottom tab per
+// routes.md/design-system.md, and no nav bar exists yet regardless — Ticket
+// 16). Same "would otherwise be unreachable except by typing the URL"
+// reasoning as /sync-status above — see docs/pending-deviations.md (Ticket 11).
 export function AppHeader({ title, onBack }: { title: string; onBack?: () => void }) {
   const { mode, systemMode, setMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
   const [loggingOut, setLoggingOut] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const syncStatus = useSyncStore((state) => state.status);
 
   async function handleLogout() {
@@ -52,6 +59,11 @@ export function AppHeader({ title, onBack }: { title: string; onBack?: () => voi
         <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 500 }}>
           {title}
         </Typography>
+        {location.pathname !== '/groups' && (
+          <IconButton aria-label="Groups" onClick={() => navigate('/groups')}>
+            <GroupIcon />
+          </IconButton>
+        )}
         {syncStatus !== 'idle' && (
           <IconButton
             aria-label={syncStatus === 'error' ? 'Sync issue — view details' : 'Syncing'}

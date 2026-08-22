@@ -13,6 +13,8 @@ import { RecipesPage } from './routes/RecipesPage';
 import { RecipeDetailPage } from './routes/RecipeDetailPage';
 import { LogPage } from './routes/LogPage';
 import { LogsPage } from './routes/LogsPage';
+import { GroupsPage } from './routes/GroupsPage';
+import { InvitePage } from './routes/InvitePage';
 import { SyncStatusPage } from './routes/SyncStatusPage';
 import { RequireAuth } from './routes/RequireAuth';
 import { RedirectIfAuthed } from './routes/RedirectIfAuthed';
@@ -52,6 +54,11 @@ function App() {
           <Route element={<RedirectIfOnboarded />}>
             <Route path="/onboarding" element={<OnboardingPage />} />
           </Route>
+          {/* Only RequireAuth, not RequireOnboarded — routes.md notes this
+              route must work for a logged-in user clicking a link from
+              anywhere, so accepting an invite isn't blocked behind
+              onboarding completion. See docs/pending-deviations.md (Ticket 11). */}
+          <Route path="/invite/:inviteCode" element={<InvitePage />} />
           <Route element={<RequireOnboarded />}>
             <Route path="/" element={<Navigate to="/pantry" replace />} />
             <Route path="/pantry" element={<PantryPage />} />
@@ -60,6 +67,7 @@ function App() {
             <Route path="/recipes/:recipeId" element={<RecipeDetailPage />} />
             <Route path="/log" element={<LogPage />} />
             <Route path="/logs" element={<LogsPage />} />
+            <Route path="/groups" element={<GroupsPage />} />
             <Route path="/sync-status" element={<SyncStatusPage />} />
           </Route>
         </Route>
