@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { useSyncStore } from '../store/useSyncStore';
 import { drainPendingOutbox } from './outbox';
-import { pullScope } from './pull';
+import { pullScope, type PullScope } from './pull';
 
 // Not specified by any doc — 60s balances catching another-device's changes
 // reasonably promptly against not hammering Supabase while the tab is just
@@ -24,14 +24,18 @@ export function useSyncEngine(): void {
     let cancelled = false;
 
     async function runPull() {
-      try {
-        await pullScope({ userId: currentUserId, groupId: activeGroupId });
-        if (!cancelled) useSyncStore.getState().setLastSynced(new Date().toISOString());
-      } catch {
-        // Offline or a transient Supabase error — the next interval tick or
-        // `online` event tries again. Nothing to surface here: this is a
-        // background refresh, not a user-initiated action, and outbox.ts's
-        // own status already covers push-side failures that need attention.
+      // Personal scope is always pulled — screens outside the active group
+      // context (the /logs cross-context view, switching back to Personal)
+      // still read whatever Dexie already has, so it shouldn't go stale just
+      // because the user is currently looking at a group. The active
+      // group's scope (Ticket 12) is pulled alongside it, not instead of it.
+      // Each scope's failure (e.g. offline) doesn't block the other.
+      const scopes: PullScope[] = [{ userId: currentUserId, groupId: null }];
+      if (activeGroupId) scopes.push({ userId: currentUserId, groupId: activeGroupId });
+
+      const results = await Promise.allSettled(scopes.map((scope) => pullScope(scope)));
+      if (!cancelled && results.some((r) => r.status === 'fulfilled')) {
+        useSyncStore.getState().setLastSynced(new Date().toISOString());
       }
     }
 

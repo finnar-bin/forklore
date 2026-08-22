@@ -4,11 +4,16 @@ import { enqueueMutation } from '../../sync/outbox';
 import type { Recipe, RecipeInput, RecipeIngredientDetail } from '../../types/recipe';
 
 // Reads come from Dexie, not Supabase — see frontend-architecture.md
-// "Offline sync — outbox pattern". Personal recipes only — group_id
-// hardcoded null per this ticket's scope. Group-scoped recipes are Ticket 12.
-export async function fetchRecipes(userId: string): Promise<Recipe[]> {
-  const rows = await db.recipes.where('created_by').equals(userId).toArray();
-  return rows.filter((r) => r.group_id === null).sort((a, b) => a.name.localeCompare(b.name));
+// "Offline sync — outbox pattern". Same personal-vs-group split as
+// fetchIngredients (pantry/api.ts) — see docs/pending-deviations.md (Ticket 12).
+export async function fetchRecipes(userId: string, groupId: string | null): Promise<Recipe[]> {
+  const rows =
+    groupId === null
+      ? (await db.recipes.where('created_by').equals(userId).toArray()).filter(
+          (r) => r.group_id === null,
+        )
+      : await db.recipes.where('group_id').equals(groupId).toArray();
+  return rows.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function fetchRecipe(id: string): Promise<Recipe | undefined> {
@@ -17,11 +22,15 @@ export async function fetchRecipe(id: string): Promise<Recipe | undefined> {
 
 // Writes go to Dexie immediately (optimistic UI), then queue to the outbox
 // for Supabase — see frontend-architecture.md "Offline sync — outbox pattern".
-export async function createRecipe(userId: string, input: RecipeInput): Promise<Recipe> {
+export async function createRecipe(
+  userId: string,
+  groupId: string | null,
+  input: RecipeInput,
+): Promise<Recipe> {
   const now = new Date().toISOString();
   const recipe: Recipe = {
     id: crypto.randomUUID(),
-    group_id: null,
+    group_id: groupId,
     created_by: userId,
     ...input,
     total_kcal: 0,

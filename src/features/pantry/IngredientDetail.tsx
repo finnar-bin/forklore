@@ -19,7 +19,7 @@ import { DeleteIngredientDialog } from './DeleteIngredientDialog';
 // for this: https://dexie.org/docs/dexie-react-hooks/useLiveQuery()).
 const LOADING = Symbol('loading');
 
-export function IngredientDetail() {
+export function IngredientDetail({ backPath }: { backPath: string }) {
   const { ingredientId } = useParams<{ ingredientId: string }>();
   const navigate = useNavigate();
   const { mode, systemMode } = useColorScheme();
@@ -41,13 +41,13 @@ export function IngredientDetail() {
     await updateIngredient(ingredientId, input);
     // Back to the list on success — its live query picks up the change
     // automatically. On error, IngredientForm surfaces it and we stay put.
-    navigate('/pantry', { replace: true });
+    navigate(backPath, { replace: true });
   }
 
   async function handleDelete() {
     if (!ingredientId) return;
     await deleteIngredient(ingredientId);
-    navigate('/pantry', { replace: true });
+    navigate(backPath, { replace: true });
   }
 
   if (loading) {

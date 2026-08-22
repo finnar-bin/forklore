@@ -27,11 +27,13 @@ import type { Ingredient } from '../../types/ingredient';
 // Only its association with this recipe gets staged into the draft.
 export function AddRecipeIngredientDialog({
   open,
+  groupId,
   excludeIngredientIds,
   onClose,
   onAdd,
 }: {
   open: boolean;
+  groupId: string | null;
   excludeIngredientIds: string[];
   onClose: () => void;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
@@ -44,6 +46,7 @@ export function AddRecipeIngredientDialog({
           delegation pattern as CreateIngredientDialog/IngredientForm. */}
       {open && (
         <AddRecipeIngredientForm
+          groupId={groupId}
           excludeIngredientIds={excludeIngredientIds}
           onClose={onClose}
           onAdd={onAdd}
@@ -54,10 +57,12 @@ export function AddRecipeIngredientDialog({
 }
 
 function AddRecipeIngredientForm({
+  groupId,
   excludeIngredientIds,
   onClose,
   onAdd,
 }: {
+  groupId: string | null;
   excludeIngredientIds: string[];
   onClose: () => void;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
@@ -81,9 +86,14 @@ function AddRecipeIngredientForm({
 
       {/* Remounts (and so resets) on toggle — each mode owns its own state. */}
       {mode === 'existing' ? (
-        <ExistingIngredientForm excludeIngredientIds={excludeIngredientIds} onClose={onClose} onAdd={onAdd} />
+        <ExistingIngredientForm
+          groupId={groupId}
+          excludeIngredientIds={excludeIngredientIds}
+          onClose={onClose}
+          onAdd={onAdd}
+        />
       ) : (
-        <NewIngredientForm onClose={onClose} onAdd={onAdd} />
+        <NewIngredientForm groupId={groupId} onClose={onClose} onAdd={onAdd} />
       )}
     </>
   );
@@ -92,10 +102,12 @@ function AddRecipeIngredientForm({
 // Quantity's unit is inherited from the selected ingredient and shown
 // read-only next to the input — never user-selectable (schema.md).
 function ExistingIngredientForm({
+  groupId,
   excludeIngredientIds,
   onClose,
   onAdd,
 }: {
+  groupId: string | null;
   excludeIngredientIds: string[];
   onClose: () => void;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
@@ -108,8 +120,8 @@ function ExistingIngredientForm({
 
   useEffect(() => {
     if (!userId) return;
-    fetchIngredients(userId).then(setOptions).catch(() => setOptions([]));
-  }, [userId]);
+    fetchIngredients(userId, groupId).then(setOptions).catch(() => setOptions([]));
+  }, [userId, groupId]);
 
   const availableOptions = useMemo(
     () => (options ?? []).filter((i) => !excludeIngredientIds.includes(i.id)),
@@ -132,7 +144,8 @@ function ExistingIngredientForm({
             <CircularProgress size={24} />
           ) : options.length === 0 ? (
             <Alert severity="info">
-              Your pantry is empty. Switch to "New ingredient" to create one.
+              {groupId ? "This group's pantry" : 'Your pantry'} is empty. Switch to "New ingredient" to
+              create one.
             </Alert>
           ) : (
             <>
@@ -181,15 +194,18 @@ function ExistingIngredientForm({
 
 // Two steps, reusing the same IngredientForm the Pantry screen uses (rather
 // than duplicating its fields): (1) define and create the ingredient itself
-// — an immediate write to the personal pantry, same as CreateIngredientDialog
-// — then (2) a recipe-specific "quantity used" step, since that's a distinct
+// — an immediate write to the same context (personal or group) this recipe
+// belongs to, same as CreateIngredientDialog — then (2) a recipe-specific
+// "quantity used" step, since that's a distinct
 // number from the ingredient's own base quantity (e.g. "500 g package, 620
 // kcal" vs. "using 150 g here") that IngredientForm has no reason to know
 // about. Only step 2's result is staged onto the recipe draft.
 function NewIngredientForm({
+  groupId,
   onClose,
   onAdd,
 }: {
+  groupId: string | null;
   onClose: () => void;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
 }) {
@@ -198,7 +214,7 @@ function NewIngredientForm({
 
   async function handleCreate(input: IngredientInput) {
     if (!userId) return;
-    const ingredient = await createIngredient(userId, input);
+    const ingredient = await createIngredient(userId, groupId, input);
     setCreated(ingredient);
   }
 
@@ -210,15 +226,17 @@ function NewIngredientForm({
     );
   }
 
-  return <RecipeQuantityStep ingredient={created} onClose={onClose} onAdd={onAdd} />;
+  return <RecipeQuantityStep ingredient={created} groupId={groupId} onClose={onClose} onAdd={onAdd} />;
 }
 
 function RecipeQuantityStep({
   ingredient,
+  groupId,
   onClose,
   onAdd,
 }: {
   ingredient: Ingredient;
+  groupId: string | null;
   onClose: () => void;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
 }) {
@@ -230,7 +248,9 @@ function RecipeQuantityStep({
     <>
       <DialogContent sx={{ pt: '12px !important' }}>
         <Stack spacing={2.5}>
-          <Alert severity="success">{ingredient.name} added to your pantry.</Alert>
+          <Alert severity="success">
+            {ingredient.name} added to {groupId ? "this group's pantry" : 'your pantry'}.
+          </Alert>
           <TextField
             label="Quantity used in this recipe"
             type="number"

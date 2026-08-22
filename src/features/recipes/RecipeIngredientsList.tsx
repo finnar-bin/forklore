@@ -17,12 +17,14 @@ import type { Ingredient } from '../../types/ingredient';
 // draft passed down from RecipeDetail — nothing is written to Supabase until
 // the page-level Save button is clicked.
 export function RecipeIngredientsList({
+  groupId,
   ingredients,
   disabled,
   onAdd,
   onQuantityChange,
   onRemove,
 }: {
+  groupId: string | null;
   ingredients: RecipeIngredientDetail[];
   disabled: boolean;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
@@ -67,6 +69,7 @@ export function RecipeIngredientsList({
 
       <AddRecipeIngredientDialog
         open={addOpen}
+        groupId={groupId}
         excludeIngredientIds={ingredients.map((i) => i.ingredient_id)}
         onClose={() => setAddOpen(false)}
         onAdd={(ingredient, quantityUsed) => {

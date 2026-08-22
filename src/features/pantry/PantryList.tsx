@@ -12,7 +12,7 @@ import { fetchIngredients } from './api';
 import { IngredientCard } from './IngredientCard';
 import { CreateIngredientDialog } from './CreateIngredientDialog';
 
-export function PantryList() {
+export function PantryList({ groupId }: { groupId: string | null }) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
 
@@ -21,8 +21,12 @@ export function PantryList() {
   // Reads from Dexie, not Supabase — re-renders automatically on local
   // writes (this device) and pulled remote changes alike, so no manual
   // refetch/merge is needed after create/delete.
-  const ingredients = useLiveQuery(() => (userId ? fetchIngredients(userId) : []), [userId]);
+  const ingredients = useLiveQuery(
+    () => (userId ? fetchIngredients(userId, groupId) : []),
+    [userId, groupId],
+  );
   const loading = ingredients === undefined;
+  const detailPath = groupId ? `/groups/${groupId}/pantry` : '/pantry';
 
   return (
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
@@ -39,7 +43,9 @@ export function PantryList() {
 
         {!loading && ingredients?.length === 0 && (
           <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-            Your pantry is empty. Add your first ingredient to get started.
+            {groupId
+              ? "This group's pantry is empty. Add the first ingredient to get started."
+              : 'Your pantry is empty. Add your first ingredient to get started.'}
           </Typography>
         )}
 
@@ -47,7 +53,7 @@ export function PantryList() {
           <IngredientCard
             key={ingredient.id}
             ingredient={ingredient}
-            onClick={() => navigate(`/pantry/${ingredient.id}`)}
+            onClick={() => navigate(`${detailPath}/${ingredient.id}`)}
           />
         ))}
       </Stack>
@@ -71,6 +77,7 @@ export function PantryList() {
 
       <CreateIngredientDialog
         open={createOpen}
+        groupId={groupId}
         onClose={() => setCreateOpen(false)}
         onCreated={() => setCreateOpen(false)}
       />

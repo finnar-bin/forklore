@@ -43,7 +43,7 @@ const LOADING = Symbol('loading');
 // `savedRecipe`/`savedIngredients` hold the last persisted snapshot, used
 // both to diff what actually changed at save time and to know whether
 // there's anything to save at all.
-export function RecipeDetail() {
+export function RecipeDetail({ groupId, backPath }: { groupId: string | null; backPath: string }) {
   const { recipeId } = useParams<{ recipeId: string }>();
   const navigate = useNavigate();
   const { mode, systemMode } = useColorScheme();
@@ -172,7 +172,7 @@ export function RecipeDetail() {
   async function handleDelete() {
     if (!recipeId) return;
     await deleteRecipe(recipeId);
-    navigate('/recipes', { replace: true });
+    navigate(backPath, { replace: true });
   }
 
   async function handleSave() {
@@ -329,6 +329,7 @@ export function RecipeDetail() {
         <Alert severity="error">{ingredientsError}</Alert>
       ) : (
         <RecipeIngredientsList
+          groupId={groupId}
           ingredients={ingredients}
           disabled={saving}
           onAdd={handleAddIngredient}

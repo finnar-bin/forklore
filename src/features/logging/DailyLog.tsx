@@ -18,7 +18,7 @@ import { EditLogEntryDialog } from './EditLogEntryDialog';
 import { LogEntryCard } from './LogEntryCard';
 import type { LogEntry } from '../../types/log';
 
-export function DailyLog() {
+export function DailyLog({ groupId }: { groupId: string | null }) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
   const { mode, systemMode } = useColorScheme();
@@ -30,7 +30,10 @@ export function DailyLog() {
 
   // Reads from Dexie, not Supabase — re-renders automatically on
   // create/edit/delete (this device) and pulled remote changes alike.
-  const entries = useLiveQuery(() => (userId ? fetchTodayLogEntries(userId) : []), [userId]);
+  const entries = useLiveQuery(
+    () => (userId ? fetchTodayLogEntries(userId, groupId) : []),
+    [userId, groupId],
+  );
   const loading = entries === undefined;
 
   const totalKcal = (entries ?? []).reduce((sum, entry) => sum + entry.snapshot_kcal, 0);
@@ -61,7 +64,9 @@ export function DailyLog() {
 
         {!loading && entries?.length === 0 && (
           <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-            Nothing logged yet today. Add your first entry to get started.
+            {groupId
+              ? "Nothing logged yet today in this group. Add the first entry to get started."
+              : 'Nothing logged yet today. Add your first entry to get started.'}
           </Typography>
         )}
 
@@ -93,7 +98,12 @@ export function DailyLog() {
         <AddIcon />
       </Fab>
 
-      <AddLogEntryDialog open={addOpen} onClose={() => setAddOpen(false)} onLogged={() => setAddOpen(false)} />
+      <AddLogEntryDialog
+        open={addOpen}
+        groupId={groupId}
+        onClose={() => setAddOpen(false)}
+        onLogged={() => setAddOpen(false)}
+      />
 
       {editingEntry && (
         <EditLogEntryDialog

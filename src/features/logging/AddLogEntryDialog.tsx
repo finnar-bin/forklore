@@ -28,10 +28,12 @@ import type { Recipe } from '../../types/recipe';
 // instead of an existing/new toggle.
 export function AddLogEntryDialog({
   open,
+  groupId,
   onClose,
   onLogged,
 }: {
   open: boolean;
+  groupId: string | null;
   onClose: () => void;
   onLogged: (entry: LogEntry) => void;
 }) {
@@ -39,15 +41,17 @@ export function AddLogEntryDialog({
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>Log an entry</DialogTitle>
       {/* Mounted only while open, so selection state starts fresh each time. */}
-      {open && <AddLogEntryForm onClose={onClose} onLogged={onLogged} />}
+      {open && <AddLogEntryForm groupId={groupId} onClose={onClose} onLogged={onLogged} />}
     </Dialog>
   );
 }
 
 function AddLogEntryForm({
+  groupId,
   onClose,
   onLogged,
 }: {
+  groupId: string | null;
   onClose: () => void;
   onLogged: (entry: LogEntry) => void;
 }) {
@@ -61,13 +65,13 @@ function AddLogEntryForm({
 
   useEffect(() => {
     if (!userId) return;
-    fetchIngredients(userId).then(setIngredients).catch(() => setIngredients([]));
-    fetchRecipes(userId).then(setRecipes).catch(() => setRecipes([]));
-  }, [userId]);
+    fetchIngredients(userId, groupId).then(setIngredients).catch(() => setIngredients([]));
+    fetchRecipes(userId, groupId).then(setRecipes).catch(() => setRecipes([]));
+  }, [userId, groupId]);
 
   async function handleLog(input: LogEntryInput) {
     if (!userId) return;
-    const entry = await createLogEntry(userId, input);
+    const entry = await createLogEntry(userId, groupId, input);
     onLogged(entry);
   }
 
@@ -106,7 +110,9 @@ function AddLogEntryForm({
               <CircularProgress size={24} />
             </Box>
           ) : ingredients.length === 0 ? (
-            <Alert severity="info">Your pantry is empty. Add an ingredient first.</Alert>
+            <Alert severity="info">
+              {groupId ? "This group's pantry" : 'Your pantry'} is empty. Add an ingredient first.
+            </Alert>
           ) : (
             <Autocomplete
               options={ingredients}
@@ -121,7 +127,9 @@ function AddLogEntryForm({
             <CircularProgress size={24} />
           </Box>
         ) : recipes.length === 0 ? (
-          <Alert severity="info">Your recipes are empty. Add a recipe first.</Alert>
+          <Alert severity="info">
+            {groupId ? "This group's recipes" : 'Your recipes'} are empty. Add a recipe first.
+          </Alert>
         ) : (
           <Autocomplete
             options={recipes}

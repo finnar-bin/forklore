@@ -8,10 +8,12 @@ import type { Ingredient } from '../../types/ingredient';
 
 export function CreateIngredientDialog({
   open,
+  groupId,
   onClose,
   onCreated,
 }: {
   open: boolean;
+  groupId: string | null;
   onClose: () => void;
   onCreated: (ingredient: Ingredient) => void;
 }) {
@@ -19,7 +21,7 @@ export function CreateIngredientDialog({
 
   async function handleSubmit(input: IngredientInput) {
     if (!userId) return;
-    const created = await createIngredient(userId, input);
+    const created = await createIngredient(userId, groupId, input);
     onCreated(created);
   }
 

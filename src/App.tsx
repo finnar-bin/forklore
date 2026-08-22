@@ -67,6 +67,14 @@ function App() {
             <Route path="/recipes/:recipeId" element={<RecipeDetailPage />} />
             <Route path="/log" element={<LogPage />} />
             <Route path="/logs" element={<LogsPage />} />
+            {/* Same component as the personal routes above, just with a
+                :groupId param present — see routes.md's "Personal vs. group"
+                note and docs/pending-deviations.md (Ticket 12). */}
+            <Route path="/groups/:groupId/pantry" element={<PantryPage />} />
+            <Route path="/groups/:groupId/pantry/:ingredientId" element={<IngredientDetailPage />} />
+            <Route path="/groups/:groupId/recipes" element={<RecipesPage />} />
+            <Route path="/groups/:groupId/recipes/:recipeId" element={<RecipeDetailPage />} />
+            <Route path="/groups/:groupId/log" element={<LogPage />} />
             <Route path="/groups" element={<GroupsPage />} />
             <Route path="/sync-status" element={<SyncStatusPage />} />
           </Route>

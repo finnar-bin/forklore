@@ -123,3 +123,17 @@ Same database-connection restriction as above.
 9. Concurrent-acceptance check (the ticket's specific acceptance criterion beyond simple single-use): generate a fresh invite, preview it once as a user so it sits on the confirm screen, then fire two `accept_group_invite` calls at the same code at effectively the same time (e.g. two browser tabs both tapping "Join group" within the same second, or two `curl`/Postman requests against the PostgREST RPC endpoint fired back to back) — confirm exactly one succeeds and the other gets the "Invalid or expired invite code" error, and that only one new `group_members` row was created. This can't be verified by two sequential manual clicks (step 8 already covers that case); it specifically needs two requests genuinely in flight at once.
 10. Let an invite sit unused past its `expires_at` (or manually backdate `expires_at` on a test row in the Table Editor) → confirm opening that link shows the expired/invalid error at the preview step, before any join attempt.
 11. Record the result somewhere durable (PR description, ticket comment) — same as prior tickets, this is the acceptance criterion, not something provable from the code alone.
+
+## Ticket 12 manual verification (group context switcher)
+
+Same database-connection restriction as above — no new migration for this ticket. Needs at least two accounts that are both members of the same group (see Ticket 11's steps above to get there).
+
+1. `npm run dev`, log in as user A (a member of at least one group) and visit `/pantry` → confirm the context switcher chip reads "Personal" and lists "Personal" plus every group A belongs to when tapped.
+2. Select a group from the chip → confirm the URL becomes `/groups/<id>/pantry`, the chip now shows that group's name, and the visible list changes (starts empty for a brand-new group).
+3. Add an ingredient while in that group's context → confirm it appears in the group's pantry list, and in the Table Editor the new `ingredients` row has `group_id` set to that group (not null) and `created_by` = A.
+4. Switch the chip back to "Personal" → confirm the URL returns to `/pantry` and the list shows only A's personal ingredients (the one just added to the group should **not** appear here).
+5. Repeat steps 2–4 for `/recipes` (including adding an ingredient to a group recipe via both "From pantry" and "New ingredient" in the Add ingredient dialog) and `/log` (logging both an ingredient and a recipe while in group context).
+6. Log in as user B (a different account, same group) and visit `/groups/<id>/pantry|recipes|log` directly → confirm B sees the ingredient/recipe/log entry A added in step 3–5 (allow up to the ~60s pull interval, or trigger it sooner by reloading/reconnecting) — this is the "changes are visible to other members" acceptance criterion.
+7. As A, visit `/logs` (all-time log) → confirm it now shows the log entries logged in step 5's group context alongside personal ones, not personal-only — this exercises the `fetchAllLogEntries` fix in `docs/pending-deviations.md` (Ticket 12).
+8. Confirm `/pantry/:ingredientId` and `/recipes/:recipeId` opened from inside a group's list carry the group in their URL (`/groups/:groupId/pantry/:id`) and that saving or deleting there navigates back to that group's list, not the personal one.
+9. Record the result somewhere durable (PR description, ticket comment) — same as prior tickets, this is the acceptance criterion, not something provable from the code alone.

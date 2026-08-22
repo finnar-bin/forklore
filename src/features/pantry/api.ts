@@ -17,11 +17,20 @@ export interface IngredientUsage {
 }
 
 // Reads come from Dexie, not Supabase — see frontend-architecture.md
-// "Offline sync — outbox pattern". Personal pantry only — group_id
-// hardcoded null per this ticket's scope. Group-scoped pantry is Ticket 12.
-export async function fetchIngredients(userId: string): Promise<Ingredient[]> {
-  const rows = await db.ingredients.where('created_by').equals(userId).toArray();
-  return rows.filter((i) => i.group_id === null).sort((a, b) => a.name.localeCompare(b.name));
+// "Offline sync — outbox pattern". `groupId: null` is the personal pantry
+// (scoped to the caller via `created_by`, matching the personal RLS policy's
+// own shape); a group id shows every ingredient belonging to that group
+// regardless of who added it, matching "group members see the whole group's
+// pantry" (schema.md's RLS policies key group rows off `group_id` alone, not
+// `created_by`). See docs/pending-deviations.md (Ticket 12).
+export async function fetchIngredients(userId: string, groupId: string | null): Promise<Ingredient[]> {
+  const rows =
+    groupId === null
+      ? (await db.ingredients.where('created_by').equals(userId).toArray()).filter(
+          (i) => i.group_id === null,
+        )
+      : await db.ingredients.where('group_id').equals(groupId).toArray();
+  return rows.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function fetchIngredient(id: string): Promise<Ingredient | undefined> {
@@ -32,12 +41,13 @@ export async function fetchIngredient(id: string): Promise<Ingredient | undefine
 // for Supabase — see frontend-architecture.md "Offline sync — outbox pattern".
 export async function createIngredient(
   userId: string,
+  groupId: string | null,
   input: IngredientInput,
 ): Promise<Ingredient> {
   const now = new Date().toISOString();
   const ingredient: Ingredient = {
     id: crypto.randomUUID(),
-    group_id: null,
+    group_id: groupId,
     created_by: userId,
     ...input,
     created_at: now,
