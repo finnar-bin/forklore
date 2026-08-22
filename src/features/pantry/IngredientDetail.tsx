@@ -42,10 +42,13 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
 
   // Group-context metadata only (design-system.md's "who added it" pattern
   // has no reason to name the user to themselves in personal context) — see
-  // docs/pending-deviations.md (Ticket 12).
+  // docs/pending-deviations.md (Ticket 12). `!= null` (not `!== null`) so a
+  // pre-migration Dexie row that's missing `updated_by` entirely (`undefined`,
+  // not `null` — see useProfileNames) doesn't slip through.
   const profileIds =
-    groupId && ingredient ? [ingredient.created_by, ingredient.updated_by].filter((id) => id !== null) : [];
+    groupId && ingredient ? [ingredient.created_by, ingredient.updated_by].filter((id) => id != null) : [];
   const profileNames = useProfileNames(profileIds);
+  const wasUpdated = ingredient?.updated_by != null;
 
   async function handleSubmit(input: IngredientInput) {
     if (!ingredientId || !userId) return;
@@ -85,7 +88,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
           createdAt={ingredient.created_at}
           updaterName={ingredient.updated_by ? profileNames[ingredient.updated_by] : undefined}
           updatedAt={ingredient.updated_at}
-          wasUpdated={ingredient.updated_by !== null}
+          wasUpdated={wasUpdated}
         />
       )}
 

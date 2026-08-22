@@ -6,7 +6,11 @@ import { fetchProfileNames } from './api';
 // `ingredients.map(i => i.created_by)`), which would re-fetch every render
 // if this effect depended on the array reference directly.
 export function useProfileNames(userIds: string[]): Record<string, string> {
-  const key = Array.from(new Set(userIds)).sort().join(',');
+  // `.filter(Boolean)` guards the same way fetchProfileNames does — an
+  // undefined/empty id in `key` would otherwise stringify to an empty
+  // segment via Array.join, which `fetchProfileNames` would also catch, but
+  // filtering here too keeps a bad id from ever entering the cache key.
+  const key = Array.from(new Set(userIds.filter(Boolean))).sort().join(',');
   const [names, setNames] = useState<Record<string, string>>({});
 
   useEffect(() => {

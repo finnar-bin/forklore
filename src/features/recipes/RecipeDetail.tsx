@@ -80,12 +80,16 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Group-context metadata only, read from the last-persisted baseline
-  // (not the live draft) — see docs/pending-deviations.md (Ticket 12).
+  // (not the live draft) — see docs/pending-deviations.md (Ticket 12). `!=
+  // null` (not `!== null`) so a pre-migration Dexie row that's missing
+  // `updated_by` entirely (`undefined`, not `null` — see useProfileNames)
+  // doesn't slip through.
   const profileIds =
     groupId && savedRecipe
-      ? [savedRecipe.created_by, savedRecipe.updated_by].filter((id) => id !== null)
+      ? [savedRecipe.created_by, savedRecipe.updated_by].filter((id) => id != null)
       : [];
   const profileNames = useProfileNames(profileIds);
+  const wasUpdated = savedRecipe?.updated_by != null;
 
   function applyRecipeBaseline(next: Recipe) {
     setSavedRecipe(next);
@@ -289,7 +293,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
           createdAt={savedRecipe.created_at}
           updaterName={savedRecipe.updated_by ? profileNames[savedRecipe.updated_by] : undefined}
           updatedAt={savedRecipe.updated_at}
-          wasUpdated={savedRecipe.updated_by !== null}
+          wasUpdated={wasUpdated}
         />
       )}
 
