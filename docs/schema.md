@@ -98,7 +98,7 @@ create table public.group_invites (
   id uuid primary key default gen_random_uuid(),
   group_id uuid not null references public.groups(id) on delete cascade,
   invited_by uuid not null references public.profiles(id),
-  invite_code text not null unique default encode(gen_random_bytes(6), 'hex'),
+  invite_code text not null unique default encode(extensions.gen_random_bytes(6), 'hex'),
   expires_at timestamptz not null default (now() + interval '7 days'),
   accepted_by uuid references public.profiles(id),
   accepted_at timestamptz,

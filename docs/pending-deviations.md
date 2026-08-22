@@ -373,7 +373,7 @@ Because the item picker can now surface any group's ingredients/recipes regardle
 
 **Deviation:** Three mechanical hardening changes with no documented spec to deviate from, added directly from the audit's findings rather than requested feature work:
 - `search_path` pinned (`set search_path = public`) on all seven `security definer` functions (`handle_new_user`, `is_group_member`, `shares_group_with`, `create_group`, `accept_group_invite`, `preview_group_invite`, `complete_onboarding`) — flagged by Postgres/Supabase's own linter for this function type. `check_ingredient_usage` is not `security definer` and was left alone.
-- Group invite codes (`group_invites.invite_code`) switched from `substr(md5(random()::text), 1, 8)` (~32 bits, non-cryptographic RNG) to `encode(gen_random_bytes(6), 'hex')` (48 bits, `pgcrypto`'s CSPRNG, already enabled). `schema.md` updated to match.
+- Group invite codes (`group_invites.invite_code`) switched from `substr(md5(random()::text), 1, 8)` (~32 bits, non-cryptographic RNG) to `encode(extensions.gen_random_bytes(6), 'hex')` (48 bits, `pgcrypto`'s CSPRNG — schema-qualified because Supabase installs pgcrypto into the `extensions` schema, not `public`, unlike `gen_random_uuid()` which is Postgres core). `schema.md` updated to match.
 - `recalculate_recipe_kcal` now takes an explicit `for update` lock on the target recipe row before recomputing `total_kcal`, closing a race where two near-simultaneous edits to the same recipe's ingredients could each read the pre-both-changes sum and the second commit would silently discard the first's contribution.
 
 See `supabase/migrations/20260901000000_security_hardening.sql` and `20260902000000_recalc_recipe_kcal_locking.sql`.

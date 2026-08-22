@@ -133,5 +133,10 @@ $$ language plpgsql security definer set search_path = public;
 -- definer` clause, so it already runs with the caller's own privileges and
 -- isn't subject to this search_path concern.
 
+-- Supabase installs pgcrypto into the `extensions` schema, not `public` —
+-- unlike gen_random_uuid() (built into Postgres core since v13, used
+-- elsewhere in this file's id defaults), gen_random_bytes is pgcrypto-only
+-- and isn't resolvable unqualified under this migration's default
+-- search_path.
 alter table public.group_invites
-  alter column invite_code set default encode(gen_random_bytes(6), 'hex');
+  alter column invite_code set default encode(extensions.gen_random_bytes(6), 'hex');
