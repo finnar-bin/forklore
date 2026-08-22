@@ -12,6 +12,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
 import { useAppStore } from '../../store/useAppStore';
+import { useProfileNames } from '../profiles/useProfileNames';
 import { fetchTodayLogEntries } from './api';
 import { AddLogEntryDialog } from './AddLogEntryDialog';
 import { EditLogEntryDialog } from './EditLogEntryDialog';
@@ -37,6 +38,10 @@ export function DailyLog({ groupId }: { groupId: string | null }) {
   const loading = entries === undefined;
 
   const totalKcal = (entries ?? []).reduce((sum, entry) => sum + entry.snapshot_kcal, 0);
+
+  // Group context only — see LogEntryCard's loggerName prop and
+  // docs/pending-deviations.md (Ticket 12 follow-up, "logged by" name).
+  const loggerNames = useProfileNames(groupId ? (entries ?? []).map((e) => e.logged_by) : []);
 
   return (
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
@@ -78,6 +83,7 @@ export function DailyLog({ groupId }: { groupId: string | null }) {
               hour: 'numeric',
               minute: '2-digit',
             })}
+            loggerName={groupId ? loggerNames[entry.logged_by] : undefined}
             onClick={() => setEditingEntry(entry)}
           />
         ))}

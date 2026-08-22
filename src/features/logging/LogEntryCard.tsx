@@ -11,10 +11,16 @@ import type { LogEntry } from '../../types/log';
 export function LogEntryCard({
   entry,
   subtitle,
+  loggerName,
   onClick,
 }: {
   entry: LogEntry;
   subtitle: string;
+  // Group context only — who actually logged this entry (entry.logged_by),
+  // distinct from whose shared log it's on (entry.group_id). Undefined in
+  // personal context, where it'd just be naming the viewer to themselves.
+  // See docs/pending-deviations.md (Ticket 12 follow-up, "logged by" name).
+  loggerName?: string;
   onClick?: () => void;
 }) {
   const { mode, systemMode } = useColorScheme();
@@ -50,6 +56,7 @@ export function LogEntryCard({
         </Box>
         <Typography fontSize={12} color="text.secondary" noWrap>
           {subtitle}
+          {loggerName && ` · Logged by ${loggerName}`}
         </Typography>
       </Box>
       <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
