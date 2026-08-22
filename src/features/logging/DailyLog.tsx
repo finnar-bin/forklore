@@ -119,7 +119,7 @@ export function DailyLog({
               minute: '2-digit',
             })}
             loggerName={groupId ? loggerNames[entry.logged_by] : undefined}
-            onClick={() => setEditingEntry(entry)}
+            onClick={entry.logged_by === userId ? () => setEditingEntry(entry) : undefined}
           />
         ))}
       </Stack>
