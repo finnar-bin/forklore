@@ -2,8 +2,10 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
+import SettingsIcon from '@mui/icons-material/Settings';
 import GroupIcon from '@mui/icons-material/Group';
 import { useColorScheme } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
 import { shadows } from '../../theme/theme';
 import type { GroupMembership } from '../../types/group';
 
@@ -22,6 +24,7 @@ export function GroupCard({
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
+  const navigate = useNavigate();
   const { group, role } = membership;
 
   return (
@@ -62,6 +65,18 @@ export function GroupCard({
       {role === 'owner' && (
         <IconButton aria-label={`Invite someone to ${group.name}`} onClick={onInvite}>
           <PersonAddAltIcon />
+        </IconButton>
+      )}
+      {/* Only real entry point to /groups/:groupId/settings — hidden for
+          non-owners per this ticket's acceptance criteria (RequireGroupOwner
+          also enforces this server-side-backed check if the URL is typed
+          directly). See docs/pending-deviations.md (Ticket 13). */}
+      {role === 'owner' && (
+        <IconButton
+          aria-label={`${group.name} settings`}
+          onClick={() => navigate(`/groups/${group.id}/settings`)}
+        >
+          <SettingsIcon />
         </IconButton>
       )}
     </Box>
