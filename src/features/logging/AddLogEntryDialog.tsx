@@ -16,6 +16,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { fetchIngredients } from '../pantry/api';
 import { fetchRecipes } from '../recipes/api';
 import { createLogEntry, type LogEntryInput } from './api';
+import { formatIngredientLabel, formatRecipeLabel } from './formatItemLabel';
 import { LogIngredientStep } from './LogIngredientStep';
 import { LogRecipeStep } from './LogRecipeStep';
 import type { Ingredient } from '../../types/ingredient';
@@ -116,7 +117,7 @@ function AddLogEntryForm({
           ) : (
             <Autocomplete
               options={ingredients}
-              getOptionLabel={(option) => option.name}
+              getOptionLabel={formatIngredientLabel}
               onChange={(_, value) => setSelectedIngredient(value)}
               isOptionEqualToValue={(option, value) => option.id === value.id}
               renderInput={(params) => <TextField {...params} label="Ingredient" autoFocus />}
@@ -133,7 +134,7 @@ function AddLogEntryForm({
         ) : (
           <Autocomplete
             options={recipes}
-            getOptionLabel={(option) => option.name}
+            getOptionLabel={formatRecipeLabel}
             onChange={(_, value) => setSelectedRecipe(value)}
             isOptionEqualToValue={(option, value) => option.id === value.id}
             renderInput={(params) => <TextField {...params} label="Recipe" autoFocus />}

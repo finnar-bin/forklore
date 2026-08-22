@@ -9,6 +9,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import type { Recipe } from '../../types/recipe';
 import type { LogEntryInput } from './api';
+import { formatRecipeLabel } from './formatItemLabel';
 
 // Asks how many grams of this recipe were eaten, then snapshots kcal scaled
 // from that — mirrors the quantity-scaling pattern already established for
@@ -32,7 +33,12 @@ export function LogRecipeStep({
   const [error, setError] = useState<string | null>(null);
 
   const parsedGramsEaten = Number(gramsEaten);
-  const canLog = Number.isFinite(parsedGramsEaten) && parsedGramsEaten > 0;
+  // Only flagged once something's actually been typed — an empty field
+  // isn't "negative" or "over the limit," it's just not filled in yet
+  // (canLog below already keeps the button disabled either way).
+  const isNegative = gramsEaten !== '' && parsedGramsEaten < 0;
+  const exceedsWeight = gramsEaten !== '' && parsedGramsEaten > recipe.weight_g;
+  const canLog = Number.isFinite(parsedGramsEaten) && parsedGramsEaten > 0 && parsedGramsEaten <= recipe.weight_g;
   const kcal = recipe.weight_g > 0 ? (recipe.total_kcal / recipe.weight_g) * parsedGramsEaten : 0;
 
   async function handleLog() {
@@ -59,7 +65,7 @@ export function LogRecipeStep({
       <DialogContent sx={{ pt: '12px !important' }}>
         <Stack spacing={2.5}>
           <Typography color="text.secondary" fontSize={14}>
-            {recipe.name}
+            {formatRecipeLabel(recipe)}
           </Typography>
           <TextField
             label="Amount eaten"
@@ -70,8 +76,16 @@ export function LogRecipeStep({
             fullWidth
             autoFocus
             disabled={submitting}
+            error={isNegative || exceedsWeight}
+            helperText={
+              isNegative
+                ? 'Enter a positive amount.'
+                : exceedsWeight
+                  ? `Can't exceed this recipe's total weight (${recipe.weight_g}g).`
+                  : undefined
+            }
             slotProps={{
-              htmlInput: { min: 0, step: 1 },
+              htmlInput: { min: 0, max: recipe.weight_g, step: 1 },
               input: { endAdornment: <InputAdornment position="end">g</InputAdornment> },
             }}
           />

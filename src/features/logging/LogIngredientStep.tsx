@@ -9,6 +9,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import type { Ingredient } from '../../types/ingredient';
 import type { LogEntryInput } from './api';
+import { formatIngredientLabel } from './formatItemLabel';
 
 // Asks how much of this ingredient was eaten, in the ingredient's own unit
 // (read-only, inherited — never user-selectable, same rule as recipe
@@ -27,6 +28,10 @@ export function LogIngredientStep({
   const [error, setError] = useState<string | null>(null);
 
   const parsedQuantity = Number(quantity);
+  // Only flagged once something's actually been typed — an empty field
+  // isn't "negative," it's just not filled in yet (canLog below already
+  // keeps the button disabled either way).
+  const isNegative = quantity !== '' && parsedQuantity < 0;
   const canLog = Number.isFinite(parsedQuantity) && parsedQuantity > 0;
   const kcal = ingredient.quantity > 0 ? (ingredient.kcal / ingredient.quantity) * parsedQuantity : 0;
 
@@ -54,7 +59,7 @@ export function LogIngredientStep({
       <DialogContent sx={{ pt: '12px !important' }}>
         <Stack spacing={2.5}>
           <Typography color="text.secondary" fontSize={14}>
-            {ingredient.name}
+            {formatIngredientLabel(ingredient)}
           </Typography>
           <TextField
             label="Quantity eaten"
@@ -65,6 +70,8 @@ export function LogIngredientStep({
             fullWidth
             autoFocus
             disabled={submitting}
+            error={isNegative}
+            helperText={isNegative ? 'Enter a positive amount.' : undefined}
             slotProps={{
               htmlInput: { min: 0, step: 0.01 },
               input: { endAdornment: <InputAdornment position="end">{ingredient.unit}</InputAdornment> },
