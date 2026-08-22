@@ -8,11 +8,12 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import { useAppStore } from '../../store/useAppStore';
+import { useProfileNames } from '../profiles/useProfileNames';
 import { fetchRecipes } from './api';
 import { RecipeCard } from './RecipeCard';
 import { CreateRecipeDialog } from './CreateRecipeDialog';
 
-export function RecipeList() {
+export function RecipeList({ groupId }: { groupId: string | null }) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
 
@@ -20,8 +21,13 @@ export function RecipeList() {
 
   // Reads from Dexie, not Supabase — re-renders automatically on local
   // writes (this device) and pulled remote changes alike.
-  const recipes = useLiveQuery(() => (userId ? fetchRecipes(userId) : []), [userId]);
+  const recipes = useLiveQuery(() => (userId ? fetchRecipes(userId, groupId) : []), [userId, groupId]);
   const loading = recipes === undefined;
+  const detailPath = groupId ? `/groups/${groupId}/recipes` : '/recipes';
+
+  // Group context only — see RecipeCard's creatorName prop and
+  // docs/pending-deviations.md (Ticket 12).
+  const creatorNames = useProfileNames(groupId ? (recipes ?? []).map((r) => r.created_by) : []);
 
   return (
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
@@ -38,7 +44,9 @@ export function RecipeList() {
 
         {!loading && recipes?.length === 0 && (
           <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-            Your recipes are empty. Add your first recipe to get started.
+            {groupId
+              ? "This group's recipes are empty. Add the first recipe to get started."
+              : 'Your recipes are empty. Add your first recipe to get started.'}
           </Typography>
         )}
 
@@ -46,7 +54,8 @@ export function RecipeList() {
           <RecipeCard
             key={recipe.id}
             recipe={recipe}
-            onClick={() => navigate(`/recipes/${recipe.id}`)}
+            creatorName={groupId ? creatorNames[recipe.created_by] : undefined}
+            onClick={() => navigate(`${detailPath}/${recipe.id}`)}
           />
         ))}
       </Stack>
@@ -70,11 +79,12 @@ export function RecipeList() {
 
       <CreateRecipeDialog
         open={createOpen}
+        groupId={groupId}
         onClose={() => setCreateOpen(false)}
         onCreated={(created) => {
           // Straight to detail, not back to the list — a brand-new recipe has
           // no ingredients yet, and that's the very next thing to add.
-          navigate(`/recipes/${created.id}`, { replace: true });
+          navigate(`${detailPath}/${created.id}`, { replace: true });
         }}
       />
     </Box>

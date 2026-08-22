@@ -9,9 +9,16 @@ import type { Ingredient } from '../../types/ingredient';
 // subtitle, primary/secondary metric on the right.
 export function IngredientCard({
   ingredient,
+  creatorName,
   onClick,
 }: {
   ingredient: Ingredient;
+  // Group context only (design-system.md's card subtitle pattern —
+  // "quantity+who added it" — see docs/pending-deviations.md, Ticket 12).
+  // Undefined in personal context; while loading in group context it's
+  // still undefined, so the subtitle just omits the clause rather than
+  // showing a placeholder.
+  creatorName?: string;
   onClick: () => void;
 }) {
   const { mode, systemMode } = useColorScheme();
@@ -40,6 +47,7 @@ export function IngredientCard({
         </Typography>
         <Typography fontSize={12} color="text.secondary" noWrap>
           {ingredient.quantity} {ingredient.unit}
+          {creatorName && ` · Added by ${creatorName}`}
         </Typography>
       </Box>
       <Box sx={{ textAlign: 'right', flexShrink: 0 }}>

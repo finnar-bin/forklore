@@ -12,13 +12,31 @@ import AddIcon from '@mui/icons-material/Add';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
 import { useAppStore } from '../../store/useAppStore';
+import { useProfileNames } from '../profiles/useProfileNames';
 import { fetchTodayLogEntries } from './api';
 import { AddLogEntryDialog } from './AddLogEntryDialog';
 import { EditLogEntryDialog } from './EditLogEntryDialog';
 import { LogEntryCard } from './LogEntryCard';
 import type { LogEntry } from '../../types/log';
 
-export function DailyLog() {
+export function DailyLog({
+  groupId,
+  groupName,
+  hasGroups,
+}: {
+  groupId: string | null;
+  // Resolved by LogPage (which already looks it up for the header title) so
+  // this component doesn't duplicate that fetchMyGroups call — see
+  // docs/pending-deviations.md (Ticket 12 follow-up, "group's all-time
+  // history"). Only meaningful when groupId is set.
+  groupName?: string | null;
+  // Whether the caller belongs to any group at all — hides "View group
+  // logs" entirely (personal context only) when there's nowhere for it to
+  // lead. Requested directly. Undefined while LogPage's own group-list fetch
+  // is still in flight, treated the same as false (the button pops in once
+  // it resolves, rather than flashing then disappearing for a no-groups user).
+  hasGroups?: boolean;
+}) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
   const { mode, systemMode } = useColorScheme();
@@ -30,10 +48,17 @@ export function DailyLog() {
 
   // Reads from Dexie, not Supabase — re-renders automatically on
   // create/edit/delete (this device) and pulled remote changes alike.
-  const entries = useLiveQuery(() => (userId ? fetchTodayLogEntries(userId) : []), [userId]);
+  const entries = useLiveQuery(
+    () => (userId ? fetchTodayLogEntries(userId, groupId) : []),
+    [userId, groupId],
+  );
   const loading = entries === undefined;
 
   const totalKcal = (entries ?? []).reduce((sum, entry) => sum + entry.snapshot_kcal, 0);
+
+  // Group context only — see LogEntryCard's loggerName prop and
+  // docs/pending-deviations.md (Ticket 12 follow-up, "logged by" name).
+  const loggerNames = useProfileNames(groupId ? (entries ?? []).map((e) => e.logged_by) : []);
 
   return (
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
@@ -51,7 +76,25 @@ export function DailyLog() {
           </Typography>
         </Paper>
 
-        <Button onClick={() => navigate('/logs')}>View all-time history</Button>
+        <Stack direction="row" spacing={1}>
+          <Button
+            onClick={() => navigate(groupId ? `/groups/${groupId}/logs` : '/logs')}
+            sx={{ flex: 1 }}
+          >
+            {groupId ? `View ${groupName ?? 'group'}'s all-time history` : 'View all-time history'}
+          </Button>
+          {groupId ? (
+            <Button onClick={() => navigate('/log')} sx={{ flex: 1 }}>
+              View personal logs
+            </Button>
+          ) : (
+            hasGroups && (
+              <Button onClick={() => navigate('/logs/groups')} sx={{ flex: 1 }}>
+                View group logs
+              </Button>
+            )
+          )}
+        </Stack>
 
         {loading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -61,7 +104,9 @@ export function DailyLog() {
 
         {!loading && entries?.length === 0 && (
           <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-            Nothing logged yet today. Add your first entry to get started.
+            {groupId
+              ? "Nothing logged yet today in this group. Add the first entry to get started."
+              : 'Nothing logged yet today. Add your first entry to get started.'}
           </Typography>
         )}
 
@@ -73,7 +118,8 @@ export function DailyLog() {
               hour: 'numeric',
               minute: '2-digit',
             })}
-            onClick={() => setEditingEntry(entry)}
+            loggerName={groupId ? loggerNames[entry.logged_by] : undefined}
+            onClick={entry.logged_by === userId ? () => setEditingEntry(entry) : undefined}
           />
         ))}
       </Stack>
@@ -93,7 +139,11 @@ export function DailyLog() {
         <AddIcon />
       </Fab>
 
-      <AddLogEntryDialog open={addOpen} onClose={() => setAddOpen(false)} onLogged={() => setAddOpen(false)} />
+      <AddLogEntryDialog
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onLogged={() => setAddOpen(false)}
+      />
 
       {editingEntry && (
         <EditLogEntryDialog

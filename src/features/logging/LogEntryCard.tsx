@@ -11,10 +11,16 @@ import type { LogEntry } from '../../types/log';
 export function LogEntryCard({
   entry,
   subtitle,
+  loggerName,
   onClick,
 }: {
   entry: LogEntry;
   subtitle: string;
+  // Group context only — who actually logged this entry (entry.logged_by),
+  // distinct from whose shared log it's on (entry.group_id). Undefined in
+  // personal context, where it'd just be naming the viewer to themselves.
+  // See docs/pending-deviations.md (Ticket 12 follow-up, "logged by" name).
+  loggerName?: string;
   onClick?: () => void;
 }) {
   const { mode, systemMode } = useColorScheme();
@@ -38,11 +44,19 @@ export function LogEntryCard({
     >
       <PhotoThumbnail photoUrl={null} alt={entry.snapshot_name} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography fontSize={14} fontWeight={500} noWrap>
-          {entry.snapshot_name}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, minWidth: 0 }}>
+          <Typography fontSize={14} fontWeight={500} noWrap sx={{ minWidth: 0 }}>
+            {entry.snapshot_name}
+          </Typography>
+          {entry.snapshot_quantity !== null && (
+            <Typography fontSize={12} color="text.secondary" noWrap sx={{ flexShrink: 0 }}>
+              {entry.snapshot_quantity} {entry.snapshot_unit}
+            </Typography>
+          )}
+        </Box>
         <Typography fontSize={12} color="text.secondary" noWrap>
           {subtitle}
+          {loggerName && ` · Logged by ${loggerName}`}
         </Typography>
       </Box>
       <Box sx={{ textAlign: 'right', flexShrink: 0 }}>

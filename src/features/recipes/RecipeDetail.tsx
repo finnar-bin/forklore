@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
+import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -13,6 +14,9 @@ import Typography from '@mui/material/Typography';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
 import { PhotoThumbnail } from '../../components/PhotoThumbnail';
+import { ItemMetadata } from '../../components/ItemMetadata';
+import { useAppStore } from '../../store/useAppStore';
+import { useProfileNames } from '../profiles/useProfileNames';
 import {
   addRecipeIngredient,
   deleteRecipe,
@@ -25,7 +29,7 @@ import {
 } from './api';
 import { DeleteRecipeDialog } from './DeleteRecipeDialog';
 import { RecipeIngredientsList } from './RecipeIngredientsList';
-import type { Recipe, RecipeIngredientDetail } from '../../types/recipe';
+import type { Recipe, RecipeIngredientDetail, WeightUnit } from '../../types/recipe';
 import type { Ingredient } from '../../types/ingredient';
 
 // Distinguishes "still loading" from "query resolved, nothing found" — see
@@ -33,9 +37,9 @@ import type { Ingredient } from '../../types/ingredient';
 const LOADING = Symbol('loading');
 
 // Everything on this screen (recipe fields + ingredient lines) is staged
-// client-side in `name`/`servings`/`photoUrl`/`ingredients` and only written
-// on Save. The recipe's own fields (name/servings/photo) read from and write
-// to Dexie — offline-capable, per this ticket. The ingredient lines
+// client-side in `name`/`weight`/`weightUnit`/`photoUrl`/`ingredients` and
+// only written on Save. The recipe's own fields (name/weight/photo) read
+// from and write to Dexie — offline-capable, per this ticket. The ingredient lines
 // (recipe_ingredients) are not mirrored in Dexie and still read/write
 // straight to Supabase — total_kcal is only ever correct once recalculated
 // by the server-side trigger, so there's no offline-correct way to stage
@@ -43,9 +47,10 @@ const LOADING = Symbol('loading');
 // `savedRecipe`/`savedIngredients` hold the last persisted snapshot, used
 // both to diff what actually changed at save time and to know whether
 // there's anything to save at all.
-export function RecipeDetail() {
+export function RecipeDetail({ groupId, backPath }: { groupId: string | null; backPath: string }) {
   const { recipeId } = useParams<{ recipeId: string }>();
   const navigate = useNavigate();
+  const userId = useAppStore((state) => state.userId);
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
@@ -62,7 +67,12 @@ export function RecipeDetail() {
   const [savedIngredients, setSavedIngredients] = useState<RecipeIngredientDetail[]>([]);
 
   const [name, setName] = useState('');
-  const [servings, setServings] = useState('1');
+  // weight/weightUnit: entry-convenience state, not persisted directly —
+  // weightUnit always resets to 'g' when a baseline (re)loads, since the
+  // server only ever stores grams (see docs/pending-deviations.md, Ticket
+  // 12 follow-up, "servings -> weight").
+  const [weight, setWeight] = useState('0');
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>('g');
   const [photoUrl, setPhotoUrl] = useState('');
   const [ingredients, setIngredients] = useState<RecipeIngredientDetail[]>([]);
 
@@ -75,10 +85,23 @@ export function RecipeDetail() {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  // Group-context metadata only, read from the last-persisted baseline
+  // (not the live draft) — see docs/pending-deviations.md (Ticket 12). `!=
+  // null` (not `!== null`) so a pre-migration Dexie row that's missing
+  // `updated_by` entirely (`undefined`, not `null` — see useProfileNames)
+  // doesn't slip through.
+  const profileIds =
+    groupId && savedRecipe
+      ? [savedRecipe.created_by, savedRecipe.updated_by].filter((id) => id != null)
+      : [];
+  const profileNames = useProfileNames(profileIds);
+  const wasUpdated = savedRecipe?.updated_by != null;
+
   function applyRecipeBaseline(next: Recipe) {
     setSavedRecipe(next);
     setName(next.name);
-    setServings(next.servings.toString());
+    setWeight(next.weight_g.toString());
+    setWeightUnit('g');
     setPhotoUrl(next.photo_url ?? '');
   }
 
@@ -114,7 +137,16 @@ export function RecipeDetail() {
       .finally(() => setIngredientsLoading(false));
   }, [recipeId]);
 
-  const servingsNum = Number(servings);
+  const parsedWeight = Number(weight);
+  // Always the grams value that would actually be saved, regardless of
+  // which unit is currently selected — used for the dirty check, validity,
+  // and the live per-gram kcal calculation below. Rounded to the nearest
+  // gram — a plain `* 1000` can land on a floating-point artifact (e.g.
+  // 1.005 * 1000 === 1004.9999999999999) that would otherwise get stored
+  // and displayed as-is, and would also make the dirty-check spuriously
+  // true after a save (savedRecipe.weight_g comes back as the same rounded
+  // integer the server actually stored).
+  const weightG = weightUnit === 'kg' ? Math.round(parsedWeight * 1000) : parsedWeight;
 
   // Realtime — recomputed on every keystroke/add/remove from the draft
   // ingredient list, not read from the persisted recipe row. Uses the same
@@ -128,22 +160,22 @@ export function RecipeDetail() {
       ),
     [ingredients],
   );
-  const perServing = servingsNum > 0 ? totalKcal / servingsNum : 0;
+  const perGram = weightG > 0 ? totalKcal / weightG : 0;
 
   const isDirty = useMemo(() => {
     if (!savedRecipe) return false;
     const normalizedPhoto = photoUrl.trim() === '' ? null : photoUrl.trim();
     if (name !== savedRecipe.name) return true;
-    if (servingsNum !== savedRecipe.servings) return true;
+    if (weightG !== savedRecipe.weight_g) return true;
     if (normalizedPhoto !== savedRecipe.photo_url) return true;
     if (ingredients.length !== savedIngredients.length) return true;
     return ingredients.some((item) => {
       const prev = savedIngredients.find((s) => s.ingredient_id === item.ingredient_id);
       return !prev || prev.quantity_used !== item.quantity_used;
     });
-  }, [name, servingsNum, photoUrl, ingredients, savedRecipe, savedIngredients]);
+  }, [name, weightG, photoUrl, ingredients, savedRecipe, savedIngredients]);
 
-  const isValid = name.trim() !== '' && Number.isFinite(servingsNum) && servingsNum >= 1;
+  const isValid = name.trim() !== '' && Number.isFinite(weightG) && weightG > 0;
 
   function handleAddIngredient(ingredient: Ingredient, quantityUsed: number) {
     setIngredients((prev) => [
@@ -172,11 +204,11 @@ export function RecipeDetail() {
   async function handleDelete() {
     if (!recipeId) return;
     await deleteRecipe(recipeId);
-    navigate('/recipes', { replace: true });
+    navigate(backPath, { replace: true });
   }
 
   async function handleSave() {
-    if (!recipeId || !savedRecipe) return;
+    if (!recipeId || !savedRecipe || !userId) return;
     setSaving(true);
     setSaveError(null);
     try {
@@ -185,33 +217,57 @@ export function RecipeDetail() {
       const normalizedPhoto = photoUrl.trim() === '' ? null : photoUrl.trim();
       const fieldsChanged =
         name !== savedRecipe.name ||
-        servingsNum !== savedRecipe.servings ||
+        weightG !== savedRecipe.weight_g ||
         normalizedPhoto !== savedRecipe.photo_url;
       if (fieldsChanged) {
-        const updated = await updateRecipe(recipeId, { name, servings: servingsNum, photo_url: normalizedPhoto });
+        const updated = await updateRecipe(recipeId, userId, {
+          name,
+          weight_g: weightG,
+          photo_url: normalizedPhoto,
+        });
         applyRecipeBaseline(updated);
       }
 
       // Ingredient-line changes require connectivity (see file header).
-      const ops: Promise<unknown>[] = [];
+      // Built as thunks and run sequentially below — NOT fired concurrently
+      // (the previous `ops.push(someCall(...))` shape started every call
+      // immediately as its own independent request/transaction, then just
+      // waited on all of them via Promise.allSettled). Each of these fires
+      // the server-side recalculate_recipe_kcal trigger, which recomputes
+      // total_kcal from scratch by re-reading every recipe_ingredients row
+      // for this recipe at the moment it runs — running them concurrently
+      // is a race where whichever transaction commits last wins, but if its
+      // own read ran before an earlier op's write had committed, it
+      // overwrites the correct combined total with a partial one (e.g.
+      // adding two ingredients in one save could leave total_kcal
+      // reflecting only one of them, even though both rows exist). See
+      // docs/pending-deviations.md (Ticket 12 follow-up, "recipe totals
+      // racing on multi-ingredient saves").
+      const ops: Array<() => Promise<void>> = [];
       const draftIds = new Set(ingredients.map((i) => i.ingredient_id));
       for (const saved of savedIngredients) {
         if (!draftIds.has(saved.ingredient_id)) {
-          ops.push(removeRecipeIngredient(recipeId, saved.ingredient_id));
+          ops.push(() => removeRecipeIngredient(recipeId, saved.ingredient_id));
         }
       }
       for (const item of ingredients) {
         const prev = savedIngredients.find((s) => s.ingredient_id === item.ingredient_id);
         if (!prev) {
-          ops.push(addRecipeIngredient(recipeId, item.ingredient_id, item.quantity_used));
+          ops.push(() => addRecipeIngredient(recipeId, item.ingredient_id, item.quantity_used));
         } else if (prev.quantity_used !== item.quantity_used) {
-          ops.push(updateRecipeIngredientQuantity(recipeId, item.ingredient_id, item.quantity_used));
+          ops.push(() => updateRecipeIngredientQuantity(recipeId, item.ingredient_id, item.quantity_used));
         }
       }
 
       if (ops.length > 0) {
-        const results = await Promise.allSettled(ops);
-        const failed = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+        let failedCount = 0;
+        for (const op of ops) {
+          try {
+            await op();
+          } catch {
+            failedCount += 1;
+          }
+        }
 
         // Refetch regardless of partial failure — some ops may have landed
         // even if others didn't, and total_kcal is only ever correct once
@@ -230,9 +286,9 @@ export function RecipeDetail() {
           // landed via the outbox regardless of this failing.
         }
 
-        if (failed.length > 0) {
+        if (failedCount > 0) {
           throw new Error(
-            `${failed.length} of ${ops.length} ingredient change${ops.length === 1 ? '' : 's'} failed to save — this usually means you're offline. Try again once you're back online.`,
+            `${failedCount} of ${ops.length} ingredient change${ops.length === 1 ? '' : 's'} failed to save — this usually means you're offline. Try again once you're back online.`,
           );
         }
       }
@@ -267,11 +323,22 @@ export function RecipeDetail() {
         <PhotoThumbnail photoUrl={photoUrl.trim() === '' ? null : photoUrl.trim()} alt={name} size={120} />
       </Box>
 
+      {groupId && (
+        <ItemMetadata
+          creatorName={profileNames[savedRecipe.created_by]}
+          createdAt={savedRecipe.created_at}
+          updaterName={savedRecipe.updated_by ? profileNames[savedRecipe.updated_by] : undefined}
+          updatedAt={savedRecipe.updated_at}
+          wasUpdated={wasUpdated}
+        />
+      )}
+
       {/* Stat tiles matching the total/per-serving kcal pattern from
-          docs/mocks/recipe-detail-*.png. Computed live from the draft
-          ingredient list (see totalKcal above) rather than read from
-          savedRecipe.total_kcal, so it updates as the user edits, before
-          anything is saved. */}
+          docs/mocks/recipe-detail-*.png, updated to per-gram (see
+          docs/pending-deviations.md, Ticket 12 follow-up). Computed live
+          from the draft ingredient list (see totalKcal above) rather than
+          read from savedRecipe.total_kcal, so it updates as the user edits,
+          before anything is saved. */}
       <Stack direction="row" spacing={1.5}>
         <Paper sx={{ flex: 1, p: 1.5, textAlign: 'center', borderRadius: '12px', boxShadow: tokens.sh1 }}>
           <Typography fontSize={18} fontWeight={500} color="primary.main">
@@ -283,10 +350,10 @@ export function RecipeDetail() {
         </Paper>
         <Paper sx={{ flex: 1, p: 1.5, textAlign: 'center', borderRadius: '12px', boxShadow: tokens.sh1 }}>
           <Typography fontSize={18} fontWeight={500} color="primary.main">
-            {perServing.toFixed(0)}
+            {perGram.toFixed(2)}
           </Typography>
           <Typography fontSize={11} color="text.secondary">
-            per serving
+            kcal per gram
           </Typography>
         </Paper>
       </Stack>
@@ -301,16 +368,30 @@ export function RecipeDetail() {
             fullWidth
             disabled={saving}
           />
-          <TextField
-            label="Servings"
-            type="number"
-            value={servings}
-            onChange={(e) => setServings(e.target.value)}
-            required
-            fullWidth
-            disabled={saving}
-            slotProps={{ htmlInput: { min: 1, step: 1 } }}
-          />
+          <Stack direction="row" spacing={2}>
+            <TextField
+              label="Weight"
+              type="number"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              required
+              fullWidth
+              disabled={saving}
+              slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
+            />
+            <TextField
+              label="Unit"
+              select
+              value={weightUnit}
+              onChange={(e) => setWeightUnit(e.target.value as WeightUnit)}
+              required
+              fullWidth
+              disabled={saving}
+            >
+              <MenuItem value="g">g</MenuItem>
+              <MenuItem value="kg">kg</MenuItem>
+            </TextField>
+          </Stack>
           <TextField
             label="Photo URL (optional)"
             value={photoUrl}
@@ -329,6 +410,7 @@ export function RecipeDetail() {
         <Alert severity="error">{ingredientsError}</Alert>
       ) : (
         <RecipeIngredientsList
+          groupId={groupId}
           ingredients={ingredients}
           disabled={saving}
           onAdd={handleAddIngredient}

@@ -1,0 +1,16 @@
+-- Requested directly: LogEntryCard needs to show the logged amount's unit
+-- next to its quantity ("1 sachet", "100 g"), but log_entries had no unit
+-- column at all — schema.md's own "snapshotted at creation time, never
+-- reads live ingredient/recipe data" rule for snapshot_name/snapshot_kcal/
+-- snapshot_quantity should have applied to the unit too, since it's the
+-- same category of "what this entry actually represents" data. See
+-- docs/pending-deviations.md (Ticket 12 follow-up, "log entry unit").
+--
+-- Reuses ingredient_unit rather than introducing a new type — every
+-- logging path's unit (an ingredient's own unit, or "g" for a recipe,
+-- per Ticket 12's servings -> weight change) is already a member of that
+-- enum. `default 'g'` only backfills any pre-existing row from before this
+-- column existed; every insert going forward supplies its own value
+-- explicitly (LogIngredientStep uses the source ingredient's unit,
+-- LogRecipeStep always uses 'g'), so there's no ambiguity for new rows.
+alter table public.log_entries add column snapshot_unit ingredient_unit not null default 'g';

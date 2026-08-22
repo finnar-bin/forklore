@@ -4,11 +4,27 @@ import { enqueueMutation } from '../../sync/outbox';
 import type { Recipe, RecipeInput, RecipeIngredientDetail } from '../../types/recipe';
 
 // Reads come from Dexie, not Supabase — see frontend-architecture.md
-// "Offline sync — outbox pattern". Personal recipes only — group_id
-// hardcoded null per this ticket's scope. Group-scoped recipes are Ticket 12.
-export async function fetchRecipes(userId: string): Promise<Recipe[]> {
-  const rows = await db.recipes.where('created_by').equals(userId).toArray();
-  return rows.filter((r) => r.group_id === null).sort((a, b) => a.name.localeCompare(b.name));
+// "Offline sync — outbox pattern". Same personal-vs-group split as
+// fetchIngredients (pantry/api.ts) — see docs/pending-deviations.md (Ticket 12).
+export async function fetchRecipes(userId: string, groupId: string | null): Promise<Recipe[]> {
+  const rows =
+    groupId === null
+      ? (await db.recipes.where('created_by').equals(userId).toArray()).filter(
+          (r) => r.group_id === null,
+        )
+      : await db.recipes.where('group_id').equals(groupId).toArray();
+  return rows.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+// Cross-context read for the log entry dialog — see fetchAllIngredients
+// (pantry/api.ts) for why this exists alongside the strict fetchRecipes
+// above. See docs/pending-deviations.md (Ticket 12 follow-up).
+export async function fetchAllRecipes(userId: string, groupIds: string[]): Promise<Recipe[]> {
+  const personal = (await db.recipes.where('created_by').equals(userId).toArray()).filter(
+    (r) => r.group_id === null,
+  );
+  const grouped = groupIds.length > 0 ? await db.recipes.where('group_id').anyOf(groupIds).toArray() : [];
+  return [...personal, ...grouped].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function fetchRecipe(id: string): Promise<Recipe | undefined> {
@@ -17,12 +33,17 @@ export async function fetchRecipe(id: string): Promise<Recipe | undefined> {
 
 // Writes go to Dexie immediately (optimistic UI), then queue to the outbox
 // for Supabase — see frontend-architecture.md "Offline sync — outbox pattern".
-export async function createRecipe(userId: string, input: RecipeInput): Promise<Recipe> {
+export async function createRecipe(
+  userId: string,
+  groupId: string | null,
+  input: RecipeInput,
+): Promise<Recipe> {
   const now = new Date().toISOString();
   const recipe: Recipe = {
     id: crypto.randomUUID(),
-    group_id: null,
+    group_id: groupId,
     created_by: userId,
+    updated_by: null,
     ...input,
     total_kcal: 0,
     forked_from_recipe_id: null,
@@ -38,12 +59,17 @@ export async function createRecipe(userId: string, input: RecipeInput): Promise<
 // fires on recipe_ingredients changes, not on plain recipe field edits — the
 // client sets it explicitly here, same as ingredients. `total_kcal` is left
 // untouched (server-computed only — see fetchRecipeIngredients below).
-export async function updateRecipe(id: string, input: RecipeInput): Promise<Recipe> {
+// `updated_by` is set here too — the recalc trigger sets its own copy via
+// `auth.uid()` for ingredient-list-only edits that never call this function
+// (see docs/pending-deviations.md, Ticket 12), so either edit path keeps it
+// current.
+export async function updateRecipe(id: string, userId: string, input: RecipeInput): Promise<Recipe> {
   const updated_at = new Date().toISOString();
-  await db.recipes.update(id, { ...input, updated_at });
+  const updated_by = userId;
+  await db.recipes.update(id, { ...input, updated_at, updated_by });
   const recipe = await db.recipes.get(id);
   if (!recipe) throw new Error('Recipe not found.');
-  await enqueueMutation('recipes', 'update', { id, ...input, updated_at });
+  await enqueueMutation('recipes', 'update', { id, ...input, updated_at, updated_by });
   return recipe;
 }
 

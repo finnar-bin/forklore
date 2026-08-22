@@ -9,6 +9,9 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
+import { useAppStore } from '../../store/useAppStore';
+import { ItemMetadata } from '../../components/ItemMetadata';
+import { useProfileNames } from '../profiles/useProfileNames';
 import { deleteIngredient, fetchIngredient, updateIngredient, type IngredientInput } from './api';
 import { IngredientForm } from './IngredientForm';
 import { DeleteIngredientDialog } from './DeleteIngredientDialog';
@@ -19,9 +22,10 @@ import { DeleteIngredientDialog } from './DeleteIngredientDialog';
 // for this: https://dexie.org/docs/dexie-react-hooks/useLiveQuery()).
 const LOADING = Symbol('loading');
 
-export function IngredientDetail() {
+export function IngredientDetail({ groupId, backPath }: { groupId: string | null; backPath: string }) {
   const { ingredientId } = useParams<{ ingredientId: string }>();
   const navigate = useNavigate();
+  const userId = useAppStore((state) => state.userId);
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
@@ -36,18 +40,28 @@ export function IngredientDetail() {
   const loading = result === LOADING;
   const ingredient = result === LOADING ? undefined : result;
 
+  // Group-context metadata only (design-system.md's "who added it" pattern
+  // has no reason to name the user to themselves in personal context) — see
+  // docs/pending-deviations.md (Ticket 12). `!= null` (not `!== null`) so a
+  // pre-migration Dexie row that's missing `updated_by` entirely (`undefined`,
+  // not `null` — see useProfileNames) doesn't slip through.
+  const profileIds =
+    groupId && ingredient ? [ingredient.created_by, ingredient.updated_by].filter((id) => id != null) : [];
+  const profileNames = useProfileNames(profileIds);
+  const wasUpdated = ingredient?.updated_by != null;
+
   async function handleSubmit(input: IngredientInput) {
-    if (!ingredientId) return;
-    await updateIngredient(ingredientId, input);
+    if (!ingredientId || !userId) return;
+    await updateIngredient(ingredientId, userId, input);
     // Back to the list on success — its live query picks up the change
     // automatically. On error, IngredientForm surfaces it and we stay put.
-    navigate('/pantry', { replace: true });
+    navigate(backPath, { replace: true });
   }
 
   async function handleDelete() {
     if (!ingredientId) return;
     await deleteIngredient(ingredientId);
-    navigate('/pantry', { replace: true });
+    navigate(backPath, { replace: true });
   }
 
   if (loading) {
@@ -68,6 +82,16 @@ export function IngredientDetail() {
 
   return (
     <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: 'auto' }}>
+      {groupId && (
+        <ItemMetadata
+          creatorName={profileNames[ingredient.created_by]}
+          createdAt={ingredient.created_at}
+          updaterName={ingredient.updated_by ? profileNames[ingredient.updated_by] : undefined}
+          updatedAt={ingredient.updated_at}
+          wasUpdated={wasUpdated}
+        />
+      )}
+
       <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
         <IngredientForm
           initialValues={{

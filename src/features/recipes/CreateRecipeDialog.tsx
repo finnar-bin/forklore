@@ -8,10 +8,12 @@ import type { Recipe, RecipeInput } from '../../types/recipe';
 
 export function CreateRecipeDialog({
   open,
+  groupId,
   onClose,
   onCreated,
 }: {
   open: boolean;
+  groupId: string | null;
   onClose: () => void;
   onCreated: (recipe: Recipe) => void;
 }) {
@@ -19,7 +21,7 @@ export function CreateRecipeDialog({
 
   async function handleSubmit(input: RecipeInput) {
     if (!userId) return;
-    const created = await createRecipe(userId, input);
+    const created = await createRecipe(userId, groupId, input);
     onCreated(created);
   }
 
