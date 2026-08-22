@@ -58,6 +58,24 @@ export async function createGroupInvite(groupId: string, invitedBy: string): Pro
   return data;
 }
 
+export interface InvitePreview {
+  groupId: string;
+  groupName: string;
+}
+
+// Read-only preview shown before the invite is actually consumed — see
+// preview_group_invite and docs/pending-deviations.md (Ticket 11 fix). Empty
+// result (not an exception) means invalid/expired/already-used; the caller
+// treats that the same as an accept_group_invite failure.
+export async function previewGroupInvite(inviteCode: string): Promise<InvitePreview | null> {
+  const { data, error } = await supabase.rpc('preview_group_invite', {
+    p_invite_code: inviteCode,
+  });
+  if (error) throw error;
+  const row = (data as { group_id: string; group_name: string }[] | null)?.[0];
+  return row ? { groupId: row.group_id, groupName: row.group_name } : null;
+}
+
 // Returns the joined group's id. rpcs.md's own note says redirect to
 // /groups/:groupId/pantry on success — that route doesn't exist until
 // Ticket 12, see docs/pending-deviations.md (Ticket 11) for the redirect
@@ -68,12 +86,4 @@ export async function acceptGroupInvite(inviteCode: string): Promise<string> {
   });
   if (error) throw error;
   return data as string;
-}
-
-// Used by the accept-invite screen to show which group was joined, since
-// accept_group_invite only returns the id.
-export async function fetchGroupName(groupId: string): Promise<string | null> {
-  const { data, error } = await supabase.from('groups').select('name').eq('id', groupId).single();
-  if (error) return null;
-  return data.name;
 }
