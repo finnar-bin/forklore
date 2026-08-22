@@ -8,6 +8,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import { useAppStore } from '../../store/useAppStore';
+import { useProfileNames } from '../profiles/useProfileNames';
 import { fetchRecipes } from './api';
 import { RecipeCard } from './RecipeCard';
 import { CreateRecipeDialog } from './CreateRecipeDialog';
@@ -23,6 +24,10 @@ export function RecipeList({ groupId }: { groupId: string | null }) {
   const recipes = useLiveQuery(() => (userId ? fetchRecipes(userId, groupId) : []), [userId, groupId]);
   const loading = recipes === undefined;
   const detailPath = groupId ? `/groups/${groupId}/recipes` : '/recipes';
+
+  // Group context only — see RecipeCard's creatorName prop and
+  // docs/pending-deviations.md (Ticket 12).
+  const creatorNames = useProfileNames(groupId ? (recipes ?? []).map((r) => r.created_by) : []);
 
   return (
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
@@ -49,6 +54,7 @@ export function RecipeList({ groupId }: { groupId: string | null }) {
           <RecipeCard
             key={recipe.id}
             recipe={recipe}
+            creatorName={groupId ? creatorNames[recipe.created_by] : undefined}
             onClick={() => navigate(`${detailPath}/${recipe.id}`)}
           />
         ))}

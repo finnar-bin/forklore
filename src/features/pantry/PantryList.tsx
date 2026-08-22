@@ -8,6 +8,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import { useAppStore } from '../../store/useAppStore';
+import { useProfileNames } from '../profiles/useProfileNames';
 import { fetchIngredients } from './api';
 import { IngredientCard } from './IngredientCard';
 import { CreateIngredientDialog } from './CreateIngredientDialog';
@@ -27,6 +28,10 @@ export function PantryList({ groupId }: { groupId: string | null }) {
   );
   const loading = ingredients === undefined;
   const detailPath = groupId ? `/groups/${groupId}/pantry` : '/pantry';
+
+  // Group context only — see IngredientCard's creatorName prop and
+  // docs/pending-deviations.md (Ticket 12).
+  const creatorNames = useProfileNames(groupId ? (ingredients ?? []).map((i) => i.created_by) : []);
 
   return (
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
@@ -53,6 +58,7 @@ export function PantryList({ groupId }: { groupId: string | null }) {
           <IngredientCard
             key={ingredient.id}
             ingredient={ingredient}
+            creatorName={groupId ? creatorNames[ingredient.created_by] : undefined}
             onClick={() => navigate(`${detailPath}/${ingredient.id}`)}
           />
         ))}

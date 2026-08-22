@@ -4,6 +4,10 @@ export interface Recipe {
   id: string;
   group_id: string | null;
   created_by: string;
+  // Null until the first edit after creation — see docs/pending-deviations.md
+  // (Ticket 12). Distinguishes "never edited" (show created_at/created_by)
+  // from "edited" (show updated_at/updated_by) without comparing timestamps.
+  updated_by: string | null;
   name: string;
   servings: number;
   total_kcal: number;

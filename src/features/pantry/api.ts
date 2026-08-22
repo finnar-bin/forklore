@@ -49,6 +49,7 @@ export async function createIngredient(
     id: crypto.randomUUID(),
     group_id: groupId,
     created_by: userId,
+    updated_by: null,
     ...input,
     created_at: now,
     updated_at: now,
@@ -60,12 +61,20 @@ export async function createIngredient(
 
 // `updated_at` has no update trigger on `ingredients` (only `recipes.updated_at`
 // is bumped, by the kcal-recalc trigger) — the client sets it explicitly.
-export async function updateIngredient(id: string, input: IngredientInput): Promise<Ingredient> {
+// `updated_by` is set here too (never at creation — see the Ingredient type's
+// own comment) so group-context metadata can tell "never edited" from
+// "edited by X" — see docs/pending-deviations.md (Ticket 12).
+export async function updateIngredient(
+  id: string,
+  userId: string,
+  input: IngredientInput,
+): Promise<Ingredient> {
   const updated_at = new Date().toISOString();
-  await db.ingredients.update(id, { ...input, updated_at });
+  const updated_by = userId;
+  await db.ingredients.update(id, { ...input, updated_at, updated_by });
   const ingredient = await db.ingredients.get(id);
   if (!ingredient) throw new Error('Ingredient not found.');
-  await enqueueMutation('ingredients', 'update', { id, ...input, updated_at });
+  await enqueueMutation('ingredients', 'update', { id, ...input, updated_at, updated_by });
   return ingredient;
 }
 

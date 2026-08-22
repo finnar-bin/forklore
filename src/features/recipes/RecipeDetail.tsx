@@ -13,6 +13,9 @@ import Typography from '@mui/material/Typography';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
 import { PhotoThumbnail } from '../../components/PhotoThumbnail';
+import { ItemMetadata } from '../../components/ItemMetadata';
+import { useAppStore } from '../../store/useAppStore';
+import { useProfileNames } from '../profiles/useProfileNames';
 import {
   addRecipeIngredient,
   deleteRecipe,
@@ -46,6 +49,7 @@ const LOADING = Symbol('loading');
 export function RecipeDetail({ groupId, backPath }: { groupId: string | null; backPath: string }) {
   const { recipeId } = useParams<{ recipeId: string }>();
   const navigate = useNavigate();
+  const userId = useAppStore((state) => state.userId);
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
@@ -74,6 +78,14 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   const [justSaved, setJustSaved] = useState(false);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  // Group-context metadata only, read from the last-persisted baseline
+  // (not the live draft) — see docs/pending-deviations.md (Ticket 12).
+  const profileIds =
+    groupId && savedRecipe
+      ? [savedRecipe.created_by, savedRecipe.updated_by].filter((id) => id !== null)
+      : [];
+  const profileNames = useProfileNames(profileIds);
 
   function applyRecipeBaseline(next: Recipe) {
     setSavedRecipe(next);
@@ -176,7 +188,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   }
 
   async function handleSave() {
-    if (!recipeId || !savedRecipe) return;
+    if (!recipeId || !savedRecipe || !userId) return;
     setSaving(true);
     setSaveError(null);
     try {
@@ -188,7 +200,11 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         servingsNum !== savedRecipe.servings ||
         normalizedPhoto !== savedRecipe.photo_url;
       if (fieldsChanged) {
-        const updated = await updateRecipe(recipeId, { name, servings: servingsNum, photo_url: normalizedPhoto });
+        const updated = await updateRecipe(recipeId, userId, {
+          name,
+          servings: servingsNum,
+          photo_url: normalizedPhoto,
+        });
         applyRecipeBaseline(updated);
       }
 
@@ -266,6 +282,16 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
         <PhotoThumbnail photoUrl={photoUrl.trim() === '' ? null : photoUrl.trim()} alt={name} size={120} />
       </Box>
+
+      {groupId && (
+        <ItemMetadata
+          creatorName={profileNames[savedRecipe.created_by]}
+          createdAt={savedRecipe.created_at}
+          updaterName={savedRecipe.updated_by ? profileNames[savedRecipe.updated_by] : undefined}
+          updatedAt={savedRecipe.updated_at}
+          wasUpdated={savedRecipe.updated_by !== null}
+        />
+      )}
 
       {/* Stat tiles matching the total/per-serving kcal pattern from
           docs/mocks/recipe-detail-*.png. Computed live from the draft

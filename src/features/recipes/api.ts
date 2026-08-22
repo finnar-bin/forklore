@@ -32,6 +32,7 @@ export async function createRecipe(
     id: crypto.randomUUID(),
     group_id: groupId,
     created_by: userId,
+    updated_by: null,
     ...input,
     total_kcal: 0,
     forked_from_recipe_id: null,
@@ -47,12 +48,17 @@ export async function createRecipe(
 // fires on recipe_ingredients changes, not on plain recipe field edits — the
 // client sets it explicitly here, same as ingredients. `total_kcal` is left
 // untouched (server-computed only — see fetchRecipeIngredients below).
-export async function updateRecipe(id: string, input: RecipeInput): Promise<Recipe> {
+// `updated_by` is set here too — the recalc trigger sets its own copy via
+// `auth.uid()` for ingredient-list-only edits that never call this function
+// (see docs/pending-deviations.md, Ticket 12), so either edit path keeps it
+// current.
+export async function updateRecipe(id: string, userId: string, input: RecipeInput): Promise<Recipe> {
   const updated_at = new Date().toISOString();
-  await db.recipes.update(id, { ...input, updated_at });
+  const updated_by = userId;
+  await db.recipes.update(id, { ...input, updated_at, updated_by });
   const recipe = await db.recipes.get(id);
   if (!recipe) throw new Error('Recipe not found.');
-  await enqueueMutation('recipes', 'update', { id, ...input, updated_at });
+  await enqueueMutation('recipes', 'update', { id, ...input, updated_at, updated_by });
   return recipe;
 }
 

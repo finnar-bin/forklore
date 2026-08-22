@@ -7,7 +7,17 @@ import type { Recipe } from '../../types/recipe';
 
 // Card / list item pattern from design-system.md: thumbnail, title +
 // subtitle, primary/secondary metric on the right.
-export function RecipeCard({ recipe, onClick }: { recipe: Recipe; onClick: () => void }) {
+export function RecipeCard({
+  recipe,
+  creatorName,
+  onClick,
+}: {
+  recipe: Recipe;
+  // Group context only — see IngredientCard's same prop and
+  // docs/pending-deviations.md (Ticket 12).
+  creatorName?: string;
+  onClick: () => void;
+}) {
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
@@ -34,6 +44,7 @@ export function RecipeCard({ recipe, onClick }: { recipe: Recipe; onClick: () =>
         </Typography>
         <Typography fontSize={12} color="text.secondary" noWrap>
           {recipe.servings} serving{recipe.servings === 1 ? '' : 's'}
+          {creatorName && ` · Added by ${creatorName}`}
         </Typography>
       </Box>
       <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
