@@ -17,4 +17,9 @@ export interface LogEntry {
   snapshot_unit: IngredientUnit;
   logged_at: string;
   created_at: string;
+  // See supabase/migrations/20260831000000_log_entries_rls_and_updated_at.sql
+  // — added so sync/pull.ts's incremental cursor can pick up edits made on
+  // another device, which created_at alone (never touched by an update)
+  // could not.
+  updated_at: string;
 }

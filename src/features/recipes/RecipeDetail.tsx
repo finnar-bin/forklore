@@ -122,19 +122,27 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   // page from rendering.
   useEffect(() => {
     if (!recipeId) return;
+    let cancelled = false;
     setIngredientsLoading(true);
     setIngredientsError(null);
     fetchRecipeIngredients(recipeId)
       .then((rows) => {
+        if (cancelled) return;
         setSavedIngredients(rows);
         setIngredients(rows);
       })
-      .catch((err) =>
+      .catch((err) => {
+        if (cancelled) return;
         setIngredientsError(
           err instanceof Error ? err.message : "Couldn't load this recipe's ingredients.",
-        ),
-      )
-      .finally(() => setIngredientsLoading(false));
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setIngredientsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [recipeId]);
 
   const parsedWeight = Number(weight);

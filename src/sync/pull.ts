@@ -16,11 +16,7 @@ export interface PullScope {
 
 interface TableSyncConfig {
   table: 'ingredients' | 'recipes' | 'log_entries';
-  // Column compared against the last-synced cursor. ingredients/recipes have
-  // `updated_at`; log_entries has no updated_at column at all (see
-  // docs/pending-deviations.md, Ticket 10) so `created_at` is the best
-  // available cursor there — edits to an existing log entry (which touch no
-  // timestamp column) won't be picked up by an incremental pull.
+  // Column compared against the last-synced cursor.
   cursorColumn: 'updated_at' | 'created_at';
   // Column that identifies "this row is personal to the caller" when
   // `scope.groupId` is null. Group-scoped rows (Ticket 12) rely on RLS
@@ -73,7 +69,7 @@ async function pullTable(config: TableSyncConfig, scope: PullScope): Promise<voi
 const TABLE_CONFIGS: TableSyncConfig[] = [
   { table: 'ingredients', cursorColumn: 'updated_at', ownerColumn: 'created_by' },
   { table: 'recipes', cursorColumn: 'updated_at', ownerColumn: 'created_by' },
-  { table: 'log_entries', cursorColumn: 'created_at', ownerColumn: 'logged_by' },
+  { table: 'log_entries', cursorColumn: 'updated_at', ownerColumn: 'logged_by' },
 ];
 
 // Pulls every table for one scope (personal, or — once Ticket 12 lands — a

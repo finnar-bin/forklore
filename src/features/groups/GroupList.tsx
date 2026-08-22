@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Fab from '@mui/material/Fab';
@@ -21,14 +21,26 @@ export function GroupList() {
   const [createOpen, setCreateOpen] = useState(false);
   const [inviteTarget, setInviteTarget] = useState<GroupMembership | null>(null);
 
+  // loadGroups is called from two independent sites below (the mount effect
+  // and CreateGroupDialog's onCreated) — a single per-effect `cancelled`
+  // flag wouldn't cover a call racing another call, only an effect racing
+  // its own cleanup. A monotonic request id lets only the most recently
+  // started call ever apply its result.
+  const requestIdRef = useRef(0);
+
   const loadGroups = useCallback(() => {
     if (!userId) return;
+    const requestId = ++requestIdRef.current;
     setError(null);
     fetchMyGroups(userId)
-      .then(setGroups)
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : "Couldn't load your groups. Try again."),
-      );
+      .then((result) => {
+        if (requestIdRef.current === requestId) setGroups(result);
+      })
+      .catch((err) => {
+        if (requestIdRef.current === requestId) {
+          setError(err instanceof Error ? err.message : "Couldn't load your groups. Try again.");
+        }
+      });
   }, [userId]);
 
   useEffect(() => {
