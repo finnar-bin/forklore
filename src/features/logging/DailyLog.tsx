@@ -22,6 +22,7 @@ import type { LogEntry } from '../../types/log';
 export function DailyLog({
   groupId,
   groupName,
+  hasGroups,
 }: {
   groupId: string | null;
   // Resolved by LogPage (which already looks it up for the header title) so
@@ -29,6 +30,12 @@ export function DailyLog({
   // docs/pending-deviations.md (Ticket 12 follow-up, "group's all-time
   // history"). Only meaningful when groupId is set.
   groupName?: string | null;
+  // Whether the caller belongs to any group at all — hides "View group
+  // logs" entirely (personal context only) when there's nowhere for it to
+  // lead. Requested directly. Undefined while LogPage's own group-list fetch
+  // is still in flight, treated the same as false (the button pops in once
+  // it resolves, rather than flashing then disappearing for a no-groups user).
+  hasGroups?: boolean;
 }) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
@@ -81,9 +88,11 @@ export function DailyLog({
               View personal logs
             </Button>
           ) : (
-            <Button onClick={() => navigate('/logs/groups')} sx={{ flex: 1 }}>
-              View group logs
-            </Button>
+            hasGroups && (
+              <Button onClick={() => navigate('/logs/groups')} sx={{ flex: 1 }}>
+                View group logs
+              </Button>
+            )
           )}
         </Stack>
 

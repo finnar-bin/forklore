@@ -38,7 +38,10 @@ export function ContextSwitcher({
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
 
-  const [groups, setGroups] = useState<GroupMembership[]>([]);
+  // undefined = not yet fetched. Distinguished from "fetched, zero groups"
+  // so the chip doesn't flash-and-disappear for a user who does belong to
+  // groups but whose fetchMyGroups call just hasn't resolved yet.
+  const [groups, setGroups] = useState<GroupMembership[] | undefined>(undefined);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -49,7 +52,7 @@ export function ContextSwitcher({
   }, [userId]);
 
   const activeMembership = activeGroupId
-    ? groups.find((membership) => membership.group.id === activeGroupId)
+    ? groups?.find((membership) => membership.group.id === activeGroupId)
     : null;
   const label = activeGroupId ? (activeMembership?.group.name ?? 'Group') : 'Personal';
 
@@ -60,6 +63,15 @@ export function ContextSwitcher({
   function selectContext(groupId: string | null) {
     setAnchorEl(null);
     navigate(groupId ? `/groups/${groupId}/${tab}` : `/${tab}`);
+  }
+
+  // Nothing to switch to — requested directly: a user in no groups at all
+  // shouldn't see a picker whose only real option is the context they're
+  // already in. Still renders (with whatever's loaded so far) if a group
+  // route is actually active, even if the membership list hasn't resolved
+  // yet or came back inconsistent, so there's always a way back to Personal.
+  if (groups?.length === 0 && activeGroupId === null) {
+    return null;
   }
 
   return (
@@ -83,7 +95,7 @@ export function ContextSwitcher({
           </ListItemIcon>
           <ListItemText>Personal</ListItemText>
         </MenuItem>
-        {groups.map((membership) => (
+        {(groups ?? []).map((membership) => (
           <MenuItem
             key={membership.group.id}
             selected={membership.group.id === activeGroupId}
