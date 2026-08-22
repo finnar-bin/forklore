@@ -36,7 +36,7 @@ export function LogPage() {
         title={groupId ? `${groupName ?? 'Group'} log` : 'Log'}
         onBack={groupId ? () => navigate('/log') : undefined}
       />
-      <DailyLog groupId={groupId} />
+      <DailyLog groupId={groupId} groupName={groupName} />
     </Box>
   );
 }

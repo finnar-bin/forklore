@@ -41,6 +41,13 @@ export function GroupLogPicker() {
 
   return (
     <Stack spacing={1.5} sx={{ p: 2, maxWidth: 480, mx: 'auto' }}>
+      <Typography fontSize={18} fontWeight={500}>
+        Your groups
+      </Typography>
+      <Typography fontSize={13} color="text.secondary" sx={{ mt: -1 }}>
+        Pick a group to see its own shared log.
+      </Typography>
+
       {error && <Alert severity="error">{error}</Alert>}
 
       {loading && (

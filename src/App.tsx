@@ -77,6 +77,7 @@ function App() {
             <Route path="/groups/:groupId/recipes" element={<RecipesPage />} />
             <Route path="/groups/:groupId/recipes/:recipeId" element={<RecipeDetailPage />} />
             <Route path="/groups/:groupId/log" element={<LogPage />} />
+            <Route path="/groups/:groupId/logs" element={<LogsPage />} />
             <Route path="/groups" element={<GroupsPage />} />
             <Route path="/sync-status" element={<SyncStatusPage />} />
           </Route>

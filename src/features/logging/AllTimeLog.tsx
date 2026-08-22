@@ -5,22 +5,33 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useAppStore } from '../../store/useAppStore';
-import { fetchAllLogEntries } from './api';
+import { useProfileNames } from '../profiles/useProfileNames';
+import { fetchAllGroupLogEntries, fetchAllLogEntries } from './api';
 import { EditLogEntryDialog } from './EditLogEntryDialog';
 import { LogEntryCard } from './LogEntryCard';
 import type { LogEntry } from '../../types/log';
 
-// All-time, cross-context history — see fetchAllLogEntries (queries by
-// logged_by only, no group_id filter, by design per schema.md/routes.md).
-export function AllTimeLog() {
+// All-time history. `groupId: null` (the /logs route) is cross-context —
+// everything the caller has logged, personal and every group combined (see
+// fetchAllLogEntries). A group id (the /groups/:groupId/logs route, Ticket
+// 12 follow-up) instead shows that one group's own shared history — every
+// entry logged into it by any member, same scoping DailyLog's group branch
+// already uses for "today." See docs/pending-deviations.md.
+export function AllTimeLog({ groupId }: { groupId: string | null }) {
   const userId = useAppStore((state) => state.userId);
 
   const [editingEntry, setEditingEntry] = useState<LogEntry | null>(null);
 
   // Reads from Dexie, not Supabase — re-renders automatically on
   // create/edit/delete (this device) and pulled remote changes alike.
-  const entries = useLiveQuery(() => (userId ? fetchAllLogEntries(userId) : []), [userId]);
+  const entries = useLiveQuery(
+    () => (groupId ? fetchAllGroupLogEntries(groupId) : userId ? fetchAllLogEntries(userId) : []),
+    [userId, groupId],
+  );
   const loading = entries === undefined;
+
+  // Group context only — same reasoning as DailyLog's own loggerNames.
+  const loggerNames = useProfileNames(groupId ? (entries ?? []).map((e) => e.logged_by) : []);
 
   const groups = useMemo(() => {
     const byDate = new Map<string, LogEntry[]>();
@@ -45,7 +56,9 @@ export function AllTimeLog() {
 
       {!loading && groups.length === 0 && (
         <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-          Nothing logged yet. Entries you log will show up here.
+          {groupId
+            ? 'Nothing logged yet in this group. Entries logged here will show up.'
+            : 'Nothing logged yet. Entries you log will show up here.'}
         </Typography>
       )}
 
@@ -73,6 +86,7 @@ export function AllTimeLog() {
                   hour: 'numeric',
                   minute: '2-digit',
                 })}
+                loggerName={groupId ? loggerNames[entry.logged_by] : undefined}
                 onClick={() => setEditingEntry(entry)}
               />
             ))}

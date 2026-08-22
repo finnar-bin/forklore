@@ -19,7 +19,17 @@ import { EditLogEntryDialog } from './EditLogEntryDialog';
 import { LogEntryCard } from './LogEntryCard';
 import type { LogEntry } from '../../types/log';
 
-export function DailyLog({ groupId }: { groupId: string | null }) {
+export function DailyLog({
+  groupId,
+  groupName,
+}: {
+  groupId: string | null;
+  // Resolved by LogPage (which already looks it up for the header title) so
+  // this component doesn't duplicate that fetchMyGroups call — see
+  // docs/pending-deviations.md (Ticket 12 follow-up, "group's all-time
+  // history"). Only meaningful when groupId is set.
+  groupName?: string | null;
+}) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
   const { mode, systemMode } = useColorScheme();
@@ -60,8 +70,11 @@ export function DailyLog({ groupId }: { groupId: string | null }) {
         </Paper>
 
         <Stack direction="row" spacing={1}>
-          <Button onClick={() => navigate('/logs')} sx={{ flex: 1 }}>
-            View all-time history
+          <Button
+            onClick={() => navigate(groupId ? `/groups/${groupId}/logs` : '/logs')}
+            sx={{ flex: 1 }}
+          >
+            {groupId ? `View ${groupName ?? 'group'}'s all-time history` : 'View all-time history'}
           </Button>
           {groupId ? (
             <Button onClick={() => navigate('/log')} sx={{ flex: 1 }}>

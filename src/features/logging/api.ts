@@ -51,6 +51,17 @@ export async function fetchAllLogEntries(userId: string): Promise<LogEntry[]> {
   );
 }
 
+// /groups/:groupId/logs — a single group's own all-time history, same
+// "every entry logged into it by any member" shape as the group branch of
+// fetchTodayLogEntries above, just without the "today" filter. See
+// docs/pending-deviations.md (Ticket 12 follow-up, "group's all-time history").
+export async function fetchAllGroupLogEntries(groupId: string): Promise<LogEntry[]> {
+  const rows = await db.log_entries.where('group_id').equals(groupId).toArray();
+  return rows.sort(
+    (a, b) => b.logged_at.localeCompare(a.logged_at) || b.created_at.localeCompare(a.created_at),
+  );
+}
+
 // Writes go to Dexie immediately (optimistic UI), then queue to the outbox
 // for Supabase — see frontend-architecture.md "Offline sync — outbox pattern".
 export async function createLogEntry(
