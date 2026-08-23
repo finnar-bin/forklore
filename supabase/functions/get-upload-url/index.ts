@@ -36,7 +36,12 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type',
+  // x-client-info and apikey aren't headers this function reads itself —
+  // they're sent automatically by supabase-js's functions.invoke() on
+  // every call, so the preflight has to allow them or the browser blocks
+  // the real request before it's ever sent ("header disallowed by
+  // preflight response").
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
