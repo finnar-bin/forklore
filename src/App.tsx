@@ -26,6 +26,7 @@ import { RequireGroupMember } from './routes/RequireGroupMember';
 import { RequireGroupOwner } from './routes/RequireGroupOwner';
 import { GroupSettingsPage } from './routes/GroupSettingsPage';
 import { ProgressPage } from './routes/ProgressPage';
+import { ProfilePage } from './routes/ProfilePage';
 
 function App() {
   const { initializing } = useAuthSession();
@@ -102,6 +103,7 @@ function App() {
               </Route>
               <Route path="/groups" element={<GroupsPage />} />
               <Route path="/sync-status" element={<SyncStatusPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
             </Route>
           </Route>
         </Route>

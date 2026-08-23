@@ -1,4 +1,42 @@
 import { supabase } from '../../lib/supabase';
+import { invalidateMyProfile } from './useMyProfile';
+import type { Profile } from '../../types/profile';
+
+export interface ProfileInput {
+  name: string;
+  avatar_url: string | null;
+  height_cm: number | null;
+  birthdate: string | null;
+}
+
+// Live Supabase read/write, not Dexie/outbox — profiles aren't part of the
+// sync engine's pull scope (src/sync/pull.ts only covers
+// ingredients/recipes/log_entries) and have no client-facing reason to be
+// offline-editable, same reasoning already applied to `groups` (see
+// docs/pending-deviations.md, Ticket 11). RLS ("update own row only", Ticket
+// 2 migration) is what makes this safe — a caller can only ever affect their
+// own row.
+export async function fetchMyProfile(userId: string): Promise<Profile> {
+  const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateMyProfile(userId: string, input: ProfileInput): Promise<Profile> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(input)
+    .eq('id', userId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  // Invalidation lives here, not in the caller — same "unforgettable by
+  // construction" reasoning as createGroup/updateGroup/deleteGroup in
+  // features/groups/api.ts, so a future direct call site can't silently
+  // skip it and leave AppHeader's avatar icon (or this screen) stale.
+  invalidateMyProfile();
+  return data;
+}
 
 // Live Supabase read, not Dexie — `profiles` is declared in Dexie's schema
 // (frontend-architecture.md) but nothing has ever pulled into it (no prior
