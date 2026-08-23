@@ -5,9 +5,15 @@ import type { WeightLog } from '../../types/weight';
 
 export function WeightChart({
   logs,
+  color,
   emptyMessage = 'Log your weight to start your trend.',
 }: {
   logs: WeightLog[];
+  // A plain CSS color string (e.g. theme/theme.ts's primaryAccent, resolved
+  // for the current light/dark mode by the caller) — not a
+  // `var(--mui-palette-*)` string, which this app's theme never actually
+  // defines (see primaryAccent's own comment).
+  color: string;
   // Overridable by Progress.tsx — a range filter (e.g. "7 days") narrowing
   // an otherwise non-empty history down to nothing needs a different
   // message ("no entries in this range") than a genuinely brand-new caller.
@@ -33,7 +39,7 @@ export function WeightChart({
     <LineChart
       dataset={logs.map((log) => ({ date: log.logged_at, weight: log.weight_kg }))}
       xAxis={[{ dataKey: 'date', scaleType: 'point', valueFormatter: (value) => formatShortDate(value) }]}
-      series={[{ dataKey: 'weight', showMark: true, color: 'var(--mui-palette-primary-main)' }]}
+      series={[{ dataKey: 'weight', showMark: true, color }]}
       height={220}
       margin={{ left: 40, right: 16, top: 16, bottom: 30 }}
       grid={{ horizontal: true }}

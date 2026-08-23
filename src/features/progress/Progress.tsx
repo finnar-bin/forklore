@@ -11,7 +11,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import { useColorScheme } from '@mui/material/styles';
-import { shadows } from '../../theme/theme';
+import { primaryAccent, shadows } from '../../theme/theme';
 import { FloatingPortal } from '../../components/FloatingPortal';
 import { GOAL_TYPES } from '../onboarding/onboardingOptions';
 import { useMyProfile, useMyProfileLoadError, invalidateMyProfile } from '../profiles/useMyProfile';
@@ -29,6 +29,7 @@ export function Progress({ userId }: { userId: string }) {
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
+  const chartColor = resolvedMode === 'dark' ? primaryAccent.dark : primaryAccent.light;
 
   const profile = useMyProfile(userId);
   const profileError = useMyProfileLoadError(userId);
@@ -140,7 +141,11 @@ export function Progress({ userId }: { userId: string }) {
               ))}
             </Select>
           </Stack>
-          <WeightChart logs={chartLogs} emptyMessage={logs.length > 0 ? 'No entries in this range.' : undefined} />
+          <WeightChart
+            logs={chartLogs}
+            color={chartColor}
+            emptyMessage={logs.length > 0 ? 'No entries in this range.' : undefined}
+          />
         </Paper>
       </Stack>
 
