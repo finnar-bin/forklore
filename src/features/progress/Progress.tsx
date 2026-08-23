@@ -75,11 +75,12 @@ export function Progress({ userId }: { userId: string }) {
   const bmi = latestWeight !== null && profile.height_cm ? calculateBmi(latestWeight, profile.height_cm) : null;
   const goalTypeLabel = profile.goal_type ? GOAL_TYPES.find((g) => g.value === profile.goal_type)?.label : null;
 
-  // Filters the already-fetched (up to DEFAULT_WEIGHT_CHART_RANGE_DAYS-old)
-  // dataset client-side rather than refetching per dropdown selection — the
-  // fetch window already covers every selectable range. "Current weight"
-  // above intentionally keeps reading from the full `logs`, not this
-  // filtered view, so narrowing the chart's range never changes it.
+  // Filters the already-fetched dataset (api.ts's fetch window covers the
+  // widest selectable range) client-side rather than refetching per
+  // dropdown selection. "Current weight" above intentionally keeps reading
+  // from the full `logs`, not this filtered view, so narrowing the chart's
+  // range never changes it.
+  const today = daysAgoLocalDate(0);
   const rangeCutoff = daysAgoLocalDate(rangeDays);
   const chartLogs = logs.filter((log) => log.logged_at >= rangeCutoff);
 
@@ -144,6 +145,8 @@ export function Progress({ userId }: { userId: string }) {
           <WeightChart
             logs={chartLogs}
             color={chartColor}
+            rangeStart={rangeCutoff}
+            rangeEnd={today}
             emptyMessage={logs.length > 0 ? 'No entries in this range.' : undefined}
           />
         </Paper>

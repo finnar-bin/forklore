@@ -6,7 +6,6 @@ export const WEIGHT_CHART_RANGE_DAYS = [7, 14, 30, 60, 180] as const;
 
 export type WeightChartRangeDays = (typeof WEIGHT_CHART_RANGE_DAYS)[number];
 
-// Matches "this current view" (unfiltered — every fetched entry) from
-// before the range dropdown existed, so adding the dropdown doesn't change
-// what a user sees until they actually touch it.
-export const DEFAULT_WEIGHT_CHART_RANGE_DAYS: WeightChartRangeDays = 180;
+// Requested directly as the default, in place of the widest option — a
+// week is the most immediately useful view on first load.
+export const DEFAULT_WEIGHT_CHART_RANGE_DAYS: WeightChartRangeDays = 7;
