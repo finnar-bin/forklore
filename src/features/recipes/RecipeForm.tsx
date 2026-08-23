@@ -4,6 +4,7 @@ import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import { PhotoUpload } from '../../components/PhotoUpload';
 import type { RecipeInput, WeightUnit } from '../../types/recipe';
 
 interface RecipeFormProps {
@@ -21,7 +22,8 @@ export function RecipeForm({ initialValues, submitLabel, onSubmit }: RecipeFormP
   // follow-up, "servings -> weight").
   const [weight, setWeight] = useState(initialValues ? initialValues.weight_g.toString() : '');
   const [weightUnit, setWeightUnit] = useState<WeightUnit>('g');
-  const [photoUrl, setPhotoUrl] = useState(initialValues?.photo_url ?? '');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(initialValues?.photo_url ?? null);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -38,7 +40,7 @@ export function RecipeForm({ initialValues, submitLabel, onSubmit }: RecipeFormP
       await onSubmit({
         name,
         weight_g,
-        photo_url: photoUrl.trim() === '' ? null : photoUrl.trim(),
+        photo_url: photoUrl,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
@@ -80,14 +82,15 @@ export function RecipeForm({ initialValues, submitLabel, onSubmit }: RecipeFormP
           <MenuItem value="kg">kg</MenuItem>
         </TextField>
       </Stack>
-      <TextField
-        label="Photo URL (optional)"
-        value={photoUrl}
-        onChange={(e) => setPhotoUrl(e.target.value)}
-        fullWidth
+      <PhotoUpload
+        photoUrl={photoUrl}
+        onChange={setPhotoUrl}
+        onUploadingChange={setPhotoUploading}
+        entity="recipe"
+        alt={name || 'recipe'}
       />
 
-      <Button type="submit" variant="contained" size="large" disabled={submitting}>
+      <Button type="submit" variant="contained" size="large" disabled={submitting || photoUploading}>
         {submitting ? 'Saving…' : submitLabel}
       </Button>
     </Stack>

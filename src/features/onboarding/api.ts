@@ -1,16 +1,6 @@
 import { supabase } from '../../lib/supabase';
 import type { ActivityLevel, BiologicalSex, GoalPace, GoalType } from '../../types/profile';
 
-export async function fetchProfileName(userId: string): Promise<string> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('name')
-    .eq('id', userId)
-    .single();
-  if (error) throw error;
-  return data.name;
-}
-
 export interface OnboardingInput {
   name: string;
   birthdate: string;

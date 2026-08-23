@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import dayjs from 'dayjs';
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { PhotoUpload } from '../../components/PhotoUpload';
 import type { ProfileInput } from './api';
 
 // Name/avatar/height/birthdate only, per Ticket 17's scope — weight/goal
@@ -29,7 +31,8 @@ export function ProfileForm({
   onSubmit: (input: ProfileInput) => Promise<void>;
 }) {
   const [name, setName] = useState(initialValues.name);
-  const [avatarUrl, setAvatarUrl] = useState(initialValues.avatar_url ?? '');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(initialValues.avatar_url);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [height, setHeight] = useState(initialValues.height_cm?.toString() ?? '');
   const [birthdate, setBirthdate] = useState(initialValues.birthdate ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +45,7 @@ export function ProfileForm({
     try {
       await onSubmit({
         name,
-        avatar_url: avatarUrl.trim() === '' ? null : avatarUrl.trim(),
+        avatar_url: avatarUrl,
         height_cm: Number(height),
         birthdate: birthdate.trim() === '' ? null : birthdate,
       });
@@ -62,6 +65,16 @@ export function ProfileForm({
     <Stack spacing={2.5} component="form" onSubmit={handleSubmit}>
       {error && <Alert severity="error">{error}</Alert>}
 
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <PhotoUpload
+          photoUrl={avatarUrl}
+          onChange={setAvatarUrl}
+          onUploadingChange={setPhotoUploading}
+          entity="avatar"
+          alt={name || 'your'}
+          size={88}
+        />
+      </Box>
       <TextField
         label="Name"
         value={name}
@@ -69,12 +82,6 @@ export function ProfileForm({
         required
         fullWidth
         autoFocus
-      />
-      <TextField
-        label="Photo URL (optional)"
-        value={avatarUrl}
-        onChange={(e) => setAvatarUrl(e.target.value)}
-        fullWidth
       />
       <DatePicker
         label="Birthdate"
@@ -94,7 +101,12 @@ export function ProfileForm({
         slotProps={{ htmlInput: { min: 50, max: 300, step: 0.1 } }}
       />
 
-      <Button type="submit" variant="contained" size="large" disabled={submitting || name.trim() === ''}>
+      <Button
+        type="submit"
+        variant="contained"
+        size="large"
+        disabled={submitting || photoUploading || name.trim() === ''}
+      >
         {submitting ? 'Saving…' : submitLabel}
       </Button>
     </Stack>

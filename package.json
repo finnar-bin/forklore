@@ -10,7 +10,9 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "supabase:push:dev": "scripts/supabase-push.sh dev",
-    "supabase:push:prod": "scripts/supabase-push.sh prod"
+    "supabase:push:prod": "scripts/supabase-push.sh prod",
+    "supabase:deploy-functions:dev": "scripts/supabase-deploy-functions.sh dev",
+    "supabase:deploy-functions:prod": "scripts/supabase-deploy-functions.sh prod"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -21,6 +23,7 @@
     "@mui/x-charts": "^7.29.1",
     "@mui/x-date-pickers": "^7.29.4",
     "@supabase/supabase-js": "^2.112.3",
+    "browser-image-compression": "^2.0.2",
     "dayjs": "^1.11.23",
     "dexie": "^4.4.5",
     "dexie-react-hooks": "^4.4.0",

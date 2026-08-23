@@ -12,7 +12,6 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
 import { useAppStore } from '../../store/useAppStore';
-import { PhotoThumbnail } from '../../components/PhotoThumbnail';
 import { LogoutConfirmDialog } from '../../components/LogoutConfirmDialog';
 import { attemptLogout, performLogout } from '../auth/api';
 import { updateMyProfile, type ProfileInput } from './api';
@@ -90,10 +89,6 @@ export function Profile() {
 
   return (
     <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'center', pt: 1 }}>
-        <PhotoThumbnail photoUrl={profile.avatar_url} alt="Your avatar" size={88} />
-      </Box>
-
       <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
         <ProfileForm
           initialValues={{

@@ -4,6 +4,7 @@ import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import { PhotoUpload } from '../../components/PhotoUpload';
 import type { IngredientUnit } from '../../types/ingredient';
 import { INGREDIENT_UNITS } from './ingredientUnits';
 import type { IngredientInput } from './api';
@@ -19,7 +20,8 @@ export function IngredientForm({ initialValues, submitLabel, onSubmit }: Ingredi
   const [quantity, setQuantity] = useState(initialValues?.quantity.toString() ?? '');
   const [unit, setUnit] = useState<IngredientUnit | ''>(initialValues?.unit ?? '');
   const [kcal, setKcal] = useState(initialValues?.kcal.toString() ?? '');
-  const [photoUrl, setPhotoUrl] = useState(initialValues?.photo_url ?? '');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(initialValues?.photo_url ?? null);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -34,7 +36,7 @@ export function IngredientForm({ initialValues, submitLabel, onSubmit }: Ingredi
         quantity: Number(quantity),
         unit,
         kcal: Number(kcal),
-        photo_url: photoUrl.trim() === '' ? null : photoUrl.trim(),
+        photo_url: photoUrl,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
@@ -88,14 +90,15 @@ export function IngredientForm({ initialValues, submitLabel, onSubmit }: Ingredi
         fullWidth
         slotProps={{ htmlInput: { min: 0, step: 0.1 } }}
       />
-      <TextField
-        label="Photo URL (optional)"
-        value={photoUrl}
-        onChange={(e) => setPhotoUrl(e.target.value)}
-        fullWidth
+      <PhotoUpload
+        photoUrl={photoUrl}
+        onChange={setPhotoUrl}
+        onUploadingChange={setPhotoUploading}
+        entity="ingredient"
+        alt={name || 'ingredient'}
       />
 
-      <Button type="submit" variant="contained" size="large" disabled={submitting}>
+      <Button type="submit" variant="contained" size="large" disabled={submitting || photoUploading}>
         {submitting ? 'Saving…' : submitLabel}
       </Button>
     </Stack>

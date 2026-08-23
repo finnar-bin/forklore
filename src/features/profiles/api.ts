@@ -22,7 +22,7 @@ export async function fetchMyProfile(userId: string): Promise<Profile> {
   return data;
 }
 
-export async function updateMyProfile(userId: string, input: ProfileInput): Promise<Profile> {
+export async function updateMyProfile(userId: string, input: Partial<ProfileInput>): Promise<Profile> {
   const { data, error } = await supabase
     .from('profiles')
     .update(input)

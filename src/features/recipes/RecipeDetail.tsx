@@ -13,7 +13,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
-import { PhotoThumbnail } from '../../components/PhotoThumbnail';
+import { PhotoUpload } from '../../components/PhotoUpload';
 import { ItemMetadata } from '../../components/ItemMetadata';
 import { useAppStore } from '../../store/useAppStore';
 import { useProfileNames } from '../profiles/useProfileNames';
@@ -74,7 +74,8 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   // 12 follow-up, "servings -> weight").
   const [weight, setWeight] = useState('0');
   const [weightUnit, setWeightUnit] = useState<WeightUnit>('g');
-  const [photoUrl, setPhotoUrl] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [ingredients, setIngredients] = useState<RecipeIngredientDetail[]>([]);
 
   const [ingredientsLoading, setIngredientsLoading] = useState(true);
@@ -105,7 +106,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
     setName(next.name);
     setWeight(next.weight_g.toString());
     setWeightUnit('g');
-    setPhotoUrl(next.photo_url ?? '');
+    setPhotoUrl(next.photo_url);
   }
 
   // Seeds the draft from Dexie once per recipe, not on every live-query
@@ -175,10 +176,9 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
 
   const isDirty = useMemo(() => {
     if (!savedRecipe) return false;
-    const normalizedPhoto = photoUrl.trim() === '' ? null : photoUrl.trim();
     if (name !== savedRecipe.name) return true;
     if (weightG !== savedRecipe.weight_g) return true;
-    if (normalizedPhoto !== savedRecipe.photo_url) return true;
+    if (photoUrl !== savedRecipe.photo_url) return true;
     if (ingredients.length !== savedIngredients.length) return true;
     return ingredients.some((item) => {
       const prev = savedIngredients.find((s) => s.ingredient_id === item.ingredient_id);
@@ -225,16 +225,13 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
     try {
       // Recipe-field-only changes go through Dexie + the outbox — this
       // succeeds offline, same as the Pantry/Log screens.
-      const normalizedPhoto = photoUrl.trim() === '' ? null : photoUrl.trim();
       const fieldsChanged =
-        name !== savedRecipe.name ||
-        weightG !== savedRecipe.weight_g ||
-        normalizedPhoto !== savedRecipe.photo_url;
+        name !== savedRecipe.name || weightG !== savedRecipe.weight_g || photoUrl !== savedRecipe.photo_url;
       if (fieldsChanged) {
         const updated = await updateRecipe(recipeId, userId, {
           name,
           weight_g: weightG,
-          photo_url: normalizedPhoto,
+          photo_url: photoUrl,
         });
         applyRecipeBaseline(updated);
       }
@@ -331,7 +328,14 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   return (
     <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-        <PhotoThumbnail photoUrl={photoUrl.trim() === '' ? null : photoUrl.trim()} alt={name} size={120} />
+        <PhotoUpload
+          photoUrl={photoUrl}
+          onChange={setPhotoUrl}
+          onUploadingChange={setPhotoUploading}
+          entity="recipe"
+          alt={name}
+          size={120}
+        />
       </Box>
 
       {groupId && (
@@ -403,13 +407,6 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
               <MenuItem value="kg">kg</MenuItem>
             </TextField>
           </Stack>
-          <TextField
-            label="Photo URL (optional)"
-            value={photoUrl}
-            onChange={(e) => setPhotoUrl(e.target.value)}
-            fullWidth
-            disabled={saving}
-          />
         </Stack>
       </Paper>
 
@@ -436,7 +433,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         variant="contained"
         size="large"
         onClick={handleSave}
-        disabled={!isValid || !isDirty || saving}
+        disabled={!isValid || !isDirty || saving || photoUploading}
       >
         {saving ? 'Saving…' : 'Save changes'}
       </Button>
