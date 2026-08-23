@@ -122,16 +122,23 @@ export function Progress({ userId }: { userId: string }) {
             borderRadius: '14px',
             boxShadow: tokens.sh2,
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             justifyContent: 'space-between',
             gap: 1,
           }}
         >
-          <Typography fontSize={14} color={goalTypeLabel ? 'text.primary' : 'text.secondary'}>
-            {goalTypeLabel
-              ? `Goal: ${goalTypeLabel}${profile.goal_weight_kg ? ` to ${profile.goal_weight_kg} kg` : ''}`
-              : 'No goal set'}
-          </Typography>
+          <Stack spacing={0.25}>
+            <Typography fontSize={14} color={goalTypeLabel ? 'text.primary' : 'text.secondary'}>
+              {goalTypeLabel
+                ? `Goal: ${goalTypeLabel}${profile.goal_weight_kg ? ` to ${profile.goal_weight_kg} kg` : ''}`
+                : 'No goal set'}
+            </Typography>
+            {profile.daily_kcal_target !== null && (
+              <Typography fontSize={12} color="text.secondary">
+                {profile.daily_kcal_target} kcal/day target
+              </Typography>
+            )}
+          </Stack>
           <Button size="small" onClick={() => setGoalDialogOpen(true)}>
             {goalTypeLabel ? 'Edit' : 'Set goal'}
           </Button>

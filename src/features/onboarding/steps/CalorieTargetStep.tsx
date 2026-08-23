@@ -10,13 +10,16 @@ import {
   isBelowGeneralGuidance,
   isCustomKcalValid,
   type CalorieOptions,
+  type CalorieSelection,
 } from '../calorieCalc';
 import type { BiologicalSex, GoalType } from '../../../types/profile';
 
-// UI-only selection shape — 'maintain' has no equivalent in the goal_pace
-// enum (steady/aggressive/custom); OnboardingStepper maps it to a null
-// goal_pace at submit time (see its buildSubmission()).
-export type CalorieSelection = 'steady' | 'aggressive' | 'maintain' | 'custom';
+// Re-exported so existing `import { type CalorieSelection } from
+// './steps/CalorieTargetStep'` call sites (OnboardingStepper) don't need to
+// change — the type itself now lives in calorieCalc.ts alongside
+// resolveCalorieTarget, which needs it too and can't import this file
+// without a circular dependency (this file already imports calorieCalc.ts).
+export type { CalorieSelection };
 
 const PACE_LABELS: Record<'steady' | 'aggressive', string> = {
   steady: 'Steady',

@@ -1,7 +1,7 @@
 import { supabase } from '../../lib/supabase';
 import { invalidateMyProfile } from '../profiles/useMyProfile';
 import { WEIGHT_CHART_RANGE_DAYS } from './chartRanges';
-import type { GoalType } from '../../types/profile';
+import type { GoalPace, GoalType } from '../../types/profile';
 import type { WeightLog } from '../../types/weight';
 
 // Trend chart window, not the caller's full history — a multi-year daily
@@ -59,6 +59,15 @@ export interface GoalInput {
   // null for 'maintain' — same "no goal weight for maintain" rule
   // onboarding's GoalStep already enforces.
   goalWeightKg: number | null;
+  // Recomputed by EditGoalDialog via the same onboarding/calorieCalc.ts
+  // logic CalorieTargetStep already uses — null goalPace matches
+  // 'maintain' (no preset pace applies), same mapping complete_onboarding's
+  // RPC uses. When the caller's profile is missing an input needed to
+  // recompute (sex/activity_level/height_cm/an existing weight log),
+  // EditGoalDialog passes the existing values through unchanged rather
+  // than clearing them.
+  goalPace: GoalPace | null;
+  dailyKcalTarget: number | null;
 }
 
 // Writes to `profiles`, not `weight_logs` — goal editing is explicitly
@@ -71,7 +80,12 @@ export interface GoalInput {
 export async function updateGoal(userId: string, input: GoalInput): Promise<void> {
   const { error } = await supabase
     .from('profiles')
-    .update({ goal_type: input.goalType, goal_weight_kg: input.goalWeightKg })
+    .update({
+      goal_type: input.goalType,
+      goal_weight_kg: input.goalWeightKg,
+      goal_pace: input.goalPace,
+      daily_kcal_target: input.dailyKcalTarget,
+    })
     .eq('id', userId);
   if (error) throw error;
   invalidateMyProfile();
