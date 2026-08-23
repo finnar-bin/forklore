@@ -1,26 +1,20 @@
-import { useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import LogoutIcon from '@mui/icons-material/Logout';
 import SyncIcon from '@mui/icons-material/Sync';
 import SyncProblemIcon from '@mui/icons-material/SyncProblem';
 import GroupIcon from '@mui/icons-material/Group';
 import { useColorScheme } from '@mui/material/styles';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { shadows } from '../theme/theme';
-import { attemptLogout, performLogout } from '../features/auth/api';
+import { useAppStore } from '../store/useAppStore';
 import { useSyncStore } from '../store/useSyncStore';
-import { LogoutConfirmDialog } from './LogoutConfirmDialog';
+import { useMyProfile } from '../features/profiles/useMyProfile';
+import { PhotoThumbnail } from './PhotoThumbnail';
 
-// Sticky top bar for feature screens. Includes theme toggle + logout inline
-// rather than behind a profile avatar (design-system.md's documented
-// pattern) — Ticket 17's Profile screen doesn't exist yet, so there is
-// nowhere else to put logout. See docs/pending-deviations.md (Ticket 6).
+// Sticky top bar for feature screens.
 //
 // Also doubles as the app's only entry point to /sync-status: a small icon
 // appears only when there's something to say (syncing/error), tapping it
@@ -31,28 +25,14 @@ import { LogoutConfirmDialog } from './LogoutConfirmDialog';
 // 16). Same "would otherwise be unreachable except by typing the URL"
 // reasoning as /sync-status above — see docs/pending-deviations.md (Ticket 11).
 export function AppHeader({ title, onBack }: { title: string; onBack?: () => void }) {
-  const { mode, systemMode, setMode } = useColorScheme();
+  const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
-  const [loggingOut, setLoggingOut] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingCount, setPendingCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const syncStatus = useSyncStore((state) => state.status);
-
-  async function handleLogout() {
-    setLoggingOut(true);
-    try {
-      const result = await attemptLogout();
-      if (result.needsConfirmation) {
-        setPendingCount(result.pendingCount);
-        setConfirmOpen(true);
-      }
-    } finally {
-      setLoggingOut(false);
-    }
-  }
+  const userId = useAppStore((state) => state.userId);
+  const profile = useMyProfile(userId);
 
   return (
     <AppBar
@@ -96,25 +76,17 @@ export function AppHeader({ title, onBack }: { title: string; onBack?: () => voi
             )}
           </IconButton>
         )}
-        <IconButton
-          aria-label="Toggle theme"
-          onClick={() => setMode(resolvedMode === 'dark' ? 'light' : 'dark')}
-        >
-          {resolvedMode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
-        </IconButton>
-        <IconButton aria-label="Log out" onClick={handleLogout} disabled={loggingOut}>
-          <LogoutIcon />
-        </IconButton>
+        {/* Persistent account-access icon, per design-system.md's "Profile/
+            account access" pattern — edit profile, logout, and the theme
+            toggle all live behind it now (Ticket 17), replacing the inline
+            theme-toggle/logout buttons this header used before that screen
+            existed (docs/pending-deviations.md, Ticket 6). */}
+        {location.pathname !== '/profile' && (
+          <IconButton aria-label="Profile" onClick={() => navigate('/profile')} sx={{ p: 0.5 }}>
+            <PhotoThumbnail photoUrl={profile?.avatar_url ?? null} alt="Your avatar" size={32} />
+          </IconButton>
+        )}
       </Toolbar>
-      <LogoutConfirmDialog
-        open={confirmOpen}
-        pendingCount={pendingCount}
-        onClose={() => setConfirmOpen(false)}
-        onConfirm={async () => {
-          await performLogout();
-          setConfirmOpen(false);
-        }}
-      />
     </AppBar>
   );
 }
