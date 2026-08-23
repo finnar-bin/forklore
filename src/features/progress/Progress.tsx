@@ -4,7 +4,9 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Fab from '@mui/material/Fab';
+import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
+import Select, { type SelectChangeEvent } from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
@@ -14,6 +16,8 @@ import { FloatingPortal } from '../../components/FloatingPortal';
 import { GOAL_TYPES } from '../onboarding/onboardingOptions';
 import { useMyProfile, useMyProfileLoadError, invalidateMyProfile } from '../profiles/useMyProfile';
 import { useWeightLogs, useWeightLogsLoadError, invalidateWeightLogs, addWeightLog } from './useWeightLogs';
+import { daysAgoLocalDate } from './api';
+import { WEIGHT_CHART_RANGE_DAYS, DEFAULT_WEIGHT_CHART_RANGE_DAYS, type WeightChartRangeDays } from './chartRanges';
 import { LogWeightDialog } from './LogWeightDialog';
 import { WeightChart } from './WeightChart';
 import { BMI_CATEGORY_LABELS, calculateBmi, getBmiCategory } from './bmi';
@@ -32,6 +36,7 @@ export function Progress({ userId }: { userId: string }) {
   const logsError = useWeightLogsLoadError(userId);
 
   const [logOpen, setLogOpen] = useState(false);
+  const [rangeDays, setRangeDays] = useState<WeightChartRangeDays>(DEFAULT_WEIGHT_CHART_RANGE_DAYS);
 
   if (profileError || logsError) {
     return (
@@ -69,6 +74,18 @@ export function Progress({ userId }: { userId: string }) {
   const bmi = latestWeight !== null && profile.height_cm ? calculateBmi(latestWeight, profile.height_cm) : null;
   const goalTypeLabel = profile.goal_type ? GOAL_TYPES.find((g) => g.value === profile.goal_type)?.label : null;
 
+  // Filters the already-fetched (up to DEFAULT_WEIGHT_CHART_RANGE_DAYS-old)
+  // dataset client-side rather than refetching per dropdown selection — the
+  // fetch window already covers every selectable range. "Current weight"
+  // above intentionally keeps reading from the full `logs`, not this
+  // filtered view, so narrowing the chart's range never changes it.
+  const rangeCutoff = daysAgoLocalDate(rangeDays);
+  const chartLogs = logs.filter((log) => log.logged_at >= rangeCutoff);
+
+  function handleRangeChange(event: SelectChangeEvent<number>) {
+    setRangeDays(Number(event.target.value) as WeightChartRangeDays);
+  }
+
   return (
     // Root box, not a nested wrapper — same FAB positioning reasoning as
     // DailyLog (fixed, wrapped in FloatingPortal so AnimatedAppShell's
@@ -105,10 +122,25 @@ export function Progress({ userId }: { userId: string }) {
         )}
 
         <Paper sx={{ p: 2, borderRadius: '14px', boxShadow: tokens.sh2 }}>
-          <Typography fontSize={14} sx={{ mb: 1 }}>
-            Weight trend
-          </Typography>
-          <WeightChart logs={logs} />
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+            <Typography fontSize={14}>Weight trend</Typography>
+            <Select
+              value={rangeDays}
+              onChange={handleRangeChange}
+              variant="standard"
+              disableUnderline
+              size="small"
+              sx={{ fontSize: 13 }}
+              inputProps={{ 'aria-label': 'Weight trend range' }}
+            >
+              {WEIGHT_CHART_RANGE_DAYS.map((days) => (
+                <MenuItem key={days} value={days} sx={{ fontSize: 13 }}>
+                  {days} days
+                </MenuItem>
+              ))}
+            </Select>
+          </Stack>
+          <WeightChart logs={chartLogs} emptyMessage={logs.length > 0 ? 'No entries in this range.' : undefined} />
         </Paper>
       </Stack>
 

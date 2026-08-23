@@ -3,7 +3,16 @@ import Typography from '@mui/material/Typography';
 import { LineChart } from '@mui/x-charts/LineChart';
 import type { WeightLog } from '../../types/weight';
 
-export function WeightChart({ logs }: { logs: WeightLog[] }) {
+export function WeightChart({
+  logs,
+  emptyMessage = 'Log your weight to start your trend.',
+}: {
+  logs: WeightLog[];
+  // Overridable by Progress.tsx — a range filter (e.g. "7 days") narrowing
+  // an otherwise non-empty history down to nothing needs a different
+  // message ("no entries in this range") than a genuinely brand-new caller.
+  emptyMessage?: string;
+}) {
   // Only the true empty state falls back to text — a single entry still
   // renders as one visible marker (no line, since a line needs two points),
   // so logging the very first weight of a session visibly changes this
@@ -14,7 +23,7 @@ export function WeightChart({ logs }: { logs: WeightLog[] }) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 220 }}>
         <Typography color="text.secondary" fontSize={13} textAlign="center">
-          Log your weight to start your trend.
+          {emptyMessage}
         </Typography>
       </Box>
     );

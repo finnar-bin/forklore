@@ -1,13 +1,18 @@
 import { supabase } from '../../lib/supabase';
+import { WEIGHT_CHART_RANGE_DAYS } from './chartRanges';
 import type { WeightLog } from '../../types/weight';
 
 // Trend chart window, not the caller's full history — a multi-year daily
 // log would both slow this fetch and cram WeightChart's point-scale x-axis
-// past readability. 180 days is enough to show a meaningful trend without
-// either problem.
-const WEIGHT_HISTORY_DAYS = 180;
+// past readability. Derived from the widest range the chart's dropdown
+// offers, rather than a separately-hardcoded number, so the two can't
+// silently drift apart.
+const WEIGHT_HISTORY_DAYS = Math.max(...WEIGHT_CHART_RANGE_DAYS);
 
-function daysAgoLocalDate(days: number): string {
+// Exported for Progress.tsx's client-side range filtering — the chart
+// dropdown's shorter windows (7/14/30/60 days) narrow down the same already
+// -fetched dataset rather than triggering a new fetch per selection.
+export function daysAgoLocalDate(days: number): string {
   const date = new Date();
   date.setDate(date.getDate() - days);
   const month = String(date.getMonth() + 1).padStart(2, '0');
