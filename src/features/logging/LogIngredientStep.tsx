@@ -8,8 +8,10 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import type { Ingredient } from '../../types/ingredient';
+import type { MealType } from '../../types/log';
 import type { LogEntryInput } from './api';
 import { formatIngredientLabel } from './formatItemLabel';
+import { MealTypeSelector } from './MealTypeSelector';
 
 // Asks how much of this ingredient was eaten, in the ingredient's own unit
 // (read-only, inherited — never user-selectable, same rule as recipe
@@ -24,6 +26,7 @@ export function LogIngredientStep({
   onCancel: () => void;
 }) {
   const [quantity, setQuantity] = useState('');
+  const [mealType, setMealType] = useState<MealType | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +50,7 @@ export function LogIngredientStep({
         snapshot_kcal: kcal,
         snapshot_quantity: parsedQuantity,
         snapshot_unit: ingredient.unit,
+        meal_type: mealType,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to log this ingredient.');
@@ -81,6 +85,7 @@ export function LogIngredientStep({
           <Typography fontSize={12} color="text.secondary">
             {kcal.toFixed(0)} kcal
           </Typography>
+          <MealTypeSelector value={mealType} onChange={setMealType} disabled={submitting} />
           {error && <Alert severity="error">{error}</Alert>}
         </Stack>
       </DialogContent>

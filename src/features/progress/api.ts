@@ -2,6 +2,7 @@ import { supabase } from '../../lib/supabase';
 import { invalidateMyProfile } from '../profiles/useMyProfile';
 import { WEIGHT_CHART_RANGE_DAYS } from './chartRanges';
 import type { GoalPace, GoalType } from '../../types/profile';
+import type { MealType } from '../../types/meal';
 import type { WeightLog } from '../../types/weight';
 
 // Trend chart window, not the caller's full history — a multi-year daily
@@ -68,6 +69,13 @@ export interface GoalInput {
   // than clearing them.
   goalPace: GoalPace | null;
   dailyKcalTarget: number | null;
+  mealBreakdownEnabled: boolean;
+  // Null when the breakdown switch is off — omitted from the update below
+  // rather than writing nulls, so a caller who last saved a breakdown and
+  // then just turns the switch off doesn't lose those saved numbers (see
+  // types/profile.ts's getMealKcalTargets and the switch's own "left alone"
+  // behavior).
+  mealKcalTargets: Record<MealType, number> | null;
 }
 
 // Writes to `profiles`, not `weight_logs` — goal editing is explicitly
@@ -85,6 +93,13 @@ export async function updateGoal(userId: string, input: GoalInput): Promise<void
       goal_weight_kg: input.goalWeightKg,
       goal_pace: input.goalPace,
       daily_kcal_target: input.dailyKcalTarget,
+      meal_breakdown_enabled: input.mealBreakdownEnabled,
+      ...(input.mealKcalTargets && {
+        breakfast_kcal_target: input.mealKcalTargets.breakfast,
+        lunch_kcal_target: input.mealKcalTargets.lunch,
+        dinner_kcal_target: input.mealKcalTargets.dinner,
+        snack_kcal_target: input.mealKcalTargets.snack,
+      }),
     })
     .eq('id', userId);
   if (error) throw error;

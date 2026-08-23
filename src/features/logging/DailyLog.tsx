@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import Divider from '@mui/material/Divider';
 import Fab from '@mui/material/Fab';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
@@ -17,8 +18,20 @@ import { useProfileNames } from '../profiles/useProfileNames';
 import { fetchTodayLogEntries } from './api';
 import { AddLogEntryDialog } from './AddLogEntryDialog';
 import { EditLogEntryDialog } from './EditLogEntryDialog';
+import { GroupMemberKcalCard } from './GroupMemberKcalCard';
 import { LogEntryCard } from './LogEntryCard';
+import { MEAL_TYPES, MEAL_TYPE_LABELS } from '../../types/meal';
+import { getMealKcalTargets } from '../../types/profile';
+import { useMyProfile } from '../profiles/useMyProfile';
 import type { LogEntry } from '../../types/log';
+import type { MealType } from '../../types/meal';
+
+// Display order for categorizing today's entries — null (no meal picked)
+// sorts last, after the four selectable meal types.
+const MEAL_TYPE_SECTIONS: { key: MealType | null; label: string }[] = [
+  ...MEAL_TYPES.map((key) => ({ key, label: MEAL_TYPE_LABELS[key] })),
+  { key: null, label: 'Uncategorized' },
+];
 
 export function DailyLog({
   groupId,
@@ -43,6 +56,13 @@ export function DailyLog({
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
+
+  // Always the viewer's own preferences — the daily target and its
+  // optional per-meal breakdown are personal, not group-wide, even on
+  // /groups/:groupId/log (whichever group's log this is showing).
+  const profile = useMyProfile(userId);
+  const dailyKcalTarget = profile?.daily_kcal_target ?? null;
+  const mealKcalTargets = profile ? getMealKcalTargets(profile) : null;
 
   const [addOpen, setAddOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<LogEntry | null>(null);
@@ -72,14 +92,50 @@ export function DailyLog({
       {/* pb clears both the FAB (bottom: 80) and BottomNav below it — see
           docs/pending-deviations.md (Ticket 16). */}
       <Stack spacing={1.5} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 18 }}>
-        <Paper sx={{ p: 2, borderRadius: '14px', boxShadow: tokens.sh2, textAlign: 'center' }}>
-          <Typography fontSize={24} fontWeight={500} color="primary.main">
-            {totalKcal.toFixed(0)}
-          </Typography>
-          <Typography fontSize={12} color="text.secondary">
-            kcal logged today
-          </Typography>
-        </Paper>
+        {groupId ? (
+          // A daily target is personal, not group-wide — the group log's
+          // info card shows every member's own target (and optional
+          // per-meal breakdown) side by side instead of one aggregate
+          // total that wouldn't clearly belong to anyone.
+          <GroupMemberKcalCard groupId={groupId} userId={userId} entries={entries ?? []} />
+        ) : (
+          <Paper sx={{ p: 2, borderRadius: '14px', boxShadow: tokens.sh2, textAlign: 'center' }}>
+            <Typography fontSize={24} fontWeight={500} color="primary.main">
+              {dailyKcalTarget !== null ? `${totalKcal.toFixed(0)} / ${dailyKcalTarget}` : totalKcal.toFixed(0)}
+            </Typography>
+            <Typography fontSize={12} color="text.secondary">
+              {dailyKcalTarget !== null ? 'kcal logged vs. your daily target' : 'kcal logged today'}
+            </Typography>
+
+            {profile?.meal_breakdown_enabled && mealKcalTargets && (
+              <>
+                <Divider sx={{ my: 1.5 }} />
+                <Stack direction="row" justifyContent="space-around">
+                  {MEAL_TYPES.map((meal) => {
+                    const target = mealKcalTargets[meal] ?? 0;
+                    // `?? null` guards a pre-feature row cached before
+                    // meal_type existed — see MEAL_TYPE_SECTIONS' own
+                    // identical guard below.
+                    const consumed = (entries ?? [])
+                      .filter((entry) => (entry.meal_type ?? null) === meal)
+                      .reduce((sum, entry) => sum + entry.snapshot_kcal, 0);
+                    const remaining = target - consumed;
+                    return (
+                      <Stack key={meal} alignItems="center" spacing={0.25}>
+                        <Typography fontSize={11} color="text.secondary">
+                          {MEAL_TYPE_LABELS[meal]}
+                        </Typography>
+                        <Typography fontSize={13} fontWeight={500} color={remaining < 0 ? 'error.main' : undefined}>
+                          {remaining >= 0 ? `${remaining.toFixed(0)} left` : `${Math.abs(remaining).toFixed(0)} over`}
+                        </Typography>
+                      </Stack>
+                    );
+                  })}
+                </Stack>
+              </>
+            )}
+          </Paper>
+        )}
 
         <Stack direction="row" spacing={1}>
           <Button
@@ -115,18 +171,35 @@ export function DailyLog({
           </Typography>
         )}
 
-        {(entries ?? []).map((entry) => (
-          <LogEntryCard
-            key={entry.id}
-            entry={entry}
-            subtitle={new Date(entry.created_at).toLocaleTimeString([], {
-              hour: 'numeric',
-              minute: '2-digit',
-            })}
-            loggerName={groupId ? loggerNames[entry.logged_by] : undefined}
-            onClick={entry.logged_by === userId ? () => setEditingEntry(entry) : undefined}
-          />
-        ))}
+        {MEAL_TYPE_SECTIONS.map(({ key, label }) => {
+          // `?? null` guards a row cached before this feature shipped —
+          // never re-pulled since (pull.ts's cursor only re-fetches rows
+          // past their updated_at), so meal_type is `undefined` at runtime
+          // on such a row despite the `MealType | null` type, and would
+          // otherwise match neither a real meal nor the "Uncategorized"
+          // bucket under strict ===.
+          const sectionEntries = (entries ?? []).filter((entry) => (entry.meal_type ?? null) === key);
+          if (sectionEntries.length === 0) return null;
+          return (
+            <Stack key={label} spacing={1.5}>
+              <Typography fontSize={13} fontWeight={600} color="text.secondary" sx={{ px: 0.5 }}>
+                {label}
+              </Typography>
+              {sectionEntries.map((entry) => (
+                <LogEntryCard
+                  key={entry.id}
+                  entry={entry}
+                  subtitle={new Date(entry.created_at).toLocaleTimeString([], {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                  loggerName={groupId ? loggerNames[entry.logged_by] : undefined}
+                  onClick={entry.logged_by === userId ? () => setEditingEntry(entry) : undefined}
+                />
+              ))}
+            </Stack>
+          );
+        })}
       </Stack>
 
       <FloatingPortal>

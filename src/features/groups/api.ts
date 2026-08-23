@@ -1,6 +1,7 @@
 import { db } from '../../lib/db';
 import { supabase } from '../../lib/supabase';
 import { invalidateMyGroups } from './useMyGroups';
+import { invalidateGroupMembers } from './useGroupMembers';
 import type { Group, GroupInvite, GroupMember, GroupMembership } from '../../types/group';
 
 export interface GroupInput {
@@ -137,6 +138,10 @@ export async function removeGroupMember(groupId: string, userId: string): Promis
     .eq('group_id', groupId)
     .eq('user_id', userId);
   if (error) throw error;
+  // The removed row is now stale in useGroupMembers' shared cache (GroupSettings
+  // itself re-fetches directly via its own loadMembers, but a mounted
+  // /groups/:groupId/log elsewhere in this session isn't otherwise told).
+  invalidateGroupMembers();
 }
 
 // Returns the joined group's id. rpcs.md's own note says redirect to

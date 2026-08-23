@@ -1,3 +1,4 @@
+import { MEAL_TYPES, type MealType } from '../../types/meal';
 import type { ActivityLevel, BiologicalSex, GoalPace, GoalType } from '../../types/profile';
 
 // A "lose" goal weight must actually be below current weight, a "gain" goal
@@ -165,4 +166,71 @@ export function getGeneralGuidanceMinimum(sex: BiologicalSex): number {
 export function isAboveDiminishingReturnsSurplus(value: number, calorieOptions: CalorieOptions): boolean {
   const aggressive = calorieOptions.presets.find((preset) => preset.pace === 'aggressive');
   return aggressive !== undefined && Number.isFinite(value) && value > aggressive.kcal;
+}
+
+// Whatever daily total the caller's current selection actually resolves to
+// right now, or null while that's still ambiguous (no selection yet, or a
+// custom entry that isn't validly in-range yet) — shared by
+// CalorieTargetStep (to know whether the meal-breakdown switch/fields can
+// be shown at all) and its two callers (to gate step validity on the same
+// number).
+export function getResolvedDailyKcal(
+  selection: CalorieSelection | '',
+  customKcal: string,
+  calorieOptions: CalorieOptions | null,
+): number | null {
+  if (selection === '' || !calorieOptions) return null;
+  if (selection === 'custom') {
+    return isCustomKcalValid(Number(customKcal), calorieOptions.maintenanceKcal) ? Number(customKcal) : null;
+  }
+  const resolved = resolveCalorieTarget(selection, customKcal, calorieOptions);
+  return resolved ? resolved.dailyKcalTarget : null;
+}
+
+// Per-meal kcal breakdown of a daily target — optional (Profile's own
+// breakfast/lunch/dinner/snack_kcal_target columns), only meaningful while
+// meal_breakdown_enabled is on. Form state for each field is kept as a
+// string (mirrors customKcal above) so an empty field reads as "0
+// allocated" rather than forcing a value.
+export function emptyMealKcalTargets(): Record<MealType, string> {
+  return { breakfast: '', lunch: '', dinner: '', snack: '' };
+}
+
+export function sumMealKcalTargets(targets: Record<MealType, string>): number {
+  return MEAL_TYPES.reduce((sum, meal) => sum + (Number(targets[meal]) || 0), 0);
+}
+
+// Blank fields count as 0 toward the sum — "optional" per meal, but once the
+// breakdown switch is on the filled (and implicitly zero) fields must add up
+// to exactly the resolved daily total, no more, no less.
+export function isMealBreakdownValid(
+  enabled: boolean,
+  targets: Record<MealType, string>,
+  dailyTotal: number | null,
+): boolean {
+  if (!enabled) return true;
+  if (dailyTotal === null) return false;
+  const allNonNegative = MEAL_TYPES.every((meal) => {
+    if (targets[meal].trim() === '') return true;
+    const value = Number(targets[meal]);
+    return Number.isFinite(value) && value >= 0;
+  });
+  // Rounded, not strict ===: kcal targets are always meant to be whole
+  // numbers (every display of one elsewhere already rounds via
+  // .toFixed(0)), but a typed/pasted non-integer value can still make the
+  // sum land a fraction of a kcal off the daily total due to plain binary
+  // floating-point rounding, even when the real-arithmetic sum is exact.
+  return allNonNegative && Math.round(sumMealKcalTargets(targets)) === Math.round(dailyTotal);
+}
+
+// Converts validated string form state to the numbers actually written to
+// Profile's breakfast/lunch/dinner/snack_kcal_target columns — only called
+// once isMealBreakdownValid confirms the fields are ready to save.
+export function mealKcalTargetsToNumbers(targets: Record<MealType, string>): Record<MealType, number> {
+  return {
+    breakfast: Number(targets.breakfast) || 0,
+    lunch: Number(targets.lunch) || 0,
+    dinner: Number(targets.dinner) || 0,
+    snack: Number(targets.snack) || 0,
+  };
 }

@@ -1,7 +1,7 @@
 import { db } from '../../lib/db';
 import { enqueueMutation } from '../../sync/outbox';
 import type { IngredientUnit } from '../../types/ingredient';
-import type { LogEntry } from '../../types/log';
+import type { LogEntry, MealType } from '../../types/log';
 
 export interface LogEntryInput {
   source_ingredient_id: string | null;
@@ -10,6 +10,7 @@ export interface LogEntryInput {
   snapshot_kcal: number;
   snapshot_quantity: number | null;
   snapshot_unit: IngredientUnit;
+  meal_type: MealType | null;
 }
 
 // Local (not UTC) calendar date — logged_at is a plain `date` column and
@@ -27,8 +28,21 @@ export function todayLocalDate(): string {
 // group combined, same query shape as fetchAllLogEntries below (Ticket 12
 // follow-up, "/log shows everything"); a group id instead shows that one
 // group's shared log — every entry logged into it by any member, per
-// schema.md's "filter by group_id for the group view" note. See
-// docs/pending-deviations.md (Ticket 12).
+// schema.md's "filter by group_id for the group view" note.
+//
+// A prior version of this queried `logged_by anyOf (this group's member
+// ids)` instead, with no group_id filter at all, intending to show every
+// member's own entries regardless of context. Reverted (code-reviewer
+// pass): `log_entries`' own RLS policy only grants visibility into a row
+// where `logged_by = auth.uid()` OR `group_id` is one of the caller's own
+// groups — it has no clause for "a fellow group member's entry in a
+// context I don't otherwise have access to." Combined with the sync
+// engine (src/sync/pull.ts) only ever pulling "my personal entries" and
+// "this one group's entries" per scope, that version couldn't actually
+// surface other members' personal/other-group entries at all, while
+// letting the *viewer's own* personal/other-group entries (already
+// present locally) leak into every group's log unconditionally. See
+// docs/pending-deviations.md.
 export async function fetchTodayLogEntries(userId: string, groupId: string | null): Promise<LogEntry[]> {
   const today = todayLocalDate();
   const rows =
@@ -88,6 +102,7 @@ export interface LogEntrySnapshotInput {
   snapshot_name: string;
   snapshot_kcal: number;
   snapshot_quantity: number | null;
+  meal_type: MealType | null;
 }
 
 // Fast-follow mentioned (but explicitly out of scope) in Ticket 8: editing an

@@ -1,18 +1,24 @@
 import Alert from '@mui/material/Alert';
+import Divider from '@mui/material/Divider';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import Stack from '@mui/material/Stack';
+import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { SelectableCard } from '../../../components/SelectableCard';
 import {
   getCustomKcalBounds,
   getGeneralGuidanceMinimum,
+  getResolvedDailyKcal,
   isAboveDiminishingReturnsSurplus,
   isBelowGeneralGuidance,
   isCustomKcalValid,
   type CalorieOptions,
   type CalorieSelection,
 } from '../calorieCalc';
+import { MealBreakdownFields } from './MealBreakdownFields';
 import type { BiologicalSex, GoalType } from '../../../types/profile';
+import type { MealType } from '../../../types/meal';
 
 // Re-exported so existing `import { type CalorieSelection } from
 // './steps/CalorieTargetStep'` call sites (OnboardingStepper) don't need to
@@ -40,6 +46,10 @@ export function CalorieTargetStep({
   onSelectionChange,
   customKcal,
   onCustomKcalChange,
+  mealBreakdownEnabled,
+  onMealBreakdownEnabledChange,
+  mealKcalTargets,
+  onMealKcalTargetChange,
 }: {
   goalType: GoalType;
   sex: BiologicalSex;
@@ -48,6 +58,10 @@ export function CalorieTargetStep({
   onSelectionChange: (value: CalorieSelection) => void;
   customKcal: string;
   onCustomKcalChange: (value: string) => void;
+  mealBreakdownEnabled: boolean;
+  onMealBreakdownEnabledChange: (value: boolean) => void;
+  mealKcalTargets: Record<MealType, string>;
+  onMealKcalTargetChange: (meal: MealType, value: string) => void;
 }) {
   const { min: customMin, max: customMax } = getCustomKcalBounds(calorieOptions.maintenanceKcal);
   const customValue = Number(customKcal);
@@ -64,6 +78,8 @@ export function CalorieTargetStep({
     customEntered &&
     customError === null &&
     isAboveDiminishingReturnsSurplus(customValue, calorieOptions);
+
+  const dailyTotal = getResolvedDailyKcal(selection, customKcal, calorieOptions);
 
   return (
     <Stack spacing={1.5} sx={{ pt: 1 }}>
@@ -136,6 +152,30 @@ export function CalorieTargetStep({
         These suggestions are estimates based on general guidelines for your stated goal, not medical advice —
         consider checking in with a doctor or registered dietitian before making significant changes to your diet.
       </Typography>
+
+      <Divider />
+
+      <Stack spacing={0.5}>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={mealBreakdownEnabled}
+              onChange={(e) => onMealBreakdownEnabledChange(e.target.checked)}
+              disabled={dailyTotal === null}
+            />
+          }
+          label="Break down by meal"
+        />
+        <Typography fontSize={11} color="text.secondary">
+          {dailyTotal === null
+            ? 'Pick a daily target above first.'
+            : 'Set a kcal limit for breakfast, lunch, dinner, and snack that adds up to your daily target.'}
+        </Typography>
+      </Stack>
+
+      {mealBreakdownEnabled && dailyTotal !== null && (
+        <MealBreakdownFields values={mealKcalTargets} onChange={onMealKcalTargetChange} dailyTotal={dailyTotal} />
+      )}
     </Stack>
   );
 }

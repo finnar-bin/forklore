@@ -14,15 +14,19 @@ import {
   calculateBmr,
   calculateCalorieOptions,
   calculateTdee,
+  getResolvedDailyKcal,
   isCustomKcalValid,
   isGoalWeightValid,
+  isMealBreakdownValid,
+  mealKcalTargetsToNumbers,
   resolveCalorieTarget,
   type CalorieSelection,
 } from '../onboarding/calorieCalc';
 import { GOAL_TYPES } from '../onboarding/onboardingOptions';
 import { CalorieTargetStep } from '../onboarding/steps/CalorieTargetStep';
 import { updateGoal } from './api';
-import type { GoalType, Profile } from '../../types/profile';
+import { getMealKcalTargets, type GoalType, type Profile } from '../../types/profile';
+import type { MealType } from '../../types/meal';
 
 const STEP_LABELS = ['Goal', 'Calorie target'];
 
@@ -101,6 +105,16 @@ function EditGoalForm({
   const [customKcal, setCustomKcal] = useState(
     profile.goal_pace === 'custom' && profile.daily_kcal_target !== null ? String(profile.daily_kcal_target) : '',
   );
+  const [mealBreakdownEnabled, setMealBreakdownEnabled] = useState(profile.meal_breakdown_enabled);
+  const [mealKcalTargets, setMealKcalTargets] = useState<Record<MealType, string>>(() => {
+    const targets = getMealKcalTargets(profile);
+    return {
+      breakfast: targets.breakfast !== null ? String(targets.breakfast) : '',
+      lunch: targets.lunch !== null ? String(targets.lunch) : '',
+      dinner: targets.dinner !== null ? String(targets.dinner) : '',
+      snack: targets.snack !== null ? String(targets.snack) : '',
+    };
+  });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -145,6 +159,8 @@ function EditGoalForm({
     ? calorieSelection
     : '';
 
+  const dailyTotal = calorieContext ? getResolvedDailyKcal(effectiveSelection, customKcal, calorieContext.options) : null;
+
   // No calorie suggestions to validate when calorieContext is null (missing
   // profile data) — handleSave below keeps the existing goal_pace/
   // daily_kcal_target unchanged in that case, so there's nothing to block.
@@ -152,7 +168,8 @@ function EditGoalForm({
     calorieContext === null ||
     (effectiveSelection !== '' &&
       (effectiveSelection !== 'custom' ||
-        isCustomKcalValid(Number(customKcal), calorieContext.options.maintenanceKcal)));
+        isCustomKcalValid(Number(customKcal), calorieContext.options.maintenanceKcal)) &&
+      isMealBreakdownValid(mealBreakdownEnabled, mealKcalTargets, dailyTotal));
 
   async function handleSave() {
     setError(null);
@@ -172,6 +189,8 @@ function EditGoalForm({
         goalWeightKg: needsGoalWeight ? Number(goalWeight) : null,
         goalPace,
         dailyKcalTarget,
+        mealBreakdownEnabled,
+        mealKcalTargets: mealBreakdownEnabled ? mealKcalTargetsToNumbers(mealKcalTargets) : null,
       });
       onSaved();
     } catch (err) {
@@ -231,6 +250,12 @@ function EditGoalForm({
                 onSelectionChange={setCalorieSelection}
                 customKcal={customKcal}
                 onCustomKcalChange={setCustomKcal}
+                mealBreakdownEnabled={mealBreakdownEnabled}
+                onMealBreakdownEnabledChange={setMealBreakdownEnabled}
+                mealKcalTargets={mealKcalTargets}
+                onMealKcalTargetChange={(meal, value) =>
+                  setMealKcalTargets((prev) => ({ ...prev, [meal]: value }))
+                }
               />
             ) : (
               <Alert severity="info">

@@ -62,3 +62,33 @@ export async function fetchProfileNames(userIds: string[]): Promise<Record<strin
 
   return Object.fromEntries((data ?? []).map((row) => [row.id, row.name]));
 }
+
+export interface MemberKcalProfile {
+  id: string;
+  name: string;
+  daily_kcal_target: number | null;
+  meal_breakdown_enabled: boolean;
+  breakfast_kcal_target: number | null;
+  lunch_kcal_target: number | null;
+  dinner_kcal_target: number | null;
+  snack_kcal_target: number | null;
+}
+
+// Same "select own row or a fellow group member's row" RLS fetchProfileNames
+// already relies on (see that function's own comment) — selects just the
+// columns GroupMemberKcalCard needs to show each member's own daily target
+// and optional per-meal breakdown on /groups/:groupId/log, not the full row.
+export async function fetchMemberKcalProfiles(userIds: string[]): Promise<Record<string, MemberKcalProfile>> {
+  const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
+  if (uniqueIds.length === 0) return {};
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(
+      'id, name, daily_kcal_target, meal_breakdown_enabled, breakfast_kcal_target, lunch_kcal_target, dinner_kcal_target, snack_kcal_target',
+    )
+    .in('id', uniqueIds);
+  if (error) throw error;
+
+  return Object.fromEntries((data ?? []).map((row) => [row.id, row as MemberKcalProfile]));
+}

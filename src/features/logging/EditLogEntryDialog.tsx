@@ -10,7 +10,8 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { deleteLogEntry, updateLogEntry } from './api';
 import { DeleteLogEntryDialog } from './DeleteLogEntryDialog';
-import type { LogEntry } from '../../types/log';
+import { MealTypeSelector } from './MealTypeSelector';
+import type { LogEntry, MealType } from '../../types/log';
 
 // Fast-follow mentioned in Ticket 8: editing (or deleting) an already-logged
 // entry's own snapshot values, independent of whatever its source
@@ -54,6 +55,7 @@ function EditLogEntryForm({
   const [name, setName] = useState(entry.snapshot_name);
   const [kcal, setKcal] = useState(entry.snapshot_kcal.toString());
   const [quantity, setQuantity] = useState(entry.snapshot_quantity?.toString() ?? '');
+  const [mealType, setMealType] = useState<MealType | null>(entry.meal_type);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -71,6 +73,7 @@ function EditLogEntryForm({
         snapshot_name: name.trim(),
         snapshot_kcal: parsedKcal,
         snapshot_quantity: quantity.trim() === '' ? null : Number(quantity),
+        meal_type: mealType,
       });
       onSaved(updated);
     } catch (err) {
@@ -125,6 +128,7 @@ function EditLogEntryForm({
               input: { endAdornment: <InputAdornment position="end">{entry.snapshot_unit}</InputAdornment> },
             }}
           />
+          <MealTypeSelector value={mealType} onChange={setMealType} disabled={saving} />
         </Stack>
       </DialogContent>
       <DialogActions

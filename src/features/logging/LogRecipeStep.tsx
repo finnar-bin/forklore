@@ -8,8 +8,10 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import type { Recipe } from '../../types/recipe';
+import type { MealType } from '../../types/log';
 import type { LogEntryInput } from './api';
 import { formatRecipeLabel } from './formatItemLabel';
+import { MealTypeSelector } from './MealTypeSelector';
 
 // Asks how many grams of this recipe were eaten, then snapshots kcal scaled
 // from that — mirrors the quantity-scaling pattern already established for
@@ -29,6 +31,7 @@ export function LogRecipeStep({
   onCancel: () => void;
 }) {
   const [gramsEaten, setGramsEaten] = useState('');
+  const [mealType, setMealType] = useState<MealType | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +58,7 @@ export function LogRecipeStep({
         // Recipes are always logged in grams — see Ticket 12's
         // servings -> weight change (docs/pending-deviations.md).
         snapshot_unit: 'g',
+        meal_type: mealType,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to log this recipe.');
@@ -95,6 +99,7 @@ export function LogRecipeStep({
           <Typography fontSize={12} color="text.secondary">
             {kcal.toFixed(0)} kcal
           </Typography>
+          <MealTypeSelector value={mealType} onChange={setMealType} disabled={submitting} />
           {error && <Alert severity="error">{error}</Alert>}
         </Stack>
       </DialogContent>

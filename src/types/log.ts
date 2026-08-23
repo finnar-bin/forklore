@@ -1,4 +1,10 @@
 import type { IngredientUnit } from './ingredient';
+import type { MealType } from './meal';
+
+// Re-exported so existing `import type { MealType } from '../../types/log'`
+// call sites don't need to change — the type itself now lives in meal.ts
+// alongside profiles' own per-meal kcal target columns, which need it too.
+export type { MealType };
 
 export interface LogEntry {
   id: string;
@@ -15,6 +21,9 @@ export interface LogEntry {
   // snapshot_* fields — never re-derived from a (possibly since-deleted)
   // source.
   snapshot_unit: IngredientUnit;
+  // Optional — which meal this entry was logged under. Null when the user
+  // didn't pick one.
+  meal_type: MealType | null;
   logged_at: string;
   created_at: string;
   // See supabase/migrations/20260831000000_log_entries_rls_and_updated_at.sql

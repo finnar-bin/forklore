@@ -14,8 +14,12 @@ import {
   calculateBmr,
   calculateCalorieOptions,
   calculateTdee,
+  emptyMealKcalTargets,
+  getResolvedDailyKcal,
   isCustomKcalValid,
   isGoalWeightValid,
+  isMealBreakdownValid,
+  mealKcalTargetsToNumbers,
   resolveCalorieTarget,
 } from './calorieCalc';
 import { AboutYouStep } from './steps/AboutYouStep';
@@ -24,6 +28,7 @@ import { ActivityLevelStep } from './steps/ActivityLevelStep';
 import { GoalStep } from './steps/GoalStep';
 import { CalorieTargetStep, type CalorieSelection } from './steps/CalorieTargetStep';
 import type { ActivityLevel, BiologicalSex, GoalType } from '../../types/profile';
+import type { MealType } from '../../types/meal';
 
 const STEP_LABELS = ['About you', 'Body metrics', 'Activity level', 'Goal', 'Calorie target'];
 
@@ -61,6 +66,8 @@ export function OnboardingStepper() {
 
   const [calorieSelection, setCalorieSelection] = useState<CalorieSelection | ''>('');
   const [customKcal, setCustomKcal] = useState('');
+  const [mealBreakdownEnabled, setMealBreakdownEnabled] = useState(false);
+  const [mealKcalTargets, setMealKcalTargets] = useState<Record<MealType, string>>(emptyMealKcalTargets());
 
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -98,7 +105,12 @@ export function OnboardingStepper() {
         (isValidNumberInRange(goalWeight, 20, 400) && isGoalWeightValid(goalType, weight, goalWeight))),
     calorieSelection !== '' &&
       (calorieSelection !== 'custom' ||
-        (calorieOptions !== null && isCustomKcalValid(Number(customKcal), calorieOptions.maintenanceKcal))),
+        (calorieOptions !== null && isCustomKcalValid(Number(customKcal), calorieOptions.maintenanceKcal))) &&
+      isMealBreakdownValid(
+        mealBreakdownEnabled,
+        mealKcalTargets,
+        getResolvedDailyKcal(calorieSelection, customKcal, calorieOptions),
+      ),
   ];
 
   function handleBack() {
@@ -109,12 +121,17 @@ export function OnboardingStepper() {
     setActiveStep((step) => step + 1);
   }
 
+  function handleMealKcalTargetChange(meal: MealType, value: string) {
+    setMealKcalTargets((prev) => ({ ...prev, [meal]: value }));
+  }
+
   async function handleFinish() {
     if (!calorieOptions || !sex || !activityLevel || !goalType || calorieSelection === '') return;
 
     const resolved = resolveCalorieTarget(calorieSelection, customKcal, calorieOptions);
     if (!resolved) return;
     const { goalPace, dailyKcalTarget } = resolved;
+    const mealTargets = mealBreakdownEnabled ? mealKcalTargetsToNumbers(mealKcalTargets) : null;
 
     setError(null);
     setSubmitting(true);
@@ -130,6 +147,11 @@ export function OnboardingStepper() {
         goalWeightKg: goalType === 'maintain' ? Number(weight) : Number(goalWeight),
         goalPace,
         dailyKcalTarget,
+        mealBreakdownEnabled,
+        breakfastKcalTarget: mealTargets?.breakfast ?? null,
+        lunchKcalTarget: mealTargets?.lunch ?? null,
+        dinnerKcalTarget: mealTargets?.dinner ?? null,
+        snackKcalTarget: mealTargets?.snack ?? null,
       });
 
       // Only touches the avatar at all if it actually changed — skips a
@@ -213,6 +235,10 @@ export function OnboardingStepper() {
           onSelectionChange={setCalorieSelection}
           customKcal={customKcal}
           onCustomKcalChange={setCustomKcal}
+          mealBreakdownEnabled={mealBreakdownEnabled}
+          onMealBreakdownEnabledChange={setMealBreakdownEnabled}
+          mealKcalTargets={mealKcalTargets}
+          onMealKcalTargetChange={handleMealKcalTargetChange}
         />
       )}
 

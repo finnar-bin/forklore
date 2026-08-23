@@ -12,6 +12,11 @@ export interface OnboardingInput {
   goalWeightKg: number;
   goalPace: GoalPace | null;
   dailyKcalTarget: number;
+  mealBreakdownEnabled: boolean;
+  breakfastKcalTarget: number | null;
+  lunchKcalTarget: number | null;
+  dinnerKcalTarget: number | null;
+  snackKcalTarget: number | null;
 }
 
 // Atomic profiles update + weight_logs insert — see the complete_onboarding
@@ -28,6 +33,11 @@ export async function completeOnboarding(input: OnboardingInput): Promise<void> 
     p_goal_weight_kg: input.goalWeightKg,
     p_goal_pace: input.goalPace,
     p_daily_kcal_target: input.dailyKcalTarget,
+    p_meal_breakdown_enabled: input.mealBreakdownEnabled,
+    p_breakfast_kcal_target: input.breakfastKcalTarget,
+    p_lunch_kcal_target: input.lunchKcalTarget,
+    p_dinner_kcal_target: input.dinnerKcalTarget,
+    p_snack_kcal_target: input.snackKcalTarget,
   });
   if (error) throw error;
 }
