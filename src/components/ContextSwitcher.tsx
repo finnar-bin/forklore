@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -12,8 +12,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../theme/theme';
 import { useAppStore } from '../store/useAppStore';
-import { fetchMyGroups } from '../features/groups/api';
-import type { GroupMembership } from '../types/group';
+import { useMyGroups } from '../features/groups/useMyGroups';
 
 // design-system.md "Context switcher chip" — pill-shaped, sits below the
 // header on Pantry/Recipes screens (Progress ignores it — see routes.md; Log
@@ -40,16 +39,12 @@ export function ContextSwitcher({
 
   // undefined = not yet fetched. Distinguished from "fetched, zero groups"
   // so the chip doesn't flash-and-disappear for a user who does belong to
-  // groups but whose fetchMyGroups call just hasn't resolved yet.
-  const [groups, setGroups] = useState<GroupMembership[] | undefined>(undefined);
+  // groups but whose fetch just hasn't resolved yet. Shared across every
+  // screen reading "groups I belong to" — see useMyGroups — rather than
+  // this component's own independent fetch, since Ticket 16's BottomNav
+  // means this mounts fresh on every Pantry<->Recipes tab switch.
+  const groups = useMyGroups(userId);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (!userId) return;
-    fetchMyGroups(userId)
-      .then(setGroups)
-      .catch(() => setGroups([]));
-  }, [userId]);
 
   const activeMembership = activeGroupId
     ? groups?.find((membership) => membership.group.id === activeGroupId)

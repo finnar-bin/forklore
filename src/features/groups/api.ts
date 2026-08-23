@@ -1,5 +1,6 @@
 import { db } from '../../lib/db';
 import { supabase } from '../../lib/supabase';
+import { invalidateMyGroups } from './useMyGroups';
 import type { Group, GroupInvite, GroupMember, GroupMembership } from '../../types/group';
 
 export interface GroupInput {
@@ -42,6 +43,9 @@ export async function createGroup(input: GroupInput): Promise<Group> {
   // schema) at least reflects groups this device has actually seen, even
   // though reads above don't come from Dexie yet.
   await db.groups.put(group);
+  // The caller now belongs to a group useMyGroups' shared cache doesn't
+  // know about yet — see docs/pending-deviations.md (Ticket 16).
+  invalidateMyGroups();
   return group;
 }
 
@@ -91,6 +95,10 @@ export async function updateGroup(groupId: string, input: GroupInput): Promise<G
   if (error) throw error;
   const group = data as Group;
   await db.groups.put(group);
+  // The cached row's group.name/description (embedded via fetchMyGroups'
+  // `groups (*)` select) is now stale — see docs/pending-deviations.md
+  // (Ticket 16).
+  invalidateMyGroups();
   return group;
 }
 
@@ -101,6 +109,9 @@ export async function deleteGroup(groupId: string): Promise<void> {
   const { error } = await supabase.from('groups').delete().eq('id', groupId);
   if (error) throw error;
   await db.groups.delete(groupId);
+  // The caller no longer belongs to this group — see
+  // docs/pending-deviations.md (Ticket 16).
+  invalidateMyGroups();
 }
 
 // group_members isn't mirrored in Dexie (same as fetchMyGroups above) — a
@@ -137,5 +148,8 @@ export async function acceptGroupInvite(inviteCode: string): Promise<string> {
     p_invite_code: inviteCode,
   });
   if (error) throw error;
+  // The caller now belongs to a group useMyGroups' shared cache doesn't
+  // know about yet — see docs/pending-deviations.md (Ticket 16).
+  invalidateMyGroups();
   return data as string;
 }

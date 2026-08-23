@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import { AppHeader } from '../components/AppHeader';
 import { AllTimeLog } from '../features/logging/AllTimeLog';
-import { fetchMyGroups } from '../features/groups/api';
+import { useMyGroups } from '../features/groups/useMyGroups';
 import { useAppStore } from '../store/useAppStore';
 
 // /logs (personal, cross-context) and /groups/:groupId/logs (one group's own
@@ -14,17 +13,9 @@ export function LogsPage() {
   const { groupId } = useParams<{ groupId?: string }>();
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
-  const [groupName, setGroupName] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!groupId || !userId) {
-      setGroupName(null);
-      return;
-    }
-    fetchMyGroups(userId)
-      .then((groups) => setGroupName(groups.find((m) => m.group.id === groupId)?.group.name ?? 'Group'))
-      .catch(() => setGroupName('Group'));
-  }, [groupId, userId]);
+  // Shared cache (see useMyGroups) rather than this page's own fetch.
+  const groups = useMyGroups(userId);
+  const groupName = groupId ? (groups?.find((m) => m.group.id === groupId)?.group.name ?? 'Group') : null;
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>

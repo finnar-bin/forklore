@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import { AppHeader } from '../components/AppHeader';
 import { DailyLog } from '../features/logging/DailyLog';
-import { fetchMyGroups } from '../features/groups/api';
+import { useMyGroups } from '../features/groups/useMyGroups';
 import { useAppStore, useSyncedActiveGroupId } from '../store/useAppStore';
-import type { GroupMembership } from '../types/group';
 
 // No ContextSwitcher here (unlike PantryPage/RecipesPage) — /log itself is
 // cross-context now (personal and every group, mixed), and switching to one
@@ -19,17 +17,12 @@ export function LogPage() {
   const groupId = useSyncedActiveGroupId(routeGroupId);
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
-  // Fetched unconditionally (not just when groupId is set) so the personal
+  // Read unconditionally (not just when groupId is set) so the personal
   // page also knows whether "View group logs" has anything to lead to —
   // requested directly: hide it entirely for a user in no groups at all.
-  const [groups, setGroups] = useState<GroupMembership[] | undefined>(undefined);
-
-  useEffect(() => {
-    if (!userId) return;
-    fetchMyGroups(userId)
-      .then(setGroups)
-      .catch(() => setGroups([]));
-  }, [userId]);
+  // Shared cache (see useMyGroups) rather than this page's own fetch, since
+  // Log is a BottomNav tab and remounts on every tap.
+  const groups = useMyGroups(userId);
 
   const groupName = groupId ? (groups?.find((m) => m.group.id === groupId)?.group.name ?? 'Group') : null;
 

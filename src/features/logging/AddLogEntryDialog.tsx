@@ -16,7 +16,7 @@ import Typography from '@mui/material/Typography';
 import { useAppStore } from '../../store/useAppStore';
 import { fetchAllIngredients } from '../pantry/api';
 import { fetchAllRecipes } from '../recipes/api';
-import { fetchMyGroups } from '../groups/api';
+import { useMyGroups } from '../groups/useMyGroups';
 import { createLogEntry, type LogEntryInput } from './api';
 import { formatIngredientLabel, formatRecipeLabel } from './formatItemLabel';
 import { LogIngredientStep } from './LogIngredientStep';
@@ -25,6 +25,11 @@ import type { GroupMembership } from '../../types/group';
 import type { Ingredient } from '../../types/ingredient';
 import type { LogEntry } from '../../types/log';
 import type { Recipe } from '../../types/recipe';
+
+// A stable reference (not a fresh `[]` literal on every render) so the
+// ingredients/recipes effect below — keyed on `groups` — doesn't re-run on
+// every render while useMyGroups is still loading.
+const EMPTY_GROUPS: GroupMembership[] = [];
 
 // Primary "log an entry by selecting an existing ingredient or recipe" flow
 // (Ticket 8 scope). Same toggle + select-then-detail shape as
@@ -66,18 +71,15 @@ function AddLogEntryForm({
   const userId = useAppStore((state) => state.userId);
   const [type, setType] = useState<'ingredient' | 'recipe'>('ingredient');
 
-  const [groups, setGroups] = useState<GroupMembership[]>([]);
+  // Shared cache (see useMyGroups) rather than this dialog's own fetch — it
+  // remounts fresh every time it opens ("selection state starts fresh each
+  // time" above), which used to mean a fresh group_members fetch every tap
+  // of the Log FAB.
+  const groups = useMyGroups(userId) ?? EMPTY_GROUPS;
   const [ingredients, setIngredients] = useState<Ingredient[] | null>(null);
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
-
-  useEffect(() => {
-    if (!userId) return;
-    fetchMyGroups(userId)
-      .then(setGroups)
-      .catch(() => setGroups([]));
-  }, [userId]);
 
   useEffect(() => {
     if (!userId) return;
