@@ -11,11 +11,15 @@ import type { IngredientInput } from './api';
 
 interface IngredientFormProps {
   initialValues?: IngredientInput;
+  // The existing ingredient's own id (edit flows only) — lets photo
+  // uploads overwrite its previous R2 object instead of orphaning it. A
+  // create flow (no initialValues) has no id yet, so this stays undefined.
+  ingredientId?: string;
   submitLabel: string;
   onSubmit: (input: IngredientInput) => Promise<void>;
 }
 
-export function IngredientForm({ initialValues, submitLabel, onSubmit }: IngredientFormProps) {
+export function IngredientForm({ initialValues, ingredientId, submitLabel, onSubmit }: IngredientFormProps) {
   const [name, setName] = useState(initialValues?.name ?? '');
   const [quantity, setQuantity] = useState(initialValues?.quantity.toString() ?? '');
   const [unit, setUnit] = useState<IngredientUnit | ''>(initialValues?.unit ?? '');
@@ -95,6 +99,7 @@ export function IngredientForm({ initialValues, submitLabel, onSubmit }: Ingredi
         onChange={setPhotoUrl}
         onUploadingChange={setPhotoUploading}
         entity="ingredient"
+        entityId={ingredientId}
         alt={name || 'ingredient'}
       />
 

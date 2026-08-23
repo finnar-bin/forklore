@@ -105,6 +105,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
             kcal: ingredient.kcal,
             photo_url: ingredient.photo_url,
           }}
+          ingredientId={ingredient.id}
           submitLabel="Save changes"
           onSubmit={handleSubmit}
         />

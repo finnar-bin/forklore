@@ -18,6 +18,7 @@ export function PhotoUpload({
   onChange,
   alt,
   entity,
+  entityId,
   size = 52,
   onUploadingChange,
 }: {
@@ -25,6 +26,12 @@ export function PhotoUpload({
   onChange: (url: string | null) => void;
   alt: string;
   entity: PhotoEntity;
+  // The existing ingredient/recipe's own id, so the upload overwrites its
+  // previous photo in R2 instead of creating a new object each time. Omit
+  // when there's no row yet (a create flow) — see src/lib/photoUpload.ts.
+  // Not needed for `entity="avatar"`, which is always keyed by the caller's
+  // own user id server-side.
+  entityId?: string;
   size?: number;
   onUploadingChange?: (uploading: boolean) => void;
 }) {
@@ -48,7 +55,7 @@ export function PhotoUpload({
     setUploading(true);
     onUploadingChange?.(true);
     try {
-      const url = await uploadPhoto(file, entity);
+      const url = await uploadPhoto(file, entity, entityId);
       // The parent may have unmounted this component while the upload was
       // in flight (e.g. a dialog closed) — calling onChange/setState after
       // that would warn at best and, if the parent doesn't gate navigation

@@ -333,6 +333,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
           onChange={setPhotoUrl}
           onUploadingChange={setPhotoUploading}
           entity="recipe"
+          entityId={recipeId}
           alt={name}
           size={120}
         />
