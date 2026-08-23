@@ -7,6 +7,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useAppStore } from '../../store/useAppStore';
 import { fetchMyProfile, updateMyProfile } from '../profiles/api';
+import { deletePhoto } from '../../lib/photoUpload';
 import { completeOnboarding } from './api';
 import {
   calculateAge,
@@ -42,6 +43,12 @@ export function OnboardingStepper() {
   const [birthdate, setBirthdate] = useState('');
   const [sex, setSex] = useState<BiologicalSex | ''>('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  // The profile's avatar_url as originally fetched, kept separate from the
+  // live-editable `avatarUrl` above so handleFinish can tell "the user
+  // explicitly removed a pre-filled avatar" (originalAvatarUrl set,
+  // avatarUrl null) apart from "never had one" or "unchanged" — only the
+  // former needs both a field update AND an R2 cleanup call.
+  const [originalAvatarUrl, setOriginalAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
 
   const [height, setHeight] = useState('');
@@ -68,6 +75,7 @@ export function OnboardingStepper() {
       .then((profile) => {
         setName(profile.name);
         setAvatarUrl(profile.avatar_url);
+        setOriginalAvatarUrl(profile.avatar_url);
       })
       .catch(() => {});
   }, [userId]);
@@ -124,13 +132,24 @@ export function OnboardingStepper() {
         dailyKcalTarget,
       });
 
-      if (avatarUrl && userId) {
+      // Only touches the avatar at all if it actually changed — skips a
+      // wasted call when the user never touched the pre-filled value.
+      if (avatarUrl !== originalAvatarUrl && userId) {
         try {
           await updateMyProfile(userId, { avatar_url: avatarUrl });
+          // Explicitly removed a pre-filled avatar (not "added a new one,"
+          // which overwrites the same deterministic R2 key with nothing
+          // to clean up) — delete its R2 object, but only now that the
+          // field update above has actually landed; deleting first and
+          // then having that update fail would leave the row still
+          // pointing at a now-deleted object.
+          if (originalAvatarUrl && !avatarUrl) {
+            await deletePhoto('avatar');
+          }
         } catch {
-          // Onboarding itself succeeded; a failed avatar save shouldn't
-          // block getting into the app — editable later from /profile. See
-          // docs/pending-deviations.md (Ticket 15).
+          // Onboarding itself succeeded; a failed avatar save/cleanup
+          // shouldn't block getting into the app — editable later from
+          // /profile. See docs/pending-deviations.md (Ticket 15).
         }
       }
 

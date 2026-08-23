@@ -5,7 +5,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { DeferredPhotoUpload } from '../../components/DeferredPhotoUpload';
-import { uploadPhoto } from '../../lib/photoUpload';
+import { deletePhoto, uploadPhoto } from '../../lib/photoUpload';
 import type { IngredientUnit } from '../../types/ingredient';
 import { INGREDIENT_UNITS } from './ingredientUnits';
 import type { IngredientInput } from './api';
@@ -47,6 +47,22 @@ export function IngredientForm({ initialValues, ingredientId, submitLabel, onSub
         kcal: Number(kcal),
         photo_url: finalPhotoUrl,
       });
+
+      // Removing an existing photo (not just replacing it, and not the
+      // create flow — initialValues.photo_url is only ever set on an
+      // edit) also deletes its R2 object, not just the field. Runs after
+      // the field update above succeeds, not before — deleting from R2
+      // first and then having the actual save fail would leave the row
+      // still pointing at a now-deleted object. Best-effort: an orphaned
+      // object if this fails is the same accepted risk documented
+      // elsewhere for this feature (docs/pending-deviations.md, Ticket 15).
+      if (initialValues?.photo_url && !finalPhotoUrl) {
+        try {
+          await deletePhoto('ingredient', ingredientId);
+        } catch {
+          // Swallowed — see above.
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
       setSubmitting(false);

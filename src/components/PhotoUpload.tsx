@@ -6,16 +6,18 @@ import IconButton from '@mui/material/IconButton';
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { PhotoThumbnail } from './PhotoThumbnail';
-import { uploadPhoto, type PhotoEntity } from '../lib/photoUpload';
+import { uploadPhoto } from '../lib/photoUpload';
 
 // Wraps PhotoThumbnail with a file-picker trigger and the compress ->
 // presign -> PUT flow (src/lib/photoUpload.ts), uploading immediately on
-// pick. Used only for `entity: 'avatar'` (ProfileForm/AboutYouStep) — it's
-// always keyed by the caller's own user id server-side, so there's no
-// id-timing concern the way there is for ingredients/recipes. Those use
-// DeferredPhotoUpload instead, which stages the file and only uploads at
-// form-submit time (see docs/pending-deviations.md, Ticket 15, for why
-// avatar was deliberately left on immediate upload).
+// pick. Avatar-only (ProfileForm/AboutYouStep) — hardcoded below rather
+// than taking an `entity` prop, since it's always keyed by the caller's
+// own user id server-side (no client-supplied id, unlike
+// ingredient/recipe) and there's never a reason to use this component for
+// anything else. Ingredients/recipes use DeferredPhotoUpload instead,
+// which stages the file and only uploads at form-submit time (see
+// docs/pending-deviations.md, Ticket 15, for why avatar was deliberately
+// left on immediate upload).
 //
 // No `capture` attribute on the file input — it forces camera-only access
 // on some mobile browsers; plain `accept="image/*"` already surfaces
@@ -25,14 +27,12 @@ export function PhotoUpload({
   photoUrl,
   onChange,
   alt,
-  entity,
   size = 52,
   onUploadingChange,
 }: {
   photoUrl: string | null;
   onChange: (url: string | null) => void;
   alt: string;
-  entity: PhotoEntity;
   size?: number;
   onUploadingChange?: (uploading: boolean) => void;
 }) {
@@ -64,7 +64,7 @@ export function PhotoUpload({
     setUploading(true);
     onUploadingChange?.(true);
     try {
-      const url = await uploadPhoto(file, entity);
+      const url = await uploadPhoto(file, 'avatar');
       // The parent may have unmounted this component while the upload was
       // in flight (e.g. a dialog closed) — calling onChange/setState after
       // that would warn at best and, if the parent doesn't gate navigation

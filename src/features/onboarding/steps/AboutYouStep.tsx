@@ -41,7 +41,6 @@ export function AboutYouStep({
           photoUrl={avatarUrl}
           onChange={onAvatarUrlChange}
           onUploadingChange={onAvatarUploadingChange}
-          entity="avatar"
           alt={name || 'your'}
           size={88}
         />

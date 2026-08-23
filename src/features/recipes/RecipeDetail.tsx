@@ -15,7 +15,7 @@ import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
 import { DeferredPhotoUpload } from '../../components/DeferredPhotoUpload';
 import { ItemMetadata } from '../../components/ItemMetadata';
-import { uploadPhoto } from '../../lib/photoUpload';
+import { deletePhoto, uploadPhoto } from '../../lib/photoUpload';
 import { useAppStore } from '../../store/useAppStore';
 import { useProfileNames } from '../profiles/useProfileNames';
 import {
@@ -243,6 +243,21 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
           photo_url: effectivePhotoUrl,
         });
         applyRecipeBaseline(updated);
+
+        // Removing an existing photo (not just replacing it) also deletes
+        // its R2 object, not just the field. Runs after the field update
+        // above succeeds, not before — deleting from R2 first and then
+        // having the save fail would leave the row still pointing at a
+        // now-deleted object. Best-effort: an orphaned object if this
+        // fails is the same accepted risk documented elsewhere for this
+        // feature (docs/pending-deviations.md, Ticket 15).
+        if (savedRecipe.photo_url && !effectivePhotoUrl) {
+          try {
+            await deletePhoto('recipe', recipeId);
+          } catch {
+            // Swallowed — see above.
+          }
+        }
       }
       setPendingPhotoFile(null);
 

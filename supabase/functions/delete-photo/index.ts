@@ -9,19 +9,18 @@ import {
   createServiceClient,
   isVisibleToCaller,
   isPhotoStillReferenced,
+  type Entity,
 } from '../_shared/photoAuth.ts';
 
-type DeletableEntity = keyof typeof OWNERSHIP_TABLES; // 'ingredient' | 'recipe'
-
-// Deletes an ingredient/recipe's R2 photo when the row itself is deleted.
-// Avatar has no delete trigger (no account-deletion feature exists), so
-// it's out of scope here.
+// Deletes an ingredient/recipe's R2 photo when the row itself is deleted
+// (called from deleteIngredient/deleteRecipe), or an avatar's when it's
+// removed from a profile (ProfileForm.tsx/AboutYouStep.tsx's "remove
+// photo" action).
 //
-// Called BEFORE the row is actually removed from Dexie/the outbox (see
-// deleteIngredient/deleteRecipe in src/features/pantry/api.ts /
-// src/features/recipes/api.ts) — the ownership check below needs the row
-// to still exist to verify the caller could see it; if it ran after the
-// row was gone, every legitimate deletion would incorrectly 403.
+// For ingredient/recipe, this is called BEFORE the row is actually removed
+// from Dexie/the outbox — the ownership check below needs the row to
+// still exist to verify the caller could see it; if it ran after the row
+// was gone, every legitimate deletion would incorrectly 403.
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: CORS_HEADERS });
@@ -29,44 +28,65 @@ Deno.serve(async (req) => {
 
   const auth = await authenticateCaller(req);
   if (!auth.ok) return auth.response;
-  const { userClient } = auth;
+  const { userClient, userId } = auth;
 
-  let entity: DeletableEntity;
-  let id: string;
+  let entity: Entity;
+  let requestedId: string | undefined;
   try {
     const body = await req.json();
-    if (!Object.hasOwn(OWNERSHIP_TABLES, body?.entity)) {
+    if (!Object.hasOwn(PATH_PREFIXES, body?.entity)) {
       throw new Error('invalid entity');
     }
-    entity = body.entity as DeletableEntity;
-    if (typeof body.id !== 'string' || !UUID_RE.test(body.id)) {
-      throw new Error('invalid id');
+    entity = body.entity as Entity;
+    // Avatars are always keyed by the caller's own id (resolved below) —
+    // any id the client sends for entity: 'avatar' is meaningless and
+    // discarded, so it's never even validated. Same convention as
+    // get-upload-url.
+    if (entity !== 'avatar') {
+      if (typeof body.id !== 'string' || !UUID_RE.test(body.id)) {
+        throw new Error('invalid id');
+      }
+      requestedId = body.id;
     }
-    id = body.id;
   } catch {
-    return errorResponse('entity must be one of ingredient, recipe; id (UUID) is required', 400);
+    return errorResponse('entity must be one of ingredient, recipe, avatar; ingredient/recipe also require an id (UUID)', 400);
   }
 
-  const table = OWNERSHIP_TABLES[entity];
-  const visible = await isVisibleToCaller(userClient, table, id, 'delete-photo');
-  if (!visible) {
-    return errorResponse('Not found or not authorized.', 403);
+  let id: string;
+  if (entity === 'avatar') {
+    // No ownership check needed beyond authentication itself — a caller
+    // can only ever delete their own avatar, since the id isn't
+    // client-influenced. No reference check either: avatars are never
+    // shared/copied across rows the way ingredient/recipe photos can be
+    // via copy_ingredient/copy_recipe.
+    id = userId;
+  } else {
+    if (!requestedId) {
+      return errorResponse('id is required for entity ingredient/recipe', 400);
+    }
+    const table = OWNERSHIP_TABLES[entity];
+    const visible = await isVisibleToCaller(userClient, table, requestedId, 'delete-photo');
+    if (!visible) {
+      return errorResponse('Not found or not authorized.', 403);
+    }
+    id = requestedId;
+
+    const key = `${PATH_PREFIXES[entity]}/${id}.webp`;
+    const serviceClientResult = createServiceClient();
+    if (!serviceClientResult.ok) return serviceClientResult.response;
+
+    const stillReferenced = await isPhotoStillReferenced(serviceClientResult.client, table, id, key, 'delete-photo');
+    if (stillReferenced) {
+      // Not an error — a copy (Ticket 14's copy_ingredient/copy_recipe,
+      // which copies photo_url verbatim rather than giving a copy its own
+      // independent photo) still needs this object. Nothing to delete.
+      return new Response(JSON.stringify({ deleted: false }), {
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      });
+    }
   }
 
   const key = `${PATH_PREFIXES[entity]}/${id}.webp`;
-
-  const serviceClientResult = createServiceClient();
-  if (!serviceClientResult.ok) return serviceClientResult.response;
-
-  const stillReferenced = await isPhotoStillReferenced(serviceClientResult.client, table, id, key, 'delete-photo');
-  if (stillReferenced) {
-    // Not an error — a copy (Ticket 14's copy_ingredient/copy_recipe,
-    // which copies photo_url verbatim rather than giving a copy its own
-    // independent photo) still needs this object. Nothing to delete.
-    return new Response(JSON.stringify({ deleted: false }), {
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-    });
-  }
 
   const accountId = Deno.env.get('R2_ACCOUNT_ID');
   const accessKeyId = Deno.env.get('R2_ACCESS_KEY_ID');

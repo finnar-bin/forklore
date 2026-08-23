@@ -14,14 +14,16 @@ interface UploadUrlResponse {
 //
 // `id` names the R2 object after the entity's own id, so this upload
 // overwrites the entity's previous photo instead of leaving it as an
-// orphaned object. Required for `entity: 'ingredient' | 'recipe'` — by the
-// time this is called (at form-submit time, via DeferredPhotoUpload's
-// consumers), the entity's real id is always already known, whether an
-// existing row's (edit) or a fresh client-generated one that doesn't exist
-// in Postgres yet (create — see createIngredient/createRecipe, which
-// generate ids the same way). Omitted (and ignored if passed) for
-// `avatar`, which the Edge Function always keys by the caller's own user
-// id server-side.
+// orphaned object. Required for `entity: 'ingredient' | 'recipe'` (enforced
+// by the overloads below, not just the runtime check) — by the time this
+// is called (at form-submit time, via DeferredPhotoUpload's consumers),
+// the entity's real id is always already known, whether an existing row's
+// (edit) or a fresh client-generated one that doesn't exist in Postgres
+// yet (create — see createIngredient/createRecipe, which generate ids the
+// same way). Omitted for `avatar`, which the Edge Function always keys by
+// the caller's own user id server-side.
+export function uploadPhoto(file: File, entity: 'avatar'): Promise<string>;
+export function uploadPhoto(file: File, entity: 'ingredient' | 'recipe', id: string): Promise<string>;
 export async function uploadPhoto(file: File, entity: PhotoEntity, id?: string): Promise<string> {
   if (!file.type.startsWith('image/')) {
     throw new Error('Please choose an image file.');
@@ -52,11 +54,22 @@ export async function uploadPhoto(file: File, entity: PhotoEntity, id?: string):
   return data.publicUrl;
 }
 
-// Deletes an ingredient/recipe's R2 photo via the delete-photo Edge
-// Function — never called directly for `avatar` (no account-deletion
-// feature exists to trigger it). Must be called before the row itself is
-// removed from Dexie/the outbox — see deleteIngredient/deleteRecipe.
-export async function deletePhoto(entity: 'ingredient' | 'recipe', id: string): Promise<void> {
+// Deletes a photo's R2 object via the delete-photo Edge Function.
+//
+// For `entity: 'ingredient' | 'recipe'`, `id` is required, and this must be
+// called before the row itself is removed from Dexie/the outbox — see
+// deleteIngredient/deleteRecipe (entity-delete cleanup) — or, when just
+// removing a photo without deleting the entity, after the field update
+// that clears photo_url has already succeeded, not before (see
+// IngredientForm.tsx/RecipeDetail.tsx's "remove photo" handling) — deleting
+// from R2 first and then having the save fail would leave the row still
+// pointing at a now-deleted object.
+//
+// For `entity: 'avatar'`, `id` is omitted — the Edge Function always keys
+// it by the caller's own user id, same as uploadPhoto.
+export function deletePhoto(entity: 'avatar'): Promise<void>;
+export function deletePhoto(entity: 'ingredient' | 'recipe', id: string): Promise<void>;
+export async function deletePhoto(entity: PhotoEntity, id?: string): Promise<void> {
   const { error } = await supabase.functions.invoke('delete-photo', {
     body: { entity, id },
   });

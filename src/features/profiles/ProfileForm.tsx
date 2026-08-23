@@ -7,6 +7,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { PhotoUpload } from '../../components/PhotoUpload';
+import { deletePhoto } from '../../lib/photoUpload';
 import type { ProfileInput } from './api';
 
 // Name/avatar/height/birthdate only, per Ticket 17's scope — weight/goal
@@ -49,6 +50,22 @@ export function ProfileForm({
         height_cm: Number(height),
         birthdate: birthdate.trim() === '' ? null : birthdate,
       });
+
+      // Removing an existing avatar (not replacing it — a replacement
+      // overwrites the same deterministic R2 key, nothing to clean up)
+      // also deletes its R2 object, not just the field. Runs after the
+      // field update above succeeds, not before — deleting from R2 first
+      // and then having the save fail would leave the row still pointing
+      // at a now-deleted object. Best-effort: an orphaned object if this
+      // fails is the same accepted risk documented elsewhere for this
+      // feature (docs/pending-deviations.md, Ticket 15).
+      if (initialValues.avatar_url && !avatarUrl) {
+        try {
+          await deletePhoto('avatar');
+        } catch {
+          // Swallowed — see above.
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
     } finally {
@@ -70,7 +87,6 @@ export function ProfileForm({
           photoUrl={avatarUrl}
           onChange={setAvatarUrl}
           onUploadingChange={setPhotoUploading}
-          entity="avatar"
           alt={name || 'your'}
           size={88}
         />
