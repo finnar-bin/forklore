@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
@@ -59,6 +60,16 @@ export function RecipeForm({ initialValues, recipeId, submitLabel, onSubmit }: R
     <Stack spacing={2.5} component="form" onSubmit={handleSubmit}>
       {error && <Alert severity="error">{error}</Alert>}
 
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <DeferredPhotoUpload
+          photoUrl={photoUrl}
+          onChange={setPhotoUrl}
+          onFileSelected={setPendingPhotoFile}
+          alt={name || 'recipe'}
+          size={120}
+        />
+      </Box>
+
       <TextField
         label="Name"
         value={name}
@@ -89,13 +100,6 @@ export function RecipeForm({ initialValues, recipeId, submitLabel, onSubmit }: R
           <MenuItem value="kg">kg</MenuItem>
         </TextField>
       </Stack>
-      <DeferredPhotoUpload
-        photoUrl={photoUrl}
-        onChange={setPhotoUrl}
-        onFileSelected={setPendingPhotoFile}
-        alt={name || 'recipe'}
-      />
-
       <Button type="submit" variant="contained" size="large" disabled={submitting}>
         {submitting ? 'Saving…' : submitLabel}
       </Button>

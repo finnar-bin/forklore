@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
@@ -73,6 +74,16 @@ export function IngredientForm({ initialValues, ingredientId, submitLabel, onSub
     <Stack spacing={2.5} component="form" onSubmit={handleSubmit}>
       {error && <Alert severity="error">{error}</Alert>}
 
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <DeferredPhotoUpload
+          photoUrl={photoUrl}
+          onChange={setPhotoUrl}
+          onFileSelected={setPendingPhotoFile}
+          alt={name || 'ingredient'}
+          size={120}
+        />
+      </Box>
+
       <TextField
         label="Name"
         value={name}
@@ -115,13 +126,6 @@ export function IngredientForm({ initialValues, ingredientId, submitLabel, onSub
         fullWidth
         slotProps={{ htmlInput: { min: 0, step: 0.1 } }}
       />
-      <DeferredPhotoUpload
-        photoUrl={photoUrl}
-        onChange={setPhotoUrl}
-        onFileSelected={setPendingPhotoFile}
-        alt={name || 'ingredient'}
-      />
-
       <Button type="submit" variant="contained" size="large" disabled={submitting}>
         {submitting ? 'Saving…' : submitLabel}
       </Button>
