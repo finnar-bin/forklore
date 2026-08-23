@@ -13,8 +13,9 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
-import { PhotoThumbnail } from '../../components/PhotoThumbnail';
+import { DeferredPhotoUpload } from '../../components/DeferredPhotoUpload';
 import { ItemMetadata } from '../../components/ItemMetadata';
+import { deletePhoto, uploadPhoto } from '../../lib/photoUpload';
 import { useAppStore } from '../../store/useAppStore';
 import { useProfileNames } from '../profiles/useProfileNames';
 import {
@@ -74,7 +75,8 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   // 12 follow-up, "servings -> weight").
   const [weight, setWeight] = useState('0');
   const [weightUnit, setWeightUnit] = useState<WeightUnit>('g');
-  const [photoUrl, setPhotoUrl] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
   const [ingredients, setIngredients] = useState<RecipeIngredientDetail[]>([]);
 
   const [ingredientsLoading, setIngredientsLoading] = useState(true);
@@ -105,7 +107,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
     setName(next.name);
     setWeight(next.weight_g.toString());
     setWeightUnit('g');
-    setPhotoUrl(next.photo_url ?? '');
+    setPhotoUrl(next.photo_url);
   }
 
   // Seeds the draft from Dexie once per recipe, not on every live-query
@@ -175,16 +177,19 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
 
   const isDirty = useMemo(() => {
     if (!savedRecipe) return false;
-    const normalizedPhoto = photoUrl.trim() === '' ? null : photoUrl.trim();
     if (name !== savedRecipe.name) return true;
     if (weightG !== savedRecipe.weight_g) return true;
-    if (normalizedPhoto !== savedRecipe.photo_url) return true;
+    if (photoUrl !== savedRecipe.photo_url) return true;
+    // A newly staged (not yet uploaded) photo doesn't change `photoUrl`
+    // itself — the upload only happens at save time — so it needs its own
+    // dirty check to enable the Save button.
+    if (pendingPhotoFile) return true;
     if (ingredients.length !== savedIngredients.length) return true;
     return ingredients.some((item) => {
       const prev = savedIngredients.find((s) => s.ingredient_id === item.ingredient_id);
       return !prev || prev.quantity_used !== item.quantity_used;
     });
-  }, [name, weightG, photoUrl, ingredients, savedRecipe, savedIngredients]);
+  }, [name, weightG, photoUrl, pendingPhotoFile, ingredients, savedRecipe, savedIngredients]);
 
   const isValid = name.trim() !== '' && Number.isFinite(weightG) && weightG > 0;
 
@@ -223,21 +228,38 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
     setSaving(true);
     setSaveError(null);
     try {
+      const effectivePhotoUrl = pendingPhotoFile
+        ? await uploadPhoto(pendingPhotoFile, 'recipe', recipeId)
+        : photoUrl;
+
       // Recipe-field-only changes go through Dexie + the outbox — this
       // succeeds offline, same as the Pantry/Log screens.
-      const normalizedPhoto = photoUrl.trim() === '' ? null : photoUrl.trim();
       const fieldsChanged =
-        name !== savedRecipe.name ||
-        weightG !== savedRecipe.weight_g ||
-        normalizedPhoto !== savedRecipe.photo_url;
+        name !== savedRecipe.name || weightG !== savedRecipe.weight_g || effectivePhotoUrl !== savedRecipe.photo_url;
       if (fieldsChanged) {
         const updated = await updateRecipe(recipeId, userId, {
           name,
           weight_g: weightG,
-          photo_url: normalizedPhoto,
+          photo_url: effectivePhotoUrl,
         });
         applyRecipeBaseline(updated);
+
+        // Removing an existing photo (not just replacing it) also deletes
+        // its R2 object, not just the field. Runs after the field update
+        // above succeeds, not before — deleting from R2 first and then
+        // having the save fail would leave the row still pointing at a
+        // now-deleted object. Best-effort: an orphaned object if this
+        // fails is the same accepted risk documented elsewhere for this
+        // feature (docs/pending-deviations.md, Ticket 15).
+        if (savedRecipe.photo_url && !effectivePhotoUrl) {
+          try {
+            await deletePhoto('recipe', recipeId);
+          } catch {
+            // Swallowed — see above.
+          }
+        }
       }
+      setPendingPhotoFile(null);
 
       // Ingredient-line changes require connectivity (see file header).
       // Built as thunks and run sequentially below — NOT fired concurrently
@@ -331,7 +353,13 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   return (
     <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-        <PhotoThumbnail photoUrl={photoUrl.trim() === '' ? null : photoUrl.trim()} alt={name} size={120} />
+        <DeferredPhotoUpload
+          photoUrl={photoUrl}
+          onChange={setPhotoUrl}
+          onFileSelected={setPendingPhotoFile}
+          alt={name}
+          size={120}
+        />
       </Box>
 
       {groupId && (
@@ -403,13 +431,6 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
               <MenuItem value="kg">kg</MenuItem>
             </TextField>
           </Stack>
-          <TextField
-            label="Photo URL (optional)"
-            value={photoUrl}
-            onChange={(e) => setPhotoUrl(e.target.value)}
-            fullWidth
-            disabled={saving}
-          />
         </Stack>
       </Paper>
 

@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import Box from '@mui/material/Box';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormLabel from '@mui/material/FormLabel';
@@ -8,6 +9,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { PhotoUpload } from '../../../components/PhotoUpload';
 import { BIOLOGICAL_SEXES } from '../onboardingOptions';
 import type { BiologicalSex } from '../../../types/profile';
 
@@ -18,6 +20,9 @@ export function AboutYouStep({
   onBirthdateChange,
   sex,
   onSexChange,
+  avatarUrl,
+  onAvatarUrlChange,
+  onAvatarUploadingChange,
 }: {
   name: string;
   onNameChange: (value: string) => void;
@@ -25,9 +30,21 @@ export function AboutYouStep({
   onBirthdateChange: (value: string) => void;
   sex: BiologicalSex | '';
   onSexChange: (value: BiologicalSex) => void;
+  avatarUrl: string | null;
+  onAvatarUrlChange: (value: string | null) => void;
+  onAvatarUploadingChange: (uploading: boolean) => void;
 }) {
   return (
     <Stack spacing={2.5} sx={{ pt: 1 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <PhotoUpload
+          photoUrl={avatarUrl}
+          onChange={onAvatarUrlChange}
+          onUploadingChange={onAvatarUploadingChange}
+          alt={name || 'your'}
+          size={88}
+        />
+      </Box>
       <TextField label="Name" value={name} onChange={(e) => onNameChange(e.target.value)} required fullWidth />
       <DatePicker
         label="Birthdate"

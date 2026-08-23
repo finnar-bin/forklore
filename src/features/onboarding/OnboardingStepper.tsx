@@ -6,7 +6,9 @@ import MobileStepper from '@mui/material/MobileStepper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useAppStore } from '../../store/useAppStore';
-import { completeOnboarding, fetchProfileName } from './api';
+import { fetchMyProfile, updateMyProfile } from '../profiles/api';
+import { deletePhoto } from '../../lib/photoUpload';
+import { completeOnboarding } from './api';
 import {
   calculateAge,
   calculateBmr,
@@ -40,6 +42,14 @@ export function OnboardingStepper() {
   const [name, setName] = useState('');
   const [birthdate, setBirthdate] = useState('');
   const [sex, setSex] = useState<BiologicalSex | ''>('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  // The profile's avatar_url as originally fetched, kept separate from the
+  // live-editable `avatarUrl` above so handleFinish can tell "the user
+  // explicitly removed a pre-filled avatar" (originalAvatarUrl set,
+  // avatarUrl null) apart from "never had one" or "unchanged" — only the
+  // former needs both a field update AND an R2 cleanup call.
+  const [originalAvatarUrl, setOriginalAvatarUrl] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
@@ -56,10 +66,18 @@ export function OnboardingStepper() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // Google SSO already has a real name via handle_new_user; email/password
-    // signups get the email's local part — pre-fill either way so the user
-    // only has to correct it, not type it from scratch.
-    if (userId) fetchProfileName(userId).then(setName).catch(() => {});
+    // Google SSO already has a real name/avatar via handle_new_user;
+    // email/password signups get the email's local part and no avatar —
+    // pre-fill either way so the user only has to correct it, not type/pick
+    // it from scratch.
+    if (!userId) return;
+    fetchMyProfile(userId)
+      .then((profile) => {
+        setName(profile.name);
+        setAvatarUrl(profile.avatar_url);
+        setOriginalAvatarUrl(profile.avatar_url);
+      })
+      .catch(() => {});
   }, [userId]);
 
   const age = useMemo(() => (birthdate ? calculateAge(birthdate) : null), [birthdate]);
@@ -113,6 +131,28 @@ export function OnboardingStepper() {
         goalPace,
         dailyKcalTarget,
       });
+
+      // Only touches the avatar at all if it actually changed — skips a
+      // wasted call when the user never touched the pre-filled value.
+      if (avatarUrl !== originalAvatarUrl && userId) {
+        try {
+          await updateMyProfile(userId, { avatar_url: avatarUrl });
+          // Explicitly removed a pre-filled avatar (not "added a new one,"
+          // which overwrites the same deterministic R2 key with nothing
+          // to clean up) — delete its R2 object, but only now that the
+          // field update above has actually landed; deleting first and
+          // then having that update fail would leave the row still
+          // pointing at a now-deleted object.
+          if (originalAvatarUrl && !avatarUrl) {
+            await deletePhoto('avatar');
+          }
+        } catch {
+          // Onboarding itself succeeded; a failed avatar save/cleanup
+          // shouldn't block getting into the app — editable later from
+          // /profile. See docs/pending-deviations.md (Ticket 15).
+        }
+      }
+
       setOnboardingComplete(true);
       navigate('/', { replace: true });
     } catch (err) {
@@ -146,6 +186,9 @@ export function OnboardingStepper() {
           onBirthdateChange={setBirthdate}
           sex={sex}
           onSexChange={setSex}
+          avatarUrl={avatarUrl}
+          onAvatarUrlChange={setAvatarUrl}
+          onAvatarUploadingChange={setAvatarUploading}
         />
       )}
       {activeStep === 1 && (
@@ -185,12 +228,17 @@ export function OnboardingStepper() {
               size="small"
               variant="contained"
               onClick={handleFinish}
-              disabled={!stepValid[activeStep] || submitting}
+              disabled={!stepValid[activeStep] || submitting || avatarUploading}
             >
               {submitting ? 'Saving…' : 'Get started'}
             </Button>
           ) : (
-            <Button size="small" variant="contained" onClick={handleNext} disabled={!stepValid[activeStep]}>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={handleNext}
+              disabled={!stepValid[activeStep] || (activeStep === 0 && avatarUploading)}
+            >
               Continue
             </Button>
           )
