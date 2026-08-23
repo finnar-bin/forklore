@@ -13,6 +13,12 @@ import type { ProfileInput } from './api';
 // but editing it here does not recompute `daily_kcal_target`; that
 // recalculation is Progress's to own, not implied by "make this editable."
 // See docs/pending-deviations.md (Ticket 17).
+//
+// Height is required, not nullable from this screen — same `required` +
+// `min`/`max`/`step` bounds as onboarding's BodyMetricsStep, which already
+// treats it as a mandatory field for the identical column. `min={50}` rules
+// out 0 and negative values (and anything else outside a plausible human
+// height) well before either bound alone would.
 export function ProfileForm({
   initialValues,
   submitLabel,
@@ -37,7 +43,7 @@ export function ProfileForm({
       await onSubmit({
         name,
         avatar_url: avatarUrl.trim() === '' ? null : avatarUrl.trim(),
-        height_cm: height.trim() === '' ? null : Number(height),
+        height_cm: Number(height),
         birthdate: birthdate.trim() === '' ? null : birthdate,
       });
     } catch (err) {
@@ -83,6 +89,7 @@ export function ProfileForm({
         type="number"
         value={height}
         onChange={(e) => setHeight(e.target.value)}
+        required
         fullWidth
         slotProps={{ htmlInput: { min: 50, max: 300, step: 0.1 } }}
       />
