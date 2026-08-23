@@ -1,4 +1,4 @@
-import type { ActivityLevel, BiologicalSex, GoalType } from '../../types/profile';
+import type { ActivityLevel, BiologicalSex, GoalPace, GoalType } from '../../types/profile';
 
 // A "lose" goal weight must actually be below current weight, a "gain" goal
 // weight must actually be above it — shared between GoalStep's inline error
@@ -92,6 +92,30 @@ export function calculateCalorieOptions(tdee: number, goalType: GoalType, sex: B
   });
 
   return { maintenanceKcal, presets };
+}
+
+// UI-only selection shape — 'maintain' has no equivalent in the goal_pace
+// enum (steady/aggressive/custom); resolveCalorieTarget below maps it to a
+// null goal_pace. Shared by OnboardingStepper and Progress's
+// EditGoalDialog — both let a caller pick from the same CalorieTargetStep
+// options and must resolve that pick to the same two DB columns.
+export type CalorieSelection = 'steady' | 'aggressive' | 'maintain' | 'custom';
+
+export interface ResolvedCalorieTarget {
+  goalPace: GoalPace | null;
+  dailyKcalTarget: number;
+}
+
+export function resolveCalorieTarget(
+  selection: CalorieSelection,
+  customKcal: string,
+  calorieOptions: CalorieOptions,
+): ResolvedCalorieTarget | null {
+  if (selection === 'custom') return { goalPace: 'custom', dailyKcalTarget: Number(customKcal) };
+  if (selection === 'maintain') return { goalPace: null, dailyKcalTarget: calorieOptions.maintenanceKcal };
+  const preset = calorieOptions.presets.find((option) => option.pace === selection);
+  if (!preset) return null;
+  return { goalPace: preset.pace, dailyKcalTarget: preset.kcal };
 }
 
 // Custom target bounds are relative to the person's own TDEE, not a flat

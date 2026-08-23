@@ -18,6 +18,7 @@
     "@fontsource/inter": "^5.3.0",
     "@mui/icons-material": "^6.5.0",
     "@mui/material": "^6.5.0",
+    "@mui/x-charts": "^7.29.1",
     "@mui/x-date-pickers": "^7.29.4",
     "@supabase/supabase-js": "^2.112.3",
     "dayjs": "^1.11.23",

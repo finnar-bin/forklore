@@ -14,13 +14,14 @@ import {
   calculateTdee,
   isCustomKcalValid,
   isGoalWeightValid,
+  resolveCalorieTarget,
 } from './calorieCalc';
 import { AboutYouStep } from './steps/AboutYouStep';
 import { BodyMetricsStep } from './steps/BodyMetricsStep';
 import { ActivityLevelStep } from './steps/ActivityLevelStep';
 import { GoalStep } from './steps/GoalStep';
 import { CalorieTargetStep, type CalorieSelection } from './steps/CalorieTargetStep';
-import type { ActivityLevel, BiologicalSex, GoalPace, GoalType } from '../../types/profile';
+import type { ActivityLevel, BiologicalSex, GoalType } from '../../types/profile';
 
 const STEP_LABELS = ['About you', 'Body metrics', 'Activity level', 'Goal', 'Calorie target'];
 
@@ -91,22 +92,11 @@ export function OnboardingStepper() {
   }
 
   async function handleFinish() {
-    if (!calorieOptions || !sex || !activityLevel || !goalType) return;
+    if (!calorieOptions || !sex || !activityLevel || !goalType || calorieSelection === '') return;
 
-    let goalPace: GoalPace | null;
-    let dailyKcalTarget: number;
-    if (calorieSelection === 'custom') {
-      goalPace = 'custom';
-      dailyKcalTarget = Number(customKcal);
-    } else if (calorieSelection === 'maintain') {
-      goalPace = null;
-      dailyKcalTarget = calorieOptions.maintenanceKcal;
-    } else {
-      const preset = calorieOptions.presets.find((option) => option.pace === calorieSelection);
-      if (!preset) return;
-      goalPace = preset.pace;
-      dailyKcalTarget = preset.kcal;
-    }
+    const resolved = resolveCalorieTarget(calorieSelection, customKcal, calorieOptions);
+    if (!resolved) return;
+    const { goalPace, dailyKcalTarget } = resolved;
 
     setError(null);
     setSubmitting(true);
