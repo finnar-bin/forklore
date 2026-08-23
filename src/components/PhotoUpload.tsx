@@ -41,6 +41,14 @@ export function PhotoUpload({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Must reset to true here, not just rely on the ref's initial value —
+    // React StrictMode double-invokes effects on mount (mount -> cleanup ->
+    // mount again) precisely to catch bugs like this. Without this line,
+    // that dev-mode cycle runs the cleanup below once, permanently leaving
+    // mountedRef.current false for the rest of this component's real
+    // lifetime, even though it's still mounted — silently breaking every
+    // upload's onChange/setUploading call after that.
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
