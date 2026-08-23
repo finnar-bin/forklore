@@ -211,17 +211,21 @@ function NewIngredientForm({
 }) {
   const userId = useAppStore((state) => state.userId);
   const [created, setCreated] = useState<Ingredient | null>(null);
+  // Generated up front (not by createIngredient) so a staged photo can be
+  // uploaded under this same id before the row itself exists — see
+  // IngredientForm.tsx/DeferredPhotoUpload.tsx.
+  const [pendingId] = useState(() => crypto.randomUUID());
 
   async function handleCreate(input: IngredientInput) {
     if (!userId) return;
-    const ingredient = await createIngredient(userId, groupId, input);
+    const ingredient = await createIngredient(pendingId, userId, groupId, input);
     setCreated(ingredient);
   }
 
   if (!created) {
     return (
       <DialogContent sx={{ pt: '12px !important' }}>
-        <IngredientForm submitLabel="Create ingredient" onSubmit={handleCreate} />
+        <IngredientForm ingredientId={pendingId} submitLabel="Create ingredient" onSubmit={handleCreate} />
       </DialogContent>
     );
   }

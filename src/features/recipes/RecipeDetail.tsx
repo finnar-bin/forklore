@@ -13,8 +13,9 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
-import { PhotoUpload } from '../../components/PhotoUpload';
+import { DeferredPhotoUpload } from '../../components/DeferredPhotoUpload';
 import { ItemMetadata } from '../../components/ItemMetadata';
+import { uploadPhoto } from '../../lib/photoUpload';
 import { useAppStore } from '../../store/useAppStore';
 import { useProfileNames } from '../profiles/useProfileNames';
 import {
@@ -75,7 +76,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   const [weight, setWeight] = useState('0');
   const [weightUnit, setWeightUnit] = useState<WeightUnit>('g');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [photoUploading, setPhotoUploading] = useState(false);
+  const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
   const [ingredients, setIngredients] = useState<RecipeIngredientDetail[]>([]);
 
   const [ingredientsLoading, setIngredientsLoading] = useState(true);
@@ -179,12 +180,16 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
     if (name !== savedRecipe.name) return true;
     if (weightG !== savedRecipe.weight_g) return true;
     if (photoUrl !== savedRecipe.photo_url) return true;
+    // A newly staged (not yet uploaded) photo doesn't change `photoUrl`
+    // itself — the upload only happens at save time — so it needs its own
+    // dirty check to enable the Save button.
+    if (pendingPhotoFile) return true;
     if (ingredients.length !== savedIngredients.length) return true;
     return ingredients.some((item) => {
       const prev = savedIngredients.find((s) => s.ingredient_id === item.ingredient_id);
       return !prev || prev.quantity_used !== item.quantity_used;
     });
-  }, [name, weightG, photoUrl, ingredients, savedRecipe, savedIngredients]);
+  }, [name, weightG, photoUrl, pendingPhotoFile, ingredients, savedRecipe, savedIngredients]);
 
   const isValid = name.trim() !== '' && Number.isFinite(weightG) && weightG > 0;
 
@@ -223,18 +228,23 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
     setSaving(true);
     setSaveError(null);
     try {
+      const effectivePhotoUrl = pendingPhotoFile
+        ? await uploadPhoto(pendingPhotoFile, 'recipe', recipeId)
+        : photoUrl;
+
       // Recipe-field-only changes go through Dexie + the outbox — this
       // succeeds offline, same as the Pantry/Log screens.
       const fieldsChanged =
-        name !== savedRecipe.name || weightG !== savedRecipe.weight_g || photoUrl !== savedRecipe.photo_url;
+        name !== savedRecipe.name || weightG !== savedRecipe.weight_g || effectivePhotoUrl !== savedRecipe.photo_url;
       if (fieldsChanged) {
         const updated = await updateRecipe(recipeId, userId, {
           name,
           weight_g: weightG,
-          photo_url: photoUrl,
+          photo_url: effectivePhotoUrl,
         });
         applyRecipeBaseline(updated);
       }
+      setPendingPhotoFile(null);
 
       // Ingredient-line changes require connectivity (see file header).
       // Built as thunks and run sequentially below — NOT fired concurrently
@@ -328,12 +338,10 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   return (
     <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-        <PhotoUpload
+        <DeferredPhotoUpload
           photoUrl={photoUrl}
           onChange={setPhotoUrl}
-          onUploadingChange={setPhotoUploading}
-          entity="recipe"
-          entityId={recipeId}
+          onFileSelected={setPendingPhotoFile}
           alt={name}
           size={120}
         />
@@ -434,7 +442,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         variant="contained"
         size="large"
         onClick={handleSave}
-        disabled={!isValid || !isDirty || saving || photoUploading}
+        disabled={!isValid || !isDirty || saving}
       >
         {saving ? 'Saving…' : 'Save changes'}
       </Button>

@@ -27,3 +27,6 @@ npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
 echo "Deploying get-upload-url to $env_name..."
 npx supabase functions deploy get-upload-url
+
+echo "Deploying delete-photo to $env_name..."
+npx supabase functions deploy delete-photo

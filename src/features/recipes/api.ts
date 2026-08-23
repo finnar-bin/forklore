@@ -1,5 +1,6 @@
 import { db } from '../../lib/db';
 import { supabase } from '../../lib/supabase';
+import { deletePhoto } from '../../lib/photoUpload';
 import { enqueueMutation } from '../../sync/outbox';
 import type { Recipe, RecipeInput, RecipeIngredientDetail } from '../../types/recipe';
 
@@ -33,14 +34,20 @@ export async function fetchRecipe(id: string): Promise<Recipe | undefined> {
 
 // Writes go to Dexie immediately (optimistic UI), then queue to the outbox
 // for Supabase — see frontend-architecture.md "Offline sync — outbox pattern".
+//
+// `id` is caller-supplied (not generated here) so CreateRecipeDialog can
+// generate it up front and use the same id to upload a staged photo (at
+// form-submit time, before this is ever called) — see
+// DeferredPhotoUpload.tsx.
 export async function createRecipe(
+  id: string,
   userId: string,
   groupId: string | null,
   input: RecipeInput,
 ): Promise<Recipe> {
   const now = new Date().toISOString();
   const recipe: Recipe = {
-    id: crypto.randomUUID(),
+    id,
     group_id: groupId,
     created_by: userId,
     updated_by: null,
@@ -77,6 +84,13 @@ export async function updateRecipe(id: string, userId: string, input: RecipeInpu
 // source_recipe_id on any log_entries that were logged from it — existing
 // log entries keep their snapshot values untouched (see schema.md).
 export async function deleteRecipe(id: string): Promise<void> {
+  try {
+    // Must run before the row is actually removed below — see
+    // deleteIngredient's identical comment (pantry/api.ts).
+    await deletePhoto('recipe', id);
+  } catch {
+    // Swallowed — best-effort, must not block deleting the row itself.
+  }
   await db.recipes.delete(id);
   await enqueueMutation('recipes', 'delete', { id });
 }

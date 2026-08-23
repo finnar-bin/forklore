@@ -1,5 +1,6 @@
 import { db } from '../../lib/db';
 import { supabase } from '../../lib/supabase';
+import { deletePhoto } from '../../lib/photoUpload';
 import { enqueueMutation } from '../../sync/outbox';
 import type { Ingredient, IngredientUnit } from '../../types/ingredient';
 
@@ -52,14 +53,20 @@ export async function fetchIngredient(id: string): Promise<Ingredient | undefine
 
 // Writes go to Dexie immediately (optimistic UI), then queue to the outbox
 // for Supabase — see frontend-architecture.md "Offline sync — outbox pattern".
+//
+// `id` is caller-supplied (not generated here) so the create dialogs can
+// generate it up front and use the same id to upload a staged photo (at
+// form-submit time, before this is ever called) — see
+// DeferredPhotoUpload.tsx and CreateIngredientDialog.tsx.
 export async function createIngredient(
+  id: string,
   userId: string,
   groupId: string | null,
   input: IngredientInput,
 ): Promise<Ingredient> {
   const now = new Date().toISOString();
   const ingredient: Ingredient = {
-    id: crypto.randomUUID(),
+    id,
     group_id: groupId,
     created_by: userId,
     updated_by: null,
@@ -92,6 +99,18 @@ export async function updateIngredient(
 }
 
 export async function deleteIngredient(id: string): Promise<void> {
+  try {
+    // Must run before the row is actually removed below — the Edge
+    // Function's ownership check needs the row to still exist to verify
+    // the caller could see it. Best-effort: a failure here (offline, a
+    // transient Edge Function error) must not block deleting the row
+    // itself; a surviving orphaned photo is the same accepted risk the R2
+    // upload flow already lives with elsewhere (docs/pending-deviations.md,
+    // Ticket 15).
+    await deletePhoto('ingredient', id);
+  } catch {
+    // Swallowed — see above.
+  }
   await db.ingredients.delete(id);
   await enqueueMutation('ingredients', 'delete', { id });
 }

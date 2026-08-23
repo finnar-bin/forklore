@@ -374,6 +374,9 @@ allow_dynamic_registration = false
 [functions.get-upload-url]
 verify_jwt = true
 
+[functions.delete-photo]
+verify_jwt = true
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.

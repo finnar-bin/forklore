@@ -12,12 +12,16 @@ interface UploadUrlResponse {
 // URL from the get-upload-url Edge Function (docs/rpcs.md), then PUTs the
 // compressed file directly to R2 — the server never touches file bytes.
 //
-// `id` (an existing ingredient/recipe id) makes the Edge Function name the
-// R2 object after that id, so this upload overwrites the entity's previous
-// photo instead of leaving it as an orphaned object — omit it when
-// uploading for a not-yet-created row (there's nothing to overwrite yet;
-// the function falls back to a fresh random id). Ignored for `avatar`,
-// which always names the object after the caller's own user id.
+// `id` names the R2 object after the entity's own id, so this upload
+// overwrites the entity's previous photo instead of leaving it as an
+// orphaned object. Required for `entity: 'ingredient' | 'recipe'` — by the
+// time this is called (at form-submit time, via DeferredPhotoUpload's
+// consumers), the entity's real id is always already known, whether an
+// existing row's (edit) or a fresh client-generated one that doesn't exist
+// in Postgres yet (create — see createIngredient/createRecipe, which
+// generate ids the same way). Omitted (and ignored if passed) for
+// `avatar`, which the Edge Function always keys by the caller's own user
+// id server-side.
 export async function uploadPhoto(file: File, entity: PhotoEntity, id?: string): Promise<string> {
   if (!file.type.startsWith('image/')) {
     throw new Error('Please choose an image file.');
@@ -46,4 +50,15 @@ export async function uploadPhoto(file: File, entity: PhotoEntity, id?: string):
   }
 
   return data.publicUrl;
+}
+
+// Deletes an ingredient/recipe's R2 photo via the delete-photo Edge
+// Function — never called directly for `avatar` (no account-deletion
+// feature exists to trigger it). Must be called before the row itself is
+// removed from Dexie/the outbox — see deleteIngredient/deleteRecipe.
+export async function deletePhoto(entity: 'ingredient' | 'recipe', id: string): Promise<void> {
+  const { error } = await supabase.functions.invoke('delete-photo', {
+    body: { entity, id },
+  });
+  if (error) throw error;
 }
