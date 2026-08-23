@@ -1,11 +1,14 @@
 import { supabase } from '../../lib/supabase';
 import { invalidateMyProfile } from './useMyProfile';
+import { todayLocalDate } from '../logging/api';
 import type { Profile } from '../../types/profile';
+import type { WeightLog } from '../../types/weightLog';
 
 export interface ProfileInput {
   name: string;
   avatar_url: string | null;
   height_cm: number | null;
+  birthdate: string | null;
 }
 
 // Live Supabase read/write, not Dexie/outbox — profiles aren't part of the
@@ -60,4 +63,47 @@ export async function fetchProfileNames(userIds: string[]): Promise<Record<strin
   if (error) throw error;
 
   return Object.fromEntries((data ?? []).map((row) => [row.id, row.name]));
+}
+
+// "Current weight" isn't a profiles column — it's the most recent
+// weight_logs row (schema.md: "historical weight entries, powers the
+// Progress screen's trend line"). Profile only needs the latest one to
+// prefill/display an editable value; the full history stays Progress's
+// (Ticket 18) to read. RLS ("read own weight logs", Ticket 2 migration)
+// scopes this to the caller's own rows.
+export async function fetchLatestWeightLog(userId: string): Promise<WeightLog | undefined> {
+  const { data, error } = await supabase
+    .from('weight_logs')
+    .select('*')
+    .eq('user_id', userId)
+    .order('logged_at', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data ?? undefined;
+}
+
+// Editing "weight" from the profile screen means recording today's
+// measurement, not rewriting history — saving twice in one day updates
+// today's own entry in place rather than accumulating duplicates. A real
+// upsert on the (user_id, logged_at) unique constraint (see
+// supabase/migrations/20260904000000_weight_logs_unique_per_day.sql) rather
+// than a find-then-update-or-insert — the latter was tried first and had a
+// TOCTOU race (two concurrent saves could each find "no row for today" and
+// both insert) plus a hard-failure mode once a duplicate existed (the find
+// step's `.maybeSingle()` throws once more than one row matches). See
+// docs/pending-deviations.md, Ticket 17's weight/birthdate follow-up.
+// `todayLocalDate` (features/logging/api.ts) is reused rather than
+// duplicated so this and log_entries agree on what "today" means (the
+// user's wall-clock day, not the server's) — see that function's own
+// comment.
+export async function saveTodayWeightLog(userId: string, weightKg: number): Promise<WeightLog> {
+  const { data, error } = await supabase
+    .from('weight_logs')
+    .upsert({ user_id: userId, weight_kg: weightKg, logged_at: todayLocalDate() }, { onConflict: 'user_id,logged_at' })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
 }
