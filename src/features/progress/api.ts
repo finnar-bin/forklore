@@ -1,5 +1,7 @@
 import { supabase } from '../../lib/supabase';
+import { invalidateMyProfile } from '../profiles/useMyProfile';
 import { WEIGHT_CHART_RANGE_DAYS } from './chartRanges';
+import type { GoalType } from '../../types/profile';
 import type { WeightLog } from '../../types/weight';
 
 // Trend chart window, not the caller's full history — a multi-year daily
@@ -50,4 +52,27 @@ export async function logWeight(userId: string, weightKg: number): Promise<Weigh
     .single();
   if (error) throw error;
   return data;
+}
+
+export interface GoalInput {
+  goalType: GoalType;
+  // null for 'maintain' — same "no goal weight for maintain" rule
+  // onboarding's GoalStep already enforces.
+  goalWeightKg: number | null;
+}
+
+// Writes to `profiles`, not `weight_logs` — goal editing is explicitly
+// Progress's to own (see features/profiles/Profile.tsx's own comment:
+// "Weight/goal editing is explicitly out of scope, owned by Progress").
+// Same "update own row only" RLS policy updateMyProfile (features/profiles
+// /api.ts) already relies on, so no new policy is needed. Invalidates the
+// shared profile cache on success so this screen's own goal display (and
+// any other mounted useMyProfile reader) picks up the change immediately.
+export async function updateGoal(userId: string, input: GoalInput): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ goal_type: input.goalType, goal_weight_kg: input.goalWeightKg })
+    .eq('id', userId);
+  if (error) throw error;
+  invalidateMyProfile();
 }

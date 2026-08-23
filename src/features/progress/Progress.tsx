@@ -18,6 +18,7 @@ import { useMyProfile, useMyProfileLoadError, invalidateMyProfile } from '../pro
 import { useWeightLogs, useWeightLogsLoadError, invalidateWeightLogs, addWeightLog } from './useWeightLogs';
 import { daysAgoLocalDate } from './api';
 import { WEIGHT_CHART_RANGE_DAYS, DEFAULT_WEIGHT_CHART_RANGE_DAYS, type WeightChartRangeDays } from './chartRanges';
+import { EditGoalDialog } from './EditGoalDialog';
 import { LogWeightDialog } from './LogWeightDialog';
 import { WeightChart } from './WeightChart';
 import { BMI_CATEGORY_LABELS, calculateBmi, getBmiCategory } from './bmi';
@@ -37,6 +38,7 @@ export function Progress({ userId }: { userId: string }) {
   const logsError = useWeightLogsLoadError(userId);
 
   const [logOpen, setLogOpen] = useState(false);
+  const [goalDialogOpen, setGoalDialogOpen] = useState(false);
   const [rangeDays, setRangeDays] = useState<WeightChartRangeDays>(DEFAULT_WEIGHT_CHART_RANGE_DAYS);
 
   if (profileError || logsError) {
@@ -114,14 +116,26 @@ export function Progress({ userId }: { userId: string }) {
           </Paper>
         </Stack>
 
-        {goalTypeLabel && (
-          <Paper sx={{ p: 2, borderRadius: '14px', boxShadow: tokens.sh2 }}>
-            <Typography fontSize={14}>
-              Goal: {goalTypeLabel}
-              {profile.goal_weight_kg ? ` to ${profile.goal_weight_kg} kg` : ''}
-            </Typography>
-          </Paper>
-        )}
+        <Paper
+          sx={{
+            p: 2,
+            borderRadius: '14px',
+            boxShadow: tokens.sh2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1,
+          }}
+        >
+          <Typography fontSize={14} color={goalTypeLabel ? 'text.primary' : 'text.secondary'}>
+            {goalTypeLabel
+              ? `Goal: ${goalTypeLabel}${profile.goal_weight_kg ? ` to ${profile.goal_weight_kg} kg` : ''}`
+              : 'No goal set'}
+          </Typography>
+          <Button size="small" onClick={() => setGoalDialogOpen(true)}>
+            {goalTypeLabel ? 'Edit' : 'Set goal'}
+          </Button>
+        </Paper>
 
         <Paper sx={{ p: 2, borderRadius: '14px', boxShadow: tokens.sh2 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
@@ -177,6 +191,15 @@ export function Progress({ userId }: { userId: string }) {
           addWeightLog(log);
           setLogOpen(false);
         }}
+      />
+
+      <EditGoalDialog
+        open={goalDialogOpen}
+        userId={userId}
+        profile={profile}
+        currentWeight={latestWeight}
+        onClose={() => setGoalDialogOpen(false)}
+        onSaved={() => setGoalDialogOpen(false)}
       />
     </Box>
   );
