@@ -30,7 +30,7 @@ export function CommunityPantryList() {
 
   return (
     <Box sx={{ position: 'relative', minHeight: 'calc(100vh - 64px)' }}>
-      <Stack spacing={1.5} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 10 }}>
+      <Stack spacing={1.75} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 10 }}>
         {loading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress />
@@ -48,6 +48,7 @@ export function CommunityPantryList() {
             key={ingredient.id}
             ingredient={ingredient}
             creatorName={creatorNames[ingredient.created_by]}
+            showCommunityIndicator={false}
             onClick={() => navigate(`/community-pantry/${ingredient.id}`)}
           />
         ))}

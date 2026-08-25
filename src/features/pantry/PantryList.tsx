@@ -103,7 +103,7 @@ export function PantryList({ groupId }: { groupId: string | null }) {
     <Box sx={{ position: 'relative', minHeight: 'calc(100vh - 64px)' }}>
       {/* pb clears both the FAB (bottom: 80) and BottomNav below it — see
           docs/pending-deviations.md (Ticket 16). */}
-      <Stack spacing={1.5} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 18 }}>
+      <Stack spacing={1.75} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 18 }}>
         <Button onClick={() => navigate('/community-pantry')}>Browse community pantry</Button>
 
         {(!groupId || isGroupOwner) && (

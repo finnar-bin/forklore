@@ -3,12 +3,19 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
 import { useAppStore } from '../../store/useAppStore';
@@ -37,6 +44,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
   const [justCopied, setJustCopied] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
   const result = useLiveQuery(
     () => (ingredientId ? fetchIngredient(ingredientId) : undefined),
@@ -112,50 +120,79 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
         />
       )}
 
-      {canEdit ? (
-        <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
-          <IngredientForm
-            initialValues={{
-              name: ingredient.name,
-              quantity: ingredient.quantity,
-              unit: ingredient.unit,
-              kcal: ingredient.kcal,
-              photo_url: ingredient.photo_url,
+      <Box sx={{ position: 'relative' }}>
+        <IconButton
+          aria-label="Ingredient actions"
+          onClick={(e) => setMenuAnchor(e.currentTarget)}
+          sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}
+        >
+          <MoreVertIcon />
+        </IconButton>
+
+        {canEdit ? (
+          <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
+            <IngredientForm
+              initialValues={{
+                name: ingredient.name,
+                quantity: ingredient.quantity,
+                unit: ingredient.unit,
+                kcal: ingredient.kcal,
+                photo_url: ingredient.photo_url,
+              }}
+              ingredientId={ingredient.id}
+              submitLabel="Save changes"
+              onSubmit={handleSubmit}
+            />
+          </Paper>
+        ) : (
+          // Read-only — only the creator may edit/delete a community
+          // ingredient (docs/pending-deviations.md, "Community pantry").
+          <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
+            <Stack spacing={2} alignItems="center">
+              <PhotoThumbnail photoUrl={ingredient.photo_url} alt={ingredient.name} size={120} />
+              <Typography fontSize={18} fontWeight={500}>
+                {ingredient.name}
+              </Typography>
+              <Typography color="text.secondary">
+                {ingredient.quantity} {ingredient.unit} · {ingredient.kcal} kcal
+              </Typography>
+            </Stack>
+          </Paper>
+        )}
+      </Box>
+
+      <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
+        {/* "Copy to…" stays available regardless of canEdit — forking a
+            community ingredient into your own, independently-editable
+            personal or group pantry row is allowed for everyone, not just
+            its creator. See docs/pending-deviations.md ("Community
+            pantry"). */}
+        <MenuItem
+          onClick={() => {
+            setMenuAnchor(null);
+            setCopyOpen(true);
+          }}
+        >
+          <ListItemIcon>
+            <ContentCopyIcon fontSize="small" sx={{ color: 'text.primary' }} />
+          </ListItemIcon>
+          <ListItemText>Copy</ListItemText>
+        </MenuItem>
+
+        {canEdit && (
+          <MenuItem
+            onClick={() => {
+              setMenuAnchor(null);
+              setDeleteOpen(true);
             }}
-            ingredientId={ingredient.id}
-            submitLabel="Save changes"
-            onSubmit={handleSubmit}
-          />
-        </Paper>
-      ) : (
-        // Read-only — only the creator may edit/delete a community
-        // ingredient (docs/pending-deviations.md, "Community pantry").
-        <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
-          <Stack spacing={2} alignItems="center">
-            <PhotoThumbnail photoUrl={ingredient.photo_url} alt={ingredient.name} size={120} />
-            <Typography fontSize={18} fontWeight={500}>
-              {ingredient.name}
-            </Typography>
-            <Typography color="text.secondary">
-              {ingredient.quantity} {ingredient.unit} · {ingredient.kcal} kcal
-            </Typography>
-          </Stack>
-        </Paper>
-      )}
-
-      {/* "Copy to…" stays available regardless of canEdit — forking a
-          community ingredient into your own, independently-editable
-          personal or group pantry row is allowed for everyone, not just its
-          creator. See docs/pending-deviations.md ("Community pantry"). */}
-      <Button variant="outlined" size="large" onClick={() => setCopyOpen(true)}>
-        Copy to…
-      </Button>
-
-      {canEdit && (
-        <Button color="error" variant="outlined" size="large" onClick={() => setDeleteOpen(true)}>
-          Delete ingredient
-        </Button>
-      )}
+          >
+            <ListItemIcon>
+              <DeleteOutlineIcon fontSize="small" color="error" />
+            </ListItemIcon>
+            <ListItemText sx={{ color: 'error.main' }}>Delete</ListItemText>
+          </MenuItem>
+        )}
+      </Menu>
 
       <DeleteIngredientDialog
         open={deleteOpen}
