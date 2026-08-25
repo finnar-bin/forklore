@@ -54,7 +54,7 @@ export function RecipeIngredientsList({
           No ingredients yet. Add some from your pantry.
         </Typography>
       ) : (
-        <Stack spacing={1.25}>
+        <Stack spacing={1.5}>
           {ingredients.map((item) => (
             <RecipeIngredientRow
               key={item.ingredient_id}
@@ -116,15 +116,40 @@ function RecipeIngredientRow({
   return (
     <Box
       sx={{
+        position: 'relative',
         bgcolor: 'background.paper',
         borderRadius: '12px',
         boxShadow: tokens.sh1,
+        border: item.is_community ? '2px solid' : 'none',
+        borderColor: item.is_community ? 'secondary.main' : undefined,
         p: 1.25,
         display: 'flex',
         alignItems: 'center',
         gap: 1,
       }}
     >
+      {/* Small tab overlapping the row's own top-left corner — same
+          community indicator as IngredientCard.tsx, see
+          docs/pending-deviations.md ("Community pantry"). */}
+      {item.is_community && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: -9,
+            left: 10,
+            bgcolor: 'secondary.main',
+            color: 'secondary.contrastText',
+            fontSize: 10,
+            fontWeight: 600,
+            lineHeight: 1,
+            px: 0.75,
+            py: 0.375,
+            borderRadius: '4px',
+          }}
+        >
+          Community
+        </Box>
+      )}
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography fontSize={13} noWrap>
           {item.name}

@@ -1,13 +1,13 @@
-import { useState, type FormEvent } from 'react';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import MenuItem from '@mui/material/MenuItem';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import { DeferredPhotoUpload } from '../../components/DeferredPhotoUpload';
-import { uploadPhoto } from '../../lib/photoUpload';
-import type { RecipeInput, WeightUnit } from '../../types/recipe';
+import { useState, type FormEvent } from "react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import MenuItem from "@mui/material/MenuItem";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import { DeferredPhotoUpload } from "../../components/DeferredPhotoUpload";
+import { uploadPhoto } from "../../lib/photoUpload";
+import type { RecipeInput, WeightUnit } from "../../types/recipe";
 
 interface RecipeFormProps {
   initialValues?: RecipeInput;
@@ -20,16 +20,25 @@ interface RecipeFormProps {
   onSubmit: (input: RecipeInput) => Promise<void>;
 }
 
-export function RecipeForm({ initialValues, recipeId, submitLabel, onSubmit }: RecipeFormProps) {
-  const [name, setName] = useState(initialValues?.name ?? '');
+export function RecipeForm({
+  initialValues,
+  recipeId,
+  submitLabel,
+  onSubmit,
+}: RecipeFormProps) {
+  const [name, setName] = useState(initialValues?.name ?? "");
   // weight_g is always stored in grams — the unit picker here is entry
   // convenience only, converted to grams on submit. Editing an existing
   // recipe always shows its stored gram value with "g" selected (no unit
   // choice is persisted) — see docs/pending-deviations.md (Ticket 12
   // follow-up, "servings -> weight").
-  const [weight, setWeight] = useState(initialValues ? initialValues.weight_g.toString() : '');
-  const [weightUnit, setWeightUnit] = useState<WeightUnit>('g');
-  const [photoUrl, setPhotoUrl] = useState<string | null>(initialValues?.photo_url ?? null);
+  const [weight, setWeight] = useState(
+    initialValues ? initialValues.weight_g.toString() : "",
+  );
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>("g");
+  const [photoUrl, setPhotoUrl] = useState<string | null>(
+    initialValues?.photo_url ?? null,
+  );
   const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -43,15 +52,20 @@ export function RecipeForm({ initialValues, recipeId, submitLabel, onSubmit }: R
       // Rounded to the nearest gram — a plain `* 1000` can land on a
       // floating-point artifact (e.g. 1.005 * 1000 === 1004.9999999999999)
       // that would otherwise get stored and displayed as-is.
-      const weight_g = weightUnit === 'kg' ? Math.round(parsedWeight * 1000) : parsedWeight;
-      const finalPhotoUrl = pendingPhotoFile ? await uploadPhoto(pendingPhotoFile, 'recipe', recipeId) : photoUrl;
+      const weight_g =
+        weightUnit === "kg" ? Math.round(parsedWeight * 1000) : parsedWeight;
+      const finalPhotoUrl = pendingPhotoFile
+        ? await uploadPhoto(pendingPhotoFile, "recipe", recipeId)
+        : photoUrl;
       await onSubmit({
         name,
         weight_g,
         photo_url: finalPhotoUrl,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
+      setError(
+        err instanceof Error ? err.message : "Something went wrong. Try again.",
+      );
       setSubmitting(false);
     }
   }
@@ -60,13 +74,13 @@ export function RecipeForm({ initialValues, recipeId, submitLabel, onSubmit }: R
     <Stack spacing={2.5} component="form" onSubmit={handleSubmit}>
       {error && <Alert severity="error">{error}</Alert>}
 
-      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ display: "flex", justifyContent: "center" }}>
         <DeferredPhotoUpload
           photoUrl={photoUrl}
           onChange={setPhotoUrl}
           onFileSelected={setPendingPhotoFile}
-          alt={name || 'recipe'}
-          size={120}
+          alt={name || "recipe"}
+          size={180}
         />
       </Box>
 
@@ -100,8 +114,13 @@ export function RecipeForm({ initialValues, recipeId, submitLabel, onSubmit }: R
           <MenuItem value="kg">kg</MenuItem>
         </TextField>
       </Stack>
-      <Button type="submit" variant="contained" size="large" disabled={submitting}>
-        {submitting ? 'Saving…' : submitLabel}
+      <Button
+        type="submit"
+        variant="contained"
+        size="large"
+        disabled={submitting}
+      >
+        {submitting ? "Saving…" : submitLabel}
       </Button>
     </Stack>
   );

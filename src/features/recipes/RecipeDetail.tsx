@@ -211,6 +211,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         unit: ingredient.unit,
         kcal: ingredient.kcal,
         quantity: ingredient.quantity,
+        is_community: ingredient.is_community,
       },
     ]);
   }
