@@ -10,8 +10,8 @@ import AddIcon from '@mui/icons-material/Add';
 import { FloatingPortal } from '../../components/FloatingPortal';
 import { useProfileNames } from '../profiles/useProfileNames';
 import { fetchCommunityIngredients } from '../pantry/api';
+import { CreateIngredientDialog } from '../pantry/CreateIngredientDialog';
 import { IngredientCard } from '../pantry/IngredientCard';
-import { CreateCommunityIngredientDialog } from './CreateCommunityIngredientDialog';
 
 // Every community ingredient, browsable by any signed-in user regardless of
 // their own or any group's opt-in switch — see docs/pending-deviations.md
@@ -72,8 +72,9 @@ export function CommunityPantryList() {
         </Fab>
       </FloatingPortal>
 
-      <CreateCommunityIngredientDialog
+      <CreateIngredientDialog
         open={createOpen}
+        isCommunity
         onClose={() => setCreateOpen(false)}
         onCreated={() => setCreateOpen(false)}
       />

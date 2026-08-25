@@ -45,11 +45,24 @@ using (
 -- your recipes: X, Y" (named, from the existing function) alongside "used in
 -- M recipes total" (this function) — never naming a recipe the caller
 -- couldn't already see on their own.
+-- Scoped to `is_community = true` explicitly, not just called only for
+-- community ingredients client-side (docs/pending-deviations.md's
+-- Ticket 14 fix note already establishes the pattern this follows: a
+-- security definer function must re-verify its own precondition
+-- server-side, never trust the caller to only invoke it in the intended
+-- case). Without this check, any authenticated caller could pass an
+-- arbitrary ingredient id — including someone else's private personal
+-- ingredient, or another group's ingredient they share no relationship
+-- with — and learn its cross-user recipe usage count, an information
+-- disclosure exactly this table's own RLS (and the non-definer
+-- check_ingredient_usage) exists to prevent.
 create or replace function public.check_community_ingredient_usage(p_ingredient_id uuid)
 returns integer as $$
   select count(*)::integer
-  from public.recipe_ingredients
-  where ingredient_id = p_ingredient_id;
+  from public.recipe_ingredients ri
+  join public.ingredients i on i.id = ri.ingredient_id
+  where ri.ingredient_id = p_ingredient_id
+    and i.is_community = true;
 $$ language sql stable security definer set search_path = public;
 
 -- Widen copy_ingredient's and copy_recipe's source-access check (both
