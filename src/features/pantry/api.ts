@@ -138,6 +138,22 @@ export async function updateIngredient(
   return ingredient;
 }
 
+// Promotes a personal or group ingredient into the community pantry —
+// `group_id` is forced to null alongside `is_community: true` in the same
+// write, satisfying the `ingredients_community_no_group` check constraint
+// (see docs/pending-deviations.md, "Community pantry") in one step rather
+// than risking a transient state where only one of the two is set.
+export async function moveIngredientToCommunity(id: string, userId: string): Promise<Ingredient> {
+  const updated_at = new Date().toISOString();
+  const updated_by = userId;
+  const patch = { group_id: null, is_community: true, updated_at, updated_by };
+  await db.ingredients.update(id, patch);
+  const ingredient = await db.ingredients.get(id);
+  if (!ingredient) throw new Error('Ingredient not found.');
+  await enqueueMutation('ingredients', 'update', { id, ...patch });
+  return ingredient;
+}
+
 export async function deleteIngredient(id: string): Promise<void> {
   try {
     // Must run before the row is actually removed below — the Edge

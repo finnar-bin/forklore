@@ -18,6 +18,7 @@ import Typography from '@mui/material/Typography';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import GroupsIcon from '@mui/icons-material/Groups';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
 import { DeferredPhotoUpload } from '../../components/DeferredPhotoUpload';
@@ -27,10 +28,11 @@ import { deletePhoto, uploadPhoto } from '../../lib/photoUpload';
 import { useAppStore } from '../../store/useAppStore';
 import { PhotoThumbnail } from '../../components/PhotoThumbnail';
 import { useProfileNames } from '../profiles/useProfileNames';
-import { deleteIngredient, fetchIngredient, updateIngredient } from './api';
+import { deleteIngredient, fetchIngredient, moveIngredientToCommunity, updateIngredient } from './api';
 import { INGREDIENT_UNITS } from './ingredientUnits';
 import { DeleteIngredientDialog } from './DeleteIngredientDialog';
 import { CopyIngredientDialog } from './CopyIngredientDialog';
+import { MoveIngredientToCommunityDialog } from './MoveIngredientToCommunityDialog';
 import type { Ingredient, IngredientUnit } from '../../types/ingredient';
 
 // Distinguishes "still loading" from "query resolved, nothing found" — see
@@ -78,6 +80,8 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
   const [justCopied, setJustCopied] = useState(false);
+  const [moveToCommunityOpen, setMoveToCommunityOpen] = useState(false);
+  const [justMovedToCommunity, setJustMovedToCommunity] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
   // Derived from the loaded row itself, not the route's groupId prop — a
@@ -89,6 +93,18 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
   // everyone else gets a read-only view.
   const isCommunity = ingredient?.is_community ?? false;
   const canEdit = !isCommunity || ingredient?.created_by === userId;
+
+  // Narrower than canEdit: canEdit is creator-agnostic for a group
+  // ingredient (any group member may edit it, matching "update own or group
+  // ingredients"'s group_id-in-caller's-groups RLS branch), but moving one
+  // to the community pantry sets group_id to null while created_by stays
+  // whoever originally created it — the update-policy check (no separate
+  // WITH CHECK, so USING doubles as the check against the *new* row)
+  // requires `group_id is null and created_by = auth.uid()` post-update,
+  // which only the original creator satisfies. A non-creator group member
+  // triggering this would optimistically "succeed" in Dexie and then be
+  // permanently rejected by Supabase, so it's gated out here client-side too.
+  const canMoveToCommunity = !isCommunity && ingredient?.created_by === userId;
 
   // Shown for group context (design-system.md's "who added it" pattern has
   // no reason to name the user to themselves in personal context — see
@@ -189,6 +205,19 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
     if (!ingredientId) return;
     await deleteIngredient(ingredientId);
     navigate(backPath, { replace: true });
+  }
+
+  async function handleMoveToCommunity() {
+    if (!ingredientId || !userId) return;
+    // Deliberately doesn't call applyIngredientBaseline — the move only
+    // patches group_id/is_community server-side, so re-baselining the draft
+    // fields from the returned row would silently discard any unsaved
+    // name/quantity/unit/kcal/photo edit the user was mid-typing. `ingredient`
+    // (the live Dexie query) already reflects the new is_community/group_id
+    // reactively, which is all canEdit/isCommunity/ItemMetadata need.
+    await moveIngredientToCommunity(ingredientId, userId);
+    setMoveToCommunityOpen(false);
+    setJustMovedToCommunity(true);
   }
 
   if (loading) {
@@ -346,6 +375,20 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
           <ListItemText>Copy</ListItemText>
         </MenuItem>
 
+        {canMoveToCommunity && (
+          <MenuItem
+            onClick={() => {
+              setMenuAnchor(null);
+              setMoveToCommunityOpen(true);
+            }}
+          >
+            <ListItemIcon>
+              <GroupsIcon fontSize="small" sx={{ color: 'text.primary' }} />
+            </ListItemIcon>
+            <ListItemText>Move to community</ListItemText>
+          </MenuItem>
+        )}
+
         {canEdit && (
           <MenuItem
             onClick={() => {
@@ -391,6 +434,13 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
         }}
       />
 
+      <MoveIngredientToCommunityDialog
+        open={moveToCommunityOpen}
+        ingredientName={ingredient.name}
+        onClose={() => setMoveToCommunityOpen(false)}
+        onConfirm={handleMoveToCommunity}
+      />
+
       <Snackbar
         open={justSaved}
         autoHideDuration={3000}
@@ -404,6 +454,14 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
         autoHideDuration={3000}
         onClose={() => setJustCopied(false)}
         message="Ingredient copied"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
+
+      <Snackbar
+        open={justMovedToCommunity}
+        autoHideDuration={3000}
+        onClose={() => setJustMovedToCommunity(false)}
+        message="Ingredient moved to community"
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
     </Stack>

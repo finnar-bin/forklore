@@ -26,7 +26,14 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt' (not 'autoUpdate') + injectRegister: false — registration
+      // is done manually via virtual:pwa-register/react's useRegisterSW in
+      // UpdatePrompt.tsx, which surfaces a "Reload" prompt instead of
+      // forcing a silent reload that could drop an in-progress form edit
+      // (IngredientDetail/RecipeDetail's staged draft state, log entry
+      // dialogs). See docs/pending-deviations.md ("PWA update prompt").
+      registerType: 'prompt',
+      injectRegister: false,
       includeAssets: ['icon.svg'],
       manifest: {
         name: 'Forklore',
