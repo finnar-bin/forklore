@@ -3,6 +3,7 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
@@ -17,6 +18,8 @@ import { attemptLogout, performLogout } from '../auth/api';
 import { updateMyProfile, type ProfileInput } from './api';
 import { useMyProfile, useMyProfileLoadError, invalidateMyProfile } from './useMyProfile';
 import { ProfileForm } from './ProfileForm';
+
+const REPO_URL = 'https://github.com/finnar-bin/forklore';
 
 // Account-level info (name/avatar/height/birthdate) plus logout and the
 // theme toggle — see design-system.md's "Profile/account access" pattern and
@@ -88,7 +91,7 @@ export function Profile() {
   }
 
   return (
-    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 4 }}>
+    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 8 }}>
       <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
         <ProfileForm
           initialValues={{
@@ -148,6 +151,23 @@ export function Profile() {
         message="Profile saved"
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
+
+      <Box
+        sx={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          py: 1,
+          textAlign: 'center',
+        }}
+      >
+        <Typography variant="caption" color="text.secondary">
+          <Link href={REPO_URL} target="_blank" rel="noopener noreferrer" color="inherit">
+            v{__APP_VERSION__} · {__GIT_HASH__}
+          </Link>
+        </Typography>
+      </Box>
     </Stack>
   );
 }
