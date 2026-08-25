@@ -27,6 +27,8 @@ import { RequireGroupOwner } from './routes/RequireGroupOwner';
 import { GroupSettingsPage } from './routes/GroupSettingsPage';
 import { ProgressPage } from './routes/ProgressPage';
 import { ProfilePage } from './routes/ProfilePage';
+import { PrivacyPolicyPage } from './routes/PrivacyPolicyPage';
+import { TermsPage } from './routes/TermsPage';
 
 function App() {
   const { initializing } = useAuthSession();
@@ -52,6 +54,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public regardless of auth state — must be reachable while
+            logged out (e.g. Google's OAuth consent screen review), so
+            these sit outside every auth gate below. */}
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+
         <Route element={<RedirectIfAuthed />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />

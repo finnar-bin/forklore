@@ -11,6 +11,7 @@ import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useColorScheme } from '@mui/material/styles';
+import { Link as RouterLink } from 'react-router-dom';
 import { shadows } from '../../theme/theme';
 import { useAppStore } from '../../store/useAppStore';
 import { LogoutConfirmDialog } from '../../components/LogoutConfirmDialog';
@@ -162,6 +163,15 @@ export function Profile() {
           textAlign: 'center',
         }}
       >
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+          <Link component={RouterLink} to="/terms" color="inherit">
+            Terms
+          </Link>{' '}
+          ·{' '}
+          <Link component={RouterLink} to="/privacy" color="inherit">
+            Privacy
+          </Link>
+        </Typography>
         <Typography variant="caption" color="text.secondary">
           <Link href={REPO_URL} target="_blank" rel="noopener noreferrer" color="inherit">
             v{__APP_VERSION__} · {__GIT_HASH__}
