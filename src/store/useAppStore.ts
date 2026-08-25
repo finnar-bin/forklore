@@ -1,4 +1,8 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { create } from 'zustand';
+import { useMyGroups } from '../features/groups/useMyGroups';
+import { getStoredGroupId, setStoredGroupId } from '../lib/activeGroupStorage';
 
 // Session state — see frontend-architecture.md "Zustand stores".
 // `onboardingComplete` is a Ticket 5 addition beyond that doc's AppState shape —
@@ -32,6 +36,42 @@ export const useAppStore = create<AppState>((set) => ({
 // a hook (rather than inlining `routeGroupId ?? null` at each of
 // Pantry/Recipes/LogPage) purely so all three stay in sync if a real
 // cross-cutting consumer shows up again.
-export function useSyncedActiveGroupId(routeGroupId: string | undefined): string | null {
+//
+// Also restores the last group context from localStorage (see
+// activeGroupStorage.ts) when landing on a bare route with no :groupId —
+// e.g. after a reload, or navigating back from Progress/Profile, which
+// aren't group-aware. Storage is written *only* by ContextSwitcher's own
+// explicit pick (both the group and the Personal case) — deliberately not
+// here as a passive "routeGroupId is truthy, so persist it" effect. A group
+// screen can stay mounted (frozen, mid-exit-animation) briefly after the
+// user has already navigated away — see AnimatedAppShell's outgoing/current
+// overlap — and an unrelated re-render of that stale instance (e.g. a
+// useMyGroups cache update) would re-run this effect and write its old
+// :groupId right back over the value the user just cleared. Restoring is
+// still safe to do passively here, since it only ever fires for the
+// screen that's actually current.
+// `tab`/`userId` are omitted by call sites that aren't a ContextSwitcher
+// landing screen (LogPage, RecipeDetailPage, IngredientDetailPage) — those
+// just want the plain `routeGroupId ?? null` derivation, no restore.
+export function useSyncedActiveGroupId(
+  routeGroupId: string | undefined,
+  tab?: 'pantry' | 'recipes',
+  userId?: string | null,
+): string | null {
+  const navigate = useNavigate();
+  const groups = useMyGroups(tab ? (userId ?? null) : null);
+
+  useEffect(() => {
+    if (!tab || routeGroupId) return;
+    const storedGroupId = getStoredGroupId();
+    if (!storedGroupId || groups === undefined) return;
+    if (groups.some((membership) => membership.group.id === storedGroupId)) {
+      navigate(`/groups/${storedGroupId}/${tab}`, { replace: true });
+    } else {
+      // Stale — the user no longer belongs to this group.
+      setStoredGroupId(null);
+    }
+  }, [routeGroupId, groups, tab, navigate]);
+
   return routeGroupId ?? null;
 }

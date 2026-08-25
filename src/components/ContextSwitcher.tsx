@@ -13,6 +13,7 @@ import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../theme/theme';
 import { useAppStore } from '../store/useAppStore';
 import { useMyGroups } from '../features/groups/useMyGroups';
+import { setStoredGroupId } from '../lib/activeGroupStorage';
 
 // design-system.md "Context switcher chip" — pill-shaped, sits below the
 // header on Pantry/Recipes screens (Progress ignores it — see routes.md; Log
@@ -20,7 +21,14 @@ import { useMyGroups } from '../features/groups/useMyGroups';
 // is a route concern, not a Zustand one (see
 // routes.md's own note on why /pantry and /groups/:groupId/pantry stay two
 // route entries) — this component navigates between them directly rather
-// than writing to useAppStore itself.
+// than writing to useAppStore itself. It's the sole writer of the
+// localStorage-backed "last group" (see activeGroupStorage.ts) — an
+// explicit pick, group or Personal — so useSyncedActiveGroupId's
+// restore-on-bare-route effect never fights a choice made here. That
+// effect deliberately doesn't persist on its own passive re-renders
+// (e.g. a still-mounted, mid-exit-animation group screen reacting to an
+// unrelated useMyGroups update) — see its comment for why that used to
+// resurrect a group right after picking Personal.
 export function ContextSwitcher({
   tab,
   activeGroupId,
@@ -57,6 +65,7 @@ export function ContextSwitcher({
 
   function selectContext(groupId: string | null) {
     setAnchorEl(null);
+    setStoredGroupId(groupId);
     navigate(groupId ? `/groups/${groupId}/${tab}` : `/${tab}`);
   }
 
