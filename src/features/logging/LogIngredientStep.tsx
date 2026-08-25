@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -7,10 +8,10 @@ import InputAdornment from '@mui/material/InputAdornment';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { formatKcalPerUnit, kcalPerUnit } from '../../lib/kcal';
 import type { Ingredient } from '../../types/ingredient';
 import type { MealType } from '../../types/log';
 import type { LogEntryInput } from './api';
-import { formatIngredientLabel } from './formatItemLabel';
 import { MealTypeSelector } from './MealTypeSelector';
 
 // Asks how much of this ingredient was eaten, in the ingredient's own unit
@@ -36,7 +37,7 @@ export function LogIngredientStep({
   // keeps the button disabled either way).
   const isNegative = quantity !== '' && parsedQuantity < 0;
   const canLog = Number.isFinite(parsedQuantity) && parsedQuantity > 0;
-  const kcal = ingredient.quantity > 0 ? (ingredient.kcal / ingredient.quantity) * parsedQuantity : 0;
+  const kcal = kcalPerUnit(ingredient.kcal, ingredient.quantity) * parsedQuantity;
 
   async function handleLog() {
     if (!canLog) return;
@@ -63,9 +64,18 @@ export function LogIngredientStep({
     <>
       <DialogContent sx={{ pt: '12px !important' }}>
         <Stack spacing={2.5}>
-          <Typography color="text.secondary" fontSize={14}>
-            {formatIngredientLabel(ingredient)}
-          </Typography>
+          {/* Name first and prominent, with the rate as its subtitle right
+              below — lets the user judge the amount before it's even
+              entered. Same "kcal per unit" figure IngredientCard.tsx/
+              IngredientDetail.tsx already show elsewhere. */}
+          <Box>
+            <Typography fontSize={18} fontWeight={500}>
+              {ingredient.name}
+            </Typography>
+            <Typography fontSize={13} color="text.secondary">
+              {formatKcalPerUnit(ingredient.kcal, ingredient.quantity)} kcal per {ingredient.unit}
+            </Typography>
+          </Box>
           <TextField
             label="Quantity eaten"
             type="number"
@@ -83,7 +93,7 @@ export function LogIngredientStep({
             }}
           />
           <Typography fontSize={12} color="text.secondary">
-            {kcal.toFixed(0)} kcal
+            {kcal.toFixed(2)} kcal
           </Typography>
           <MealTypeSelector value={mealType} onChange={setMealType} disabled={submitting} />
           {error && <Alert severity="error">{error}</Alert>}

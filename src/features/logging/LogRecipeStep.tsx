@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -7,10 +8,10 @@ import InputAdornment from '@mui/material/InputAdornment';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { formatKcalPerUnit, kcalPerUnit } from '../../lib/kcal';
 import type { Recipe } from '../../types/recipe';
 import type { MealType } from '../../types/log';
 import type { LogEntryInput } from './api';
-import { formatRecipeLabel } from './formatItemLabel';
 import { MealTypeSelector } from './MealTypeSelector';
 
 // Asks how many grams of this recipe were eaten, then snapshots kcal scaled
@@ -42,7 +43,7 @@ export function LogRecipeStep({
   const isNegative = gramsEaten !== '' && parsedGramsEaten < 0;
   const exceedsWeight = gramsEaten !== '' && parsedGramsEaten > recipe.weight_g;
   const canLog = Number.isFinite(parsedGramsEaten) && parsedGramsEaten > 0 && parsedGramsEaten <= recipe.weight_g;
-  const kcal = recipe.weight_g > 0 ? (recipe.total_kcal / recipe.weight_g) * parsedGramsEaten : 0;
+  const kcal = kcalPerUnit(recipe.total_kcal, recipe.weight_g) * parsedGramsEaten;
 
   async function handleLog() {
     if (!canLog) return;
@@ -71,9 +72,17 @@ export function LogRecipeStep({
     <>
       <DialogContent sx={{ pt: '12px !important' }}>
         <Stack spacing={2.5}>
-          <Typography color="text.secondary" fontSize={14}>
-            {formatRecipeLabel(recipe)}
-          </Typography>
+          {/* Name first and prominent, with the rate as its subtitle right
+              below — same "kcal per gram" figure RecipeDetail.tsx already
+              shows as one of its stat tiles. */}
+          <Box>
+            <Typography fontSize={18} fontWeight={500}>
+              {recipe.name}
+            </Typography>
+            <Typography fontSize={13} color="text.secondary">
+              {formatKcalPerUnit(recipe.total_kcal, recipe.weight_g)} kcal per g
+            </Typography>
+          </Box>
           <TextField
             label="Amount eaten"
             type="number"
@@ -97,7 +106,7 @@ export function LogRecipeStep({
             }}
           />
           <Typography fontSize={12} color="text.secondary">
-            {kcal.toFixed(0)} kcal
+            {kcal.toFixed(2)} kcal
           </Typography>
           <MealTypeSelector value={mealType} onChange={setMealType} disabled={submitting} />
           {error && <Alert severity="error">{error}</Alert>}

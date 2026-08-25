@@ -91,7 +91,7 @@ export function CalorieTargetStep({
           onClick={() => onSelectionChange('maintain')}
           trailing={
             <Typography fontSize={14} fontWeight={500} color="primary.main">
-              {calorieOptions.maintenanceKcal} kcal/day
+              {calorieOptions.maintenanceKcal.toFixed(2)} kcal/day
             </Typography>
           }
         />
@@ -105,7 +105,7 @@ export function CalorieTargetStep({
             onClick={() => onSelectionChange(preset.pace)}
             trailing={
               <Typography fontSize={14} fontWeight={500} color="primary.main">
-                {preset.kcal} kcal/day
+                {preset.kcal.toFixed(2)} kcal/day
               </Typography>
             }
           />

@@ -663,6 +663,8 @@ Net effect of the reverted version: other members' personal/other-group entries 
 
 **Deviation (requested directly — card indicator redesign):** `IngredientCard.tsx`'s community indicator changed from an inline `Chip` next to the ingredient name to a `2px` card border in `secondary.main` plus a small tab overlapping the card's own top-left corner reading "Community", in the same color as the border — reads as a property of the whole card rather than its title. The card also gained a `showCommunityIndicator` prop (default `true`) so a list made up entirely of community ingredients can suppress it as pure noise — `CommunityPantryList.tsx` passes `false`; `PantryList.tsx` (which mixes community rows into a personal/group list) leaves it at the default. `CommunityPantryList.tsx`'s and `PantryList.tsx`'s own `Stack spacing` was bumped from `1.5` to `1.75` to give the tab (which pokes `top: -9`) clearance from the row above at tighter spacing.
 
+**Deviation (requested directly — extend the same indicator to recipe ingredient lines):** `RecipeIngredientsList.tsx`'s `RecipeIngredientRow` gained the identical border+tab treatment for a community ingredient used in a recipe, so a recipe's own ingredient list surfaces the same signal `IngredientCard.tsx` already does. This needed `is_community` plumbed one level further than it previously went: `RecipeIngredientDetail` (`types/recipe.ts`) gained an `is_community: boolean` field, `fetchRecipeIngredients` (`recipes/api.ts`) now selects and maps it from the joined `ingredients` row, and `RecipeDetail.tsx`'s `handleAddIngredient` now carries it over from the picked `Ingredient` when staging a new draft row (both places a `RecipeIngredientDetail` is constructed). `RecipeIngredientsList.tsx`'s own `Stack spacing` was bumped `1.25` → `1.5` for the same top-overhang clearance reason as above.
+
 **Not yet verified:** Same database-connection restriction as every entry above (org policy: must not connect to databases) — `20260907000000_community_pantry.sql` (including the `check_community_ingredient_usage` fix above) has not been pushed to a live project. Verification here was `tsc -b` and `oxlint`, both clean; see `supabase/README.md`'s new section for the full manual QA checklist once a human pushes this migration.
 
 ---
@@ -676,3 +678,47 @@ Net effect of the reverted version: other members' personal/other-group entries 
 **Why:** Requested directly (consolidate the two standalone buttons into a menu; the recipe menu's placement next to the photo rather than the fields card). The icon-size fix was caught by this session's own `code-reviewer` subagent pass before pushing.
 
 **Not yet verified:** No database change in this entry — pure client-side UI. Verification was `tsc -b` and `oxlint`, both clean. Manual follow-up: open an ingredient/recipe detail, confirm the menu opens/closes correctly (item click, backdrop click, Escape) and both actions still work and still respect the same permission/dirty-state gating the removed buttons had.
+
+---
+
+## IngredientDetail layout parity with RecipeDetail (requested directly, no ticket number)
+
+**Deviation:** `IngredientDetail.tsx` no longer reuses `IngredientForm` for editing — it now inlines its own Name/Quantity+Unit/Kcal fields and stages them client-side (`name`/`quantity`/`unit`/`kcal`/`photoUrl`/`pendingPhotoFile` local state, diffed against a `savedIngredient` baseline), mirroring exactly how `RecipeDetail.tsx` has never reused `RecipeForm` for its own edit path. `IngredientForm` becomes create-only as a result (used only by `CreateIngredientDialog.tsx`/`AddRecipeIngredientDialog.tsx`'s "New ingredient" step) — the same role `RecipeForm.tsx` already had before this change, so the two entity types are now symmetric: a shared *Form component for create, an inlined staged-draft page for edit. This gives `IngredientDetail.tsx` the same section order and interaction model `RecipeDetail.tsx` already had: photo row (with the actions menu pinned to its top-right corner) → metadata → live stat tiles (kcal, kcal per unit — computed from the draft fields, not the last-saved row, so they update as the user types) → fields card (or the read-only summary for a non-creator viewing a community ingredient) → actions menu → an explicit "Save changes" button disabled until the draft is both valid and dirty. Behavior is otherwise unchanged — saves still go through `updateIngredient`'s existing Dexie+outbox path — just staged locally until Save is clicked instead of submitting immediately, matching Recipe's existing pattern.
+
+**Deviation (requested directly — detail-page photo size):** The photo shown on `IngredientDetail.tsx`/`RecipeDetail.tsx` (both the editable `DeferredPhotoUpload` and, for a read-only community-ingredient view, `PhotoThumbnail`) was bumped from `size={120}` to `size={200}`. Separately, `IngredientForm.tsx`/`RecipeForm.tsx` (the create-only dialogs) had their own photo picker bumped from `size={120}` to `size={180}` — kept slightly smaller than the detail pages' since a create dialog has less room than a full-page detail view.
+
+**Why:** Both requested directly (first "make IngredientDetail's UI mimic RecipeDetail's overall layout", then a follow-up photo-size increase applied consistently across both create and detail surfaces).
+
+**Not yet verified:** No database change in this entry — pure client-side UI/architecture. Verification was `tsc -b` and `oxlint`, both clean. Manual follow-up: edit an existing ingredient (with and without a photo), confirm Save is disabled until something actually changes and re-enables correctly after a save; remove a photo and Save, confirm the R2 object is deleted the same way `RecipeDetail.tsx`'s save handler already does; view a community ingredient you didn't create and confirm the read-only summary (no Save button, no editable fields) still renders correctly at the new photo size.
+
+---
+
+## AddLogEntryDialog ingredient autocomplete fix (requested directly, no ticket number)
+
+**Deviation (fix — reported directly as "options seem to get duplicated and matching items which don't match what I typed"):** The ingredient `Autocomplete` in `AddLogEntryDialog.tsx` was missing `getOptionKey`, unlike the recipe `Autocomplete` immediately below it, which already had one. Without it, MUI falls back to keying each rendered option by its label text; since `formatIngredientLabel` renders `"<quantity> <unit> <name>"`, two ingredients sharing quantity/unit/name (easy to hit once community/group ingredients are mixed into one cross-context list) collided on the same React key, causing options to visually swap/duplicate while filtering. Fixed by adding `getOptionKey={(option) => option.id}`, matching the recipe branch. Also added a name-only `filterOptions={createFilterOptions({ trim: true, stringify: (option) => option.name })}` (again matching the recipe branch already there) so a typed number can't spuriously match against the quantity/unit prefix instead of the ingredient's actual name.
+
+**Why:** Reported directly as a bug. Not fixed on the recipe `Autocomplete`'s sibling in `AddRecipeIngredientDialog.tsx`'s `ExistingIngredientForm` (also missing `getOptionKey`, same latent risk if two ingredients share a name) — flagged to the requester but left alone since it wasn't part of what was reported.
+
+**Not yet verified:** No database change in this entry — pure client-side UI. Verification was `tsc -b` and `oxlint`, both clean. Manual follow-up: with two ingredients that share the same name/quantity/unit (e.g. a personal one and a community one), open "Log an entry", type a filter that matches both, and confirm both appear distinctly and stay stable while typing further.
+
+---
+
+## Logging step header + rate indicator (requested directly, no ticket number)
+
+**Deviation:** `LogIngredientStep.tsx`/`LogRecipeStep.tsx` each gained a "kcal per unit"/"kcal per gram" rate line, shown above the quantity-eaten field so the user can judge an amount before typing anything (previously only the *resulting* total kcal was shown, below the field, after entering a quantity). This was then restructured into a name-prominent header: the item's own name at `fontSize={18} fontWeight={500}`, with the rate as a `fontSize={13}` subtitle directly below it — replacing the previous single line that showed `formatIngredientLabel`/`formatRecipeLabel`'s `"<quantity> <unit> <name>"` string. `formatIngredientLabel`/`formatRecipeLabel` are consequently no longer used in either file.
+
+**Why:** Requested directly, in two steps (first the rate indicator, then the header restructure).
+
+**Not yet verified:** No database change in this entry — pure client-side UI. Verification was `tsc -b` and `oxlint`, both clean.
+
+---
+
+## Shared kcal-per-unit helper and app-wide `.toFixed(2)` normalization (requested directly, no ticket number)
+
+**Deviation:** New `src/lib/kcal.ts` exports `kcalPerUnit(kcal, quantity)` (safe divide — `quantity <= 0` resolves to `0` rather than `Infinity`/`NaN`) and `formatKcalPerUnit(kcal, quantity)` (the same, `.toFixed(2)`-formatted). These replace a `quantity > 0 ? kcal / quantity : 0` calculation that had been independently duplicated across `IngredientCard.tsx`, `IngredientDetail.tsx`, `LogIngredientStep.tsx`, `LogRecipeStep.tsx`, `RecipeCard.tsx`, `RecipeDetail.tsx`, `RecipeIngredientsList.tsx`, and `CopyRecipeDialog.tsx` — call sites needing the raw number for further math (scaling by a quantity eaten, diffing against another item's rate) use `kcalPerUnit`; everything else uses `formatKcalPerUnit` directly. `features/copy/api.ts`'s `IngredientMatch.kcal_per_unit` is unchanged — it's a rate already computed server-side (`find_ingredient_match`), not a client-side `kcal`/`quantity` pair, so there's nothing for the new helper to compute there.
+
+**Deviation (requested directly — display consistency):** Every rendered kcal value app-wide was normalized to `.toFixed(2)`, replacing what had become an inconsistent mix of `.toFixed(0)`, `.toFixed(2)`, and a few entirely unformatted raw numbers (e.g. `IngredientCard.tsx`'s total-kcal figure, `IngredientDetail.tsx`'s "kcal" stat tile, onboarding's calorie-preset display). This touches ingredient/recipe totals, log entry/day/all-time totals, per-meal remaining/over amounts, daily and per-meal kcal targets, and onboarding calorie presets — every one of these now reads `.toFixed(2)`, including whole-number-by-convention fields like `daily_kcal_target` (so, e.g., a 2000 kcal/day target now displays as "2000.00"). Controlled `TextField` `value=` bindings (e.g. the Kcal field on `IngredientDetail.tsx`'s own form) were deliberately left untouched — those are live-typed strings, not display values, and forcing `.toFixed(2)` on them would fight the user's own typing.
+
+**Why:** Both requested directly.
+
+**Not yet verified:** No database change in this entry — pure client-side formatting. Verification was `tsc -b` and `oxlint`, both clean.

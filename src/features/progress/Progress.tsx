@@ -135,7 +135,7 @@ export function Progress({ userId }: { userId: string }) {
             </Typography>
             {profile.daily_kcal_target !== null && (
               <Typography fontSize={12} color="text.secondary">
-                {profile.daily_kcal_target} kcal/day target
+                {profile.daily_kcal_target.toFixed(2)} kcal/day target
               </Typography>
             )}
           </Stack>

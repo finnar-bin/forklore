@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
+import { formatKcalPerUnit } from '../../lib/kcal';
 import { PhotoThumbnail } from '../../components/PhotoThumbnail';
 import type { Ingredient } from '../../types/ingredient';
 
@@ -33,7 +34,6 @@ export function IngredientCard({
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
-  const kcalPerUnit = ingredient.quantity > 0 ? ingredient.kcal / ingredient.quantity : 0;
   const showIndicator = ingredient.is_community && showCommunityIndicator;
 
   return (
@@ -89,10 +89,10 @@ export function IngredientCard({
       </Box>
       <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
         <Typography fontSize={14} fontWeight={500} color="primary.main">
-          {ingredient.kcal} kcal
+          {ingredient.kcal.toFixed(2)} kcal
         </Typography>
         <Typography fontSize={11} color="text.secondary">
-          {kcalPerUnit.toFixed(2)}/{ingredient.unit}
+          {formatKcalPerUnit(ingredient.kcal, ingredient.quantity)}/{ingredient.unit}
         </Typography>
       </Box>
     </Box>

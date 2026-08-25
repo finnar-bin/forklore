@@ -22,6 +22,7 @@ import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
 import { DeferredPhotoUpload } from '../../components/DeferredPhotoUpload';
 import { ItemMetadata } from '../../components/ItemMetadata';
+import { formatKcalPerUnit } from '../../lib/kcal';
 import { deletePhoto, uploadPhoto } from '../../lib/photoUpload';
 import { useAppStore } from '../../store/useAppStore';
 import { PhotoThumbnail } from '../../components/PhotoThumbnail';
@@ -124,7 +125,6 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
 
   const parsedQuantity = Number(quantity);
   const parsedKcal = Number(kcal);
-  const kcalPerUnit = parsedQuantity > 0 ? parsedKcal / parsedQuantity : 0;
 
   const isDirty = useMemo(() => {
     if (!savedIngredient) return false;
@@ -242,12 +242,12 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
 
       {/* Stat tiles matching RecipeDetail.tsx's total/per-gram kcal
           pattern — kcal and kcal per unit, computed live from the draft
-          fields (see kcalPerUnit above) rather than the last-saved row, so
-          it updates as the user edits, before anything is saved. */}
+          fields rather than the last-saved row, so it updates as the user
+          edits, before anything is saved. */}
       <Stack direction="row" spacing={1.5}>
         <Paper sx={{ flex: 1, p: 1.5, textAlign: 'center', borderRadius: '12px', boxShadow: tokens.sh1 }}>
           <Typography fontSize={18} fontWeight={500} color="primary.main">
-            {parsedKcal}
+            {parsedKcal.toFixed(2)}
           </Typography>
           <Typography fontSize={11} color="text.secondary">
             kcal
@@ -255,7 +255,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
         </Paper>
         <Paper sx={{ flex: 1, p: 1.5, textAlign: 'center', borderRadius: '12px', boxShadow: tokens.sh1 }}>
           <Typography fontSize={18} fontWeight={500} color="primary.main">
-            {kcalPerUnit.toFixed(2)}
+            {formatKcalPerUnit(parsedKcal, parsedQuantity)}
           </Typography>
           <Typography fontSize={11} color="text.secondary">
             kcal per {unit || ingredient.unit}
@@ -322,7 +322,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
               {ingredient.name}
             </Typography>
             <Typography color="text.secondary">
-              {ingredient.quantity} {ingredient.unit} · {ingredient.kcal} kcal
+              {ingredient.quantity} {ingredient.unit} · {ingredient.kcal.toFixed(2)} kcal
             </Typography>
           </Stack>
         </Paper>

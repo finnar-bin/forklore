@@ -75,7 +75,7 @@ export function AllTimeLog({ groupId }: { groupId: string | null }) {
                 })}
               </Typography>
               <Typography fontSize={12} color="text.secondary">
-                {dayTotal.toFixed(0)} kcal
+                {dayTotal.toFixed(2)} kcal
               </Typography>
             </Box>
             {dayEntries.map((entry) => (

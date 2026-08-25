@@ -62,7 +62,9 @@ export function GroupMemberKcalCard({
                   {member.user_id === userId ? ' (you)' : ''}
                 </Typography>
                 <Typography fontSize={13} fontWeight={500} color="primary.main" sx={{ flexShrink: 0 }}>
-                  {target !== null ? `${loggedToday.toFixed(0)} / ${target} kcal` : `${loggedToday.toFixed(0)} kcal`}
+                  {target !== null
+                    ? `${loggedToday.toFixed(2)} / ${target.toFixed(2)} kcal`
+                    : `${loggedToday.toFixed(2)} kcal`}
                 </Typography>
               </Stack>
 
@@ -82,7 +84,7 @@ export function GroupMemberKcalCard({
                           {MEAL_TYPE_LABELS[meal]}
                         </Typography>
                         <Typography fontSize={12} fontWeight={500} color={remaining < 0 ? 'error.main' : undefined}>
-                          {remaining >= 0 ? `${remaining.toFixed(0)} left` : `${Math.abs(remaining).toFixed(0)} over`}
+                          {remaining >= 0 ? `${remaining.toFixed(2)} left` : `${Math.abs(remaining).toFixed(2)} over`}
                         </Typography>
                       </Stack>
                     );

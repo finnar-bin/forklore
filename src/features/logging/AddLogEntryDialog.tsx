@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Alert from '@mui/material/Alert';
-import Autocomplete from '@mui/material/Autocomplete';
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -158,9 +158,14 @@ function AddLogEntryForm({
           ) : (
             <Autocomplete
               options={ingredients}
+              getOptionKey={(option) => option.id}
               getOptionLabel={formatIngredientLabel}
               onChange={(_, value) => setSelectedIngredient(value)}
               isOptionEqualToValue={(option, value) => option.id === value.id}
+              filterOptions={createFilterOptions({
+                trim: true,
+                stringify: (option) => option.name,
+              })}
               renderOption={({ key, ...props }, option) => (
                 <Box component="li" key={key} {...props}>
                   <Stack sx={{ minWidth: 0 }}>
@@ -185,9 +190,14 @@ function AddLogEntryForm({
         ) : (
           <Autocomplete
             options={recipes}
+            getOptionKey={(option) => option.id}
             getOptionLabel={formatRecipeLabel}
             onChange={(_, value) => setSelectedRecipe(value)}
             isOptionEqualToValue={(option, value) => option.id === value.id}
+            filterOptions={createFilterOptions({
+              trim: true,
+              stringify: (option) => option.name,
+            })}
             renderOption={({ key, ...props }, option) => (
               <Box component="li" key={key} {...props}>
                 <Stack sx={{ minWidth: 0 }}>

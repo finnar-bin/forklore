@@ -22,6 +22,7 @@ import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
 import { DeferredPhotoUpload } from '../../components/DeferredPhotoUpload';
 import { ItemMetadata } from '../../components/ItemMetadata';
+import { formatKcalPerUnit, kcalPerUnit } from '../../lib/kcal';
 import { deletePhoto, uploadPhoto } from '../../lib/photoUpload';
 import { useAppStore } from '../../store/useAppStore';
 import { useProfileNames } from '../profiles/useProfileNames';
@@ -174,14 +175,9 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   // formula as the recalculate_recipe_kcal trigger (schema.md), so it
   // matches what the server will compute once saved.
   const totalKcal = useMemo(
-    () =>
-      ingredients.reduce(
-        (sum, item) => sum + (item.quantity > 0 ? (item.kcal * item.quantity_used) / item.quantity : 0),
-        0,
-      ),
+    () => ingredients.reduce((sum, item) => sum + kcalPerUnit(item.kcal, item.quantity) * item.quantity_used, 0),
     [ingredients],
   );
-  const perGram = weightG > 0 ? totalKcal / weightG : 0;
 
   const isDirty = useMemo(() => {
     if (!savedRecipe) return false;
@@ -397,7 +393,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
       <Stack direction="row" spacing={1.5}>
         <Paper sx={{ flex: 1, p: 1.5, textAlign: 'center', borderRadius: '12px', boxShadow: tokens.sh1 }}>
           <Typography fontSize={18} fontWeight={500} color="primary.main">
-            {totalKcal.toFixed(0)}
+            {totalKcal.toFixed(2)}
           </Typography>
           <Typography fontSize={11} color="text.secondary">
             total kcal
@@ -405,7 +401,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         </Paper>
         <Paper sx={{ flex: 1, p: 1.5, textAlign: 'center', borderRadius: '12px', boxShadow: tokens.sh1 }}>
           <Typography fontSize={18} fontWeight={500} color="primary.main">
-            {perGram.toFixed(2)}
+            {formatKcalPerUnit(totalKcal, weightG)}
           </Typography>
           <Typography fontSize={11} color="text.secondary">
             kcal per gram

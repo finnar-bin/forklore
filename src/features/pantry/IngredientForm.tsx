@@ -1,15 +1,15 @@
-import { useState, type FormEvent } from "react";
-import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import MenuItem from "@mui/material/MenuItem";
-import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
-import { DeferredPhotoUpload } from "../../components/DeferredPhotoUpload";
-import { deletePhoto, uploadPhoto } from "../../lib/photoUpload";
-import type { IngredientUnit } from "../../types/ingredient";
-import { INGREDIENT_UNITS } from "./ingredientUnits";
-import type { IngredientInput } from "./api";
+import { useState, type FormEvent } from 'react';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import { DeferredPhotoUpload } from '../../components/DeferredPhotoUpload';
+import { deletePhoto, uploadPhoto } from '../../lib/photoUpload';
+import type { IngredientUnit } from '../../types/ingredient';
+import { INGREDIENT_UNITS } from './ingredientUnits';
+import type { IngredientInput } from './api';
 
 interface IngredientFormProps {
   initialValues?: IngredientInput;
@@ -22,23 +22,12 @@ interface IngredientFormProps {
   onSubmit: (input: IngredientInput) => Promise<void>;
 }
 
-export function IngredientForm({
-  initialValues,
-  ingredientId,
-  submitLabel,
-  onSubmit,
-}: IngredientFormProps) {
-  const [name, setName] = useState(initialValues?.name ?? "");
-  const [quantity, setQuantity] = useState(
-    initialValues?.quantity.toString() ?? "",
-  );
-  const [unit, setUnit] = useState<IngredientUnit | "">(
-    initialValues?.unit ?? "",
-  );
-  const [kcal, setKcal] = useState(initialValues?.kcal.toString() ?? "");
-  const [photoUrl, setPhotoUrl] = useState<string | null>(
-    initialValues?.photo_url ?? null,
-  );
+export function IngredientForm({ initialValues, ingredientId, submitLabel, onSubmit }: IngredientFormProps) {
+  const [name, setName] = useState(initialValues?.name ?? '');
+  const [quantity, setQuantity] = useState(initialValues?.quantity.toString() ?? '');
+  const [unit, setUnit] = useState<IngredientUnit | ''>(initialValues?.unit ?? '');
+  const [kcal, setKcal] = useState(initialValues?.kcal.toString() ?? '');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(initialValues?.photo_url ?? null);
   const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -50,7 +39,7 @@ export function IngredientForm({
     setSubmitting(true);
     try {
       const finalPhotoUrl = pendingPhotoFile
-        ? await uploadPhoto(pendingPhotoFile, "ingredient", ingredientId)
+        ? await uploadPhoto(pendingPhotoFile, 'ingredient', ingredientId)
         : photoUrl;
       await onSubmit({
         name,
@@ -70,15 +59,13 @@ export function IngredientForm({
       // elsewhere for this feature (docs/pending-deviations.md, Ticket 15).
       if (initialValues?.photo_url && !finalPhotoUrl) {
         try {
-          await deletePhoto("ingredient", ingredientId);
+          await deletePhoto('ingredient', ingredientId);
         } catch {
           // Swallowed — see above.
         }
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Something went wrong. Try again.",
-      );
+      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
       setSubmitting(false);
     }
   }
@@ -87,12 +74,12 @@ export function IngredientForm({
     <Stack spacing={2.5} component="form" onSubmit={handleSubmit}>
       {error && <Alert severity="error">{error}</Alert>}
 
-      <Box sx={{ display: "flex", justifyContent: "center" }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
         <DeferredPhotoUpload
           photoUrl={photoUrl}
           onChange={setPhotoUrl}
           onFileSelected={setPendingPhotoFile}
-          alt={name || "ingredient"}
+          alt={name || 'ingredient'}
           size={180}
         />
       </Box>
@@ -139,13 +126,8 @@ export function IngredientForm({
         fullWidth
         slotProps={{ htmlInput: { min: 0, step: 0.1 } }}
       />
-      <Button
-        type="submit"
-        variant="contained"
-        size="large"
-        disabled={submitting}
-      >
-        {submitting ? "Saving…" : submitLabel}
+      <Button type="submit" variant="contained" size="large" disabled={submitting}>
+        {submitting ? 'Saving…' : submitLabel}
       </Button>
     </Stack>
   );

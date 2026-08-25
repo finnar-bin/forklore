@@ -101,7 +101,9 @@ export function DailyLog({
         ) : (
           <Paper sx={{ p: 2, borderRadius: '14px', boxShadow: tokens.sh2, textAlign: 'center' }}>
             <Typography fontSize={24} fontWeight={500} color="primary.main">
-              {dailyKcalTarget !== null ? `${totalKcal.toFixed(0)} / ${dailyKcalTarget}` : totalKcal.toFixed(0)}
+              {dailyKcalTarget !== null
+                ? `${totalKcal.toFixed(2)} / ${dailyKcalTarget.toFixed(2)}`
+                : totalKcal.toFixed(2)}
             </Typography>
             <Typography fontSize={12} color="text.secondary">
               {dailyKcalTarget !== null ? 'kcal logged vs. your daily target' : 'kcal logged today'}
@@ -126,7 +128,7 @@ export function DailyLog({
                           {MEAL_TYPE_LABELS[meal]}
                         </Typography>
                         <Typography fontSize={13} fontWeight={500} color={remaining < 0 ? 'error.main' : undefined}>
-                          {remaining >= 0 ? `${remaining.toFixed(0)} left` : `${Math.abs(remaining).toFixed(0)} over`}
+                          {remaining >= 0 ? `${remaining.toFixed(2)} left` : `${Math.abs(remaining).toFixed(2)} over`}
                         </Typography>
                       </Stack>
                     );
