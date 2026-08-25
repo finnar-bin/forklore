@@ -1,4 +1,6 @@
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
@@ -13,11 +15,13 @@ export function IngredientCard({
   onClick,
 }: {
   ingredient: Ingredient;
-  // Group context only (design-system.md's card subtitle pattern —
-  // "quantity+who added it" — see docs/pending-deviations.md, Ticket 12).
-  // Undefined in personal context; while loading in group context it's
-  // still undefined, so the subtitle just omits the clause rather than
-  // showing a placeholder.
+  // Shown whenever known: group context always (design-system.md's card
+  // subtitle pattern — "quantity+who added it" — see
+  // docs/pending-deviations.md, Ticket 12), and personal context too when
+  // this is a community ingredient (its creator isn't necessarily "you" —
+  // see docs/pending-deviations.md, "Community pantry"). Undefined while
+  // still loading either way, so the subtitle just omits the clause rather
+  // than showing a placeholder.
   creatorName?: string;
   onClick: () => void;
 }) {
@@ -42,9 +46,14 @@ export function IngredientCard({
     >
       <PhotoThumbnail photoUrl={ingredient.photo_url} alt={ingredient.name} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography fontSize={14} fontWeight={500} noWrap>
-          {ingredient.name}
-        </Typography>
+        <Stack direction="row" spacing={0.75} alignItems="center">
+          <Typography fontSize={14} fontWeight={500} noWrap>
+            {ingredient.name}
+          </Typography>
+          {ingredient.is_community && (
+            <Chip label="Community" size="small" color="secondary" sx={{ height: 18, fontSize: 10 }} />
+          )}
+        </Stack>
         <Typography fontSize={12} color="text.secondary" noWrap>
           {ingredient.quantity} {ingredient.unit}
           {creatorName && ` · Added by ${creatorName}`}

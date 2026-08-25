@@ -80,3 +80,30 @@ export async function pullScope(scope: PullScope): Promise<void> {
   const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
   if (failed) throw failed.reason;
 }
+
+// Community pantry ingredients (docs/pending-deviations.md, "Community
+// pantry") aren't owned by a user or a group — they're global, readable by
+// every signed-in caller regardless of that user's/any group's opt-in
+// switch, since /community-pantry must list all of them for everyone. So
+// this pulls unconditionally for every signed-in user (see useSyncEngine.ts),
+// rather than being folded into pullScope's per-owner/per-group shape —
+// there's no owner column to filter on, and no scope key beyond a single
+// fixed one.
+export async function pullCommunityIngredients(): Promise<void> {
+  const metaKey = 'ingredients:community';
+  const lastSyncedAt = await getCursor(metaKey);
+  const syncStartedAt = new Date().toISOString();
+
+  let query = supabase.from('ingredients').select('*').eq('is_community', true);
+  if (lastSyncedAt) {
+    query = query.gt('updated_at', lastSyncedAt);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  if (data && data.length > 0) {
+    await db.ingredients.bulkPut(data);
+  }
+  await setCursor(metaKey, syncStartedAt);
+}

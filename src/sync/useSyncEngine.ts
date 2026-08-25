@@ -3,7 +3,7 @@ import { useAppStore } from '../store/useAppStore';
 import { useSyncStore } from '../store/useSyncStore';
 import { fetchMyGroups } from '../features/groups/api';
 import { drainPendingOutbox } from './outbox';
-import { pullScope, type PullScope } from './pull';
+import { pullCommunityIngredients, pullScope, type PullScope } from './pull';
 
 // Not specified by any doc — 60s balances catching another-device's changes
 // reasonably promptly against not hammering Supabase while the tab is just
@@ -39,7 +39,14 @@ export function useSyncEngine(): void {
         ...groups.map((membership) => ({ userId: currentUserId, groupId: membership.group.id })),
       ];
 
-      const results = await Promise.allSettled(scopes.map((scope) => pullScope(scope)));
+      // Community ingredients are global, not owned by a user or group, and
+      // pulled unconditionally for every signed-in caller regardless of
+      // anyone's opt-in switch — /community-pantry must list all of them
+      // for everyone. See pull.ts's own comment.
+      const results = await Promise.allSettled([
+        ...scopes.map((scope) => pullScope(scope)),
+        pullCommunityIngredients(),
+      ]);
       if (!cancelled && results.some((r) => r.status === 'fulfilled')) {
         useSyncStore.getState().setLastSynced(new Date().toISOString());
       }

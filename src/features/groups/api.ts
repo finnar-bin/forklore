@@ -103,6 +103,21 @@ export async function updateGroup(groupId: string, input: GroupInput): Promise<G
   return group;
 }
 
+// Standalone, immediate-save setter for the group's community pantry
+// opt-in — lives on the group's own pantry screen (PantryList.tsx), not
+// GroupSettings/GroupForm, since there's no "Save changes" button on a list
+// screen to batch it with. RLS's "owner manages group" policy already
+// restricts this to the group's owner, same as updateGroup above. See
+// docs/pending-deviations.md ("Community pantry").
+export async function setGroupCommunityPantryEnabled(groupId: string, enabled: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('groups')
+    .update({ community_pantry_enabled: enabled })
+    .eq('id', groupId);
+  if (error) throw error;
+  invalidateMyGroups();
+}
+
 // Cascades to group_members/ingredients/recipes/log_entries via the
 // `on delete cascade` foreign keys already defined in schema.md — no RPC
 // needed, RLS's "owner deletes group" policy covers the row itself.

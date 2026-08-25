@@ -38,6 +38,19 @@ export async function updateMyProfile(userId: string, input: Partial<ProfileInpu
   return data;
 }
 
+// Standalone, immediate-save setter for the personal community pantry
+// opt-in — lives on /pantry (PantryList.tsx), not ProfileForm, since there's
+// no "Save changes" button on a list screen to batch it with. See
+// docs/pending-deviations.md ("Community pantry").
+export async function setCommunityPantryEnabled(userId: string, enabled: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ community_pantry_enabled: enabled })
+    .eq('id', userId);
+  if (error) throw error;
+  invalidateMyProfile();
+}
+
 // Live Supabase read, not Dexie — `profiles` is declared in Dexie's schema
 // (frontend-architecture.md) but nothing has ever pulled into it (no prior
 // ticket needed another user's profile). RLS ("select own row or a fellow

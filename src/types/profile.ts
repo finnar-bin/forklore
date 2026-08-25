@@ -20,6 +20,10 @@ export interface Profile {
   goal_type: GoalType | null;
   goal_pace: GoalPace | null;
   daily_kcal_target: number | null;
+  // Opt-in: when true, community pantry ingredients (see types/ingredient.ts)
+  // are usable in this user's personal pantry/recipes/log, alongside their
+  // own. See docs/pending-deviations.md ("Community pantry").
+  community_pantry_enabled: boolean;
   // Optional per-meal kcal breakdown of daily_kcal_target — the four
   // columns are only meaningful (and only ever written together, summing to
   // daily_kcal_target) when meal_breakdown_enabled is true. Left as-is when

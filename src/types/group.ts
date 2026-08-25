@@ -3,6 +3,10 @@ export interface Group {
   name: string;
   description: string | null;
   owner_id: string;
+  // Owner-controlled opt-in: when true, community pantry ingredients are
+  // usable in this group's pantry/recipes/log. See
+  // docs/pending-deviations.md ("Community pantry").
+  community_pantry_enabled: boolean;
   created_at: string;
 }
 

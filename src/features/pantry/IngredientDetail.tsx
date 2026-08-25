@@ -8,10 +8,12 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
 import { useAppStore } from '../../store/useAppStore';
 import { ItemMetadata } from '../../components/ItemMetadata';
+import { PhotoThumbnail } from '../../components/PhotoThumbnail';
 import { useProfileNames } from '../profiles/useProfileNames';
 import { deleteIngredient, fetchIngredient, updateIngredient, type IngredientInput } from './api';
 import { IngredientForm } from './IngredientForm';
@@ -44,13 +46,27 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
   const loading = result === LOADING;
   const ingredient = result === LOADING ? undefined : result;
 
-  // Group-context metadata only (design-system.md's "who added it" pattern
-  // has no reason to name the user to themselves in personal context) — see
-  // docs/pending-deviations.md (Ticket 12). `!= null` (not `!== null`) so a
+  // Derived from the loaded row itself, not the route's groupId prop — a
+  // community ingredient can be reached from /pantry, any
+  // /groups/:id/pantry, or /community-pantry alike, and permission has
+  // nothing to do with which of those it was opened from. Only the creator
+  // may edit/delete a community ingredient (the RLS rule this mirrors on
+  // the client — see docs/pending-deviations.md, "Community pantry");
+  // everyone else gets a read-only view.
+  const isCommunity = ingredient?.is_community ?? false;
+  const canEdit = !isCommunity || ingredient?.created_by === userId;
+
+  // Shown for group context (design-system.md's "who added it" pattern has
+  // no reason to name the user to themselves in personal context — see
+  // docs/pending-deviations.md, Ticket 12) or for any community ingredient
+  // regardless of context, since its creator isn't necessarily "you" even
+  // in your own personal pantry. `!= null` (not `!== null`) so a
   // pre-migration Dexie row that's missing `updated_by` entirely (`undefined`,
   // not `null` — see useProfileNames) doesn't slip through.
   const profileIds =
-    groupId && ingredient ? [ingredient.created_by, ingredient.updated_by].filter((id) => id != null) : [];
+    (groupId || isCommunity) && ingredient
+      ? [ingredient.created_by, ingredient.updated_by].filter((id) => id != null)
+      : [];
   const profileNames = useProfileNames(profileIds);
   const wasUpdated = ingredient?.updated_by != null;
 
@@ -86,7 +102,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
 
   return (
     <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: 'auto' }}>
-      {groupId && (
+      {(groupId || isCommunity) && (
         <ItemMetadata
           creatorName={profileNames[ingredient.created_by]}
           createdAt={ingredient.created_at}
@@ -96,33 +112,56 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
         />
       )}
 
-      <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
-        <IngredientForm
-          initialValues={{
-            name: ingredient.name,
-            quantity: ingredient.quantity,
-            unit: ingredient.unit,
-            kcal: ingredient.kcal,
-            photo_url: ingredient.photo_url,
-          }}
-          ingredientId={ingredient.id}
-          submitLabel="Save changes"
-          onSubmit={handleSubmit}
-        />
-      </Paper>
+      {canEdit ? (
+        <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
+          <IngredientForm
+            initialValues={{
+              name: ingredient.name,
+              quantity: ingredient.quantity,
+              unit: ingredient.unit,
+              kcal: ingredient.kcal,
+              photo_url: ingredient.photo_url,
+            }}
+            ingredientId={ingredient.id}
+            submitLabel="Save changes"
+            onSubmit={handleSubmit}
+          />
+        </Paper>
+      ) : (
+        // Read-only — only the creator may edit/delete a community
+        // ingredient (docs/pending-deviations.md, "Community pantry").
+        <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
+          <Stack spacing={2} alignItems="center">
+            <PhotoThumbnail photoUrl={ingredient.photo_url} alt={ingredient.name} size={120} />
+            <Typography fontSize={18} fontWeight={500}>
+              {ingredient.name}
+            </Typography>
+            <Typography color="text.secondary">
+              {ingredient.quantity} {ingredient.unit} · {ingredient.kcal} kcal
+            </Typography>
+          </Stack>
+        </Paper>
+      )}
 
+      {/* "Copy to…" stays available regardless of canEdit — forking a
+          community ingredient into your own, independently-editable
+          personal or group pantry row is allowed for everyone, not just its
+          creator. See docs/pending-deviations.md ("Community pantry"). */}
       <Button variant="outlined" size="large" onClick={() => setCopyOpen(true)}>
         Copy to…
       </Button>
 
-      <Button color="error" variant="outlined" size="large" onClick={() => setDeleteOpen(true)}>
-        Delete ingredient
-      </Button>
+      {canEdit && (
+        <Button color="error" variant="outlined" size="large" onClick={() => setDeleteOpen(true)}>
+          Delete ingredient
+        </Button>
+      )}
 
       <DeleteIngredientDialog
         open={deleteOpen}
         ingredientId={ingredient.id}
         ingredientName={ingredient.name}
+        isCommunity={isCommunity}
         onClose={() => setDeleteOpen(false)}
         onConfirm={handleDelete}
       />
@@ -132,6 +171,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
         ingredientId={ingredient.id}
         ingredientName={ingredient.name}
         groupId={groupId}
+        isCommunity={isCommunity}
         onClose={() => setCopyOpen(false)}
         onCopied={() => {
           setCopyOpen(false);
