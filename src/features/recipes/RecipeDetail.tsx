@@ -366,7 +366,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
           onChange={setPhotoUrl}
           onFileSelected={setPendingPhotoFile}
           alt={name}
-          size={120}
+          size={200}
         />
         <IconButton
           aria-label="Recipe actions"

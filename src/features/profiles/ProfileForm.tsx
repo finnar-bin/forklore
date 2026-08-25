@@ -1,14 +1,14 @@
-import { useState, type FormEvent } from 'react';
-import dayjs from 'dayjs';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { PhotoUpload } from '../../components/PhotoUpload';
-import { deletePhoto } from '../../lib/photoUpload';
-import type { ProfileInput } from './api';
+import { useState, type FormEvent } from "react";
+import dayjs from "dayjs";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { PhotoUpload } from "../../components/PhotoUpload";
+import { deletePhoto } from "../../lib/photoUpload";
+import type { ProfileInput } from "./api";
 
 // Name/avatar/height/birthdate only, per Ticket 17's scope — weight/goal
 // fields live on Progress (Ticket 18), not here. Birthdate directly feeds
@@ -32,10 +32,14 @@ export function ProfileForm({
   onSubmit: (input: ProfileInput) => Promise<void>;
 }) {
   const [name, setName] = useState(initialValues.name);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(initialValues.avatar_url);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(
+    initialValues.avatar_url,
+  );
   const [photoUploading, setPhotoUploading] = useState(false);
-  const [height, setHeight] = useState(initialValues.height_cm?.toString() ?? '');
-  const [birthdate, setBirthdate] = useState(initialValues.birthdate ?? '');
+  const [height, setHeight] = useState(
+    initialValues.height_cm?.toString() ?? "",
+  );
+  const [birthdate, setBirthdate] = useState(initialValues.birthdate ?? "");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -48,7 +52,7 @@ export function ProfileForm({
         name,
         avatar_url: avatarUrl,
         height_cm: Number(height),
-        birthdate: birthdate.trim() === '' ? null : birthdate,
+        birthdate: birthdate.trim() === "" ? null : birthdate,
       });
 
       // Removing an existing avatar (not replacing it — a replacement
@@ -61,13 +65,15 @@ export function ProfileForm({
       // feature (docs/pending-deviations.md, Ticket 15).
       if (initialValues.avatar_url && !avatarUrl) {
         try {
-          await deletePhoto('avatar');
+          await deletePhoto("avatar");
         } catch {
           // Swallowed — see above.
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
+      setError(
+        err instanceof Error ? err.message : "Something went wrong. Try again.",
+      );
     } finally {
       // try/finally (not just the catch branch) — this form stays mounted
       // after a successful save (same "Save changes" pattern as
@@ -82,13 +88,13 @@ export function ProfileForm({
     <Stack spacing={2.5} component="form" onSubmit={handleSubmit}>
       {error && <Alert severity="error">{error}</Alert>}
 
-      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ display: "flex", justifyContent: "center" }}>
         <PhotoUpload
           photoUrl={avatarUrl}
           onChange={setAvatarUrl}
           onUploadingChange={setPhotoUploading}
-          alt={name || 'your'}
-          size={88}
+          alt={name || "your"}
+          size={180}
         />
       </Box>
       <TextField
@@ -102,9 +108,11 @@ export function ProfileForm({
       <DatePicker
         label="Birthdate"
         value={birthdate ? dayjs(birthdate) : null}
-        onChange={(newValue) => setBirthdate(newValue?.isValid() ? newValue.format('YYYY-MM-DD') : '')}
+        onChange={(newValue) =>
+          setBirthdate(newValue?.isValid() ? newValue.format("YYYY-MM-DD") : "")
+        }
         disableFuture
-        minDate={dayjs().subtract(120, 'year')}
+        minDate={dayjs().subtract(120, "year")}
         slotProps={{ textField: { required: true, fullWidth: true } }}
       />
       <TextField
@@ -121,9 +129,9 @@ export function ProfileForm({
         type="submit"
         variant="contained"
         size="large"
-        disabled={submitting || photoUploading || name.trim() === ''}
+        disabled={submitting || photoUploading || name.trim() === ""}
       >
-        {submitting ? 'Saving…' : submitLabel}
+        {submitting ? "Saving…" : submitLabel}
       </Button>
     </Stack>
   );
