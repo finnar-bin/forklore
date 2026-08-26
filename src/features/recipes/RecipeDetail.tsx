@@ -204,6 +204,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         ingredient_id: ingredient.id,
         quantity_used: quantityUsed,
         name: ingredient.name,
+        brand: ingredient.brand,
         unit: ingredient.unit,
         kcal: ingredient.kcal,
         quantity: ingredient.quantity,

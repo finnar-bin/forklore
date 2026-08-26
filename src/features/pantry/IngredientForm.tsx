@@ -24,6 +24,7 @@ interface IngredientFormProps {
 
 export function IngredientForm({ initialValues, ingredientId, submitLabel, onSubmit }: IngredientFormProps) {
   const [name, setName] = useState(initialValues?.name ?? '');
+  const [brand, setBrand] = useState(initialValues?.brand ?? '');
   const [quantity, setQuantity] = useState(initialValues?.quantity.toString() ?? '');
   const [unit, setUnit] = useState<IngredientUnit | ''>(initialValues?.unit ?? '');
   const [kcal, setKcal] = useState(initialValues?.kcal.toString() ?? '');
@@ -43,6 +44,7 @@ export function IngredientForm({ initialValues, ingredientId, submitLabel, onSub
         : photoUrl;
       await onSubmit({
         name,
+        brand: brand.trim() === '' ? null : brand.trim(),
         quantity: Number(quantity),
         unit,
         kcal: Number(kcal),
@@ -92,6 +94,7 @@ export function IngredientForm({ initialValues, ingredientId, submitLabel, onSub
         fullWidth
         autoFocus
       />
+      <TextField label="Brand" value={brand} onChange={(e) => setBrand(e.target.value)} fullWidth />
       <Stack direction="row" spacing={2}>
         <TextField
           label="Quantity"

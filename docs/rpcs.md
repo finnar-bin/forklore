@@ -69,8 +69,8 @@ returns uuid as $$
 declare
   v_new_id uuid;
 begin
-  insert into public.ingredients (group_id, created_by, name, quantity, unit, kcal, photo_url)
-  select p_target_group_id, auth.uid(), name, quantity, unit, kcal, photo_url
+  insert into public.ingredients (group_id, created_by, name, brand, quantity, unit, kcal, photo_url)
+  select p_target_group_id, auth.uid(), name, brand, quantity, unit, kcal, photo_url
   from public.ingredients
   where id = p_ingredient_id
   returning id into v_new_id;

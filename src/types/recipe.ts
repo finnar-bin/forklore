@@ -47,6 +47,7 @@ export interface RecipeIngredientDetail {
   ingredient_id: string;
   quantity_used: number;
   name: string;
+  brand: string | null;
   unit: IngredientUnit;
   kcal: number;
   quantity: number;

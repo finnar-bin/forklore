@@ -8,7 +8,6 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import { FloatingPortal } from '../../components/FloatingPortal';
-import { useProfileNames } from '../profiles/useProfileNames';
 import { fetchCommunityIngredients } from '../pantry/api';
 import { CreateIngredientDialog } from '../pantry/CreateIngredientDialog';
 import { IngredientCard } from '../pantry/IngredientCard';
@@ -25,8 +24,6 @@ export function CommunityPantryList() {
 
   const ingredients = useLiveQuery(() => fetchCommunityIngredients(), []);
   const loading = ingredients === undefined;
-
-  const creatorNames = useProfileNames((ingredients ?? []).map((i) => i.created_by));
 
   return (
     <Box sx={{ position: 'relative', minHeight: 'calc(100vh - 64px)' }}>
@@ -47,7 +44,6 @@ export function CommunityPantryList() {
           <IngredientCard
             key={ingredient.id}
             ingredient={ingredient}
-            creatorName={creatorNames[ingredient.created_by]}
             showCommunityIndicator={false}
             onClick={() => navigate(`/community-pantry/${ingredient.id}`)}
           />

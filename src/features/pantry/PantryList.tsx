@@ -20,7 +20,6 @@ import { setGroupCommunityPantryEnabled } from '../groups/api';
 import { useMyGroups } from '../groups/useMyGroups';
 import { setCommunityPantryEnabled } from '../profiles/api';
 import { useMyProfile } from '../profiles/useMyProfile';
-import { useProfileNames } from '../profiles/useProfileNames';
 import { fetchIngredients } from './api';
 import { IngredientCard } from './IngredientCard';
 import { CreateIngredientDialog } from './CreateIngredientDialog';
@@ -84,14 +83,6 @@ export function PantryList({ groupId }: { groupId: string | null }) {
   );
   const loading = ingredients === undefined;
   const detailPath = groupId ? `/groups/${groupId}/pantry` : '/pantry';
-
-  // Shown for group-context items always (Ticket 12), and for a community
-  // ingredient regardless of context — its creator isn't necessarily "you"
-  // even in your own personal pantry. See IngredientCard's creatorName prop
-  // and docs/pending-deviations.md ("Community pantry").
-  const creatorNames = useProfileNames(
-    (ingredients ?? []).filter((i) => groupId !== null || i.is_community).map((i) => i.created_by),
-  );
 
   return (
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
@@ -160,9 +151,6 @@ export function PantryList({ groupId }: { groupId: string | null }) {
           <IngredientCard
             key={ingredient.id}
             ingredient={ingredient}
-            creatorName={
-              groupId || ingredient.is_community ? creatorNames[ingredient.created_by] : undefined
-            }
             onClick={() => navigate(`${detailPath}/${ingredient.id}`)}
           />
         ))}

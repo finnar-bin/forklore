@@ -6,6 +6,7 @@ import type { Ingredient, IngredientUnit } from '../../types/ingredient';
 
 export interface IngredientInput {
   name: string;
+  brand: string | null;
   quantity: number;
   unit: IngredientUnit;
   kcal: number;

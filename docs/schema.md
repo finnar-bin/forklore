@@ -129,6 +129,7 @@ create table public.ingredients (
   group_id uuid references public.groups(id) on delete cascade,
   created_by uuid not null references public.profiles(id),
   name text not null,
+  brand text,
   quantity numeric not null,
   unit ingredient_unit not null,
   kcal numeric not null,
@@ -137,6 +138,8 @@ create table public.ingredients (
   updated_at timestamptz not null default now()
 );
 ```
+
+`brand` is optional (nullable, no default) — a plain display field, not part of any uniqueness or matching rule (`find_ingredient_match` still matches on name+unit only).
 
 ### recipes
 

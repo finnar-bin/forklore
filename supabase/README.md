@@ -214,3 +214,15 @@ Needs `supabase/migrations/20260907000000_community_pantry.sql` pushed — adds 
 7. Defense-in-depth RLS check: as a user with no relationship at all to the ingredient's creator, attempt a direct `update`/`delete` against the `ingredients` REST endpoint for a community ingredient you don't own → confirm it's rejected (the existing personal-row RLS branch, unchanged by this feature, already restricts this to `created_by = auth.uid()`).
 8. `check_community_ingredient_usage` scoping fix: as any user, call `supabase.rpc('check_community_ingredient_usage', { p_ingredient_id: '<a personal ingredient id belonging to a different user, or a group ingredient you share no membership with>' })` directly → confirm it returns `0` regardless of that ingredient's actual recipe usage, rather than leaking a real count for an ingredient you have no relationship to.
 8. Record the result somewhere durable (PR description, ticket comment) — same as prior tickets.
+
+## Optional ingredient brand field manual verification
+
+Needs `supabase/migrations/20260908000000_ingredient_brand.sql` pushed — adds `ingredients.brand` (nullable text) and re-declares `copy_ingredient` to carry it through a copy (see `docs/pending-deviations.md`, "Optional ingredient brand field").
+
+1. `npm run dev`, log in. On `/pantry`, tap the FAB → confirm a "Brand" field appears between Name and Quantity/Unit → create an ingredient with a brand set → confirm it saves and the Table Editor's `ingredients.brand` has the typed value.
+2. Create a second ingredient leaving Brand blank → confirm the Table Editor shows `null` for `brand`, not an empty string.
+3. Open the first ingredient's detail page, change the Brand field, tap "Save changes" → confirm it persists (reload the page, confirm it's still there). Clear the field back to blank and save → confirm `brand` goes back to `null` in the Table Editor.
+4. From a recipe's "Add ingredient" → "New ingredient" step, create an ingredient with a brand → confirm the same behavior as step 1.
+5. Copy an ingredient that has a brand set (`MoreVert` → "Copy") into a different personal/group context → confirm the new row's `brand` matches the source's in the Table Editor.
+6. If community pantry is in use: as a non-creator viewing a community ingredient's detail page (read-only), confirm a set brand is shown under the ingredient's name.
+7. Record the result somewhere durable (PR description, ticket comment) — same as prior entries.

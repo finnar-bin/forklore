@@ -10,7 +10,6 @@ import type { Ingredient } from '../../types/ingredient';
 // subtitle, primary/secondary metric on the right.
 export function IngredientCard({
   ingredient,
-  creatorName,
   // Every list of ingredients that can mix community rows in with
   // personal/group ones needs the indicator (PantryList.tsx). The
   // community pantry's own list is 100% community ingredients, so it'd be
@@ -20,14 +19,6 @@ export function IngredientCard({
   onClick,
 }: {
   ingredient: Ingredient;
-  // Shown whenever known: group context always (design-system.md's card
-  // subtitle pattern — "quantity+who added it" — see
-  // docs/pending-deviations.md, Ticket 12), and personal context too when
-  // this is a community ingredient (its creator isn't necessarily "you" —
-  // see docs/pending-deviations.md, "Community pantry"). Undefined while
-  // still loading either way, so the subtitle just omits the clause rather
-  // than showing a placeholder.
-  creatorName?: string;
   showCommunityIndicator?: boolean;
   onClick: () => void;
 }) {
@@ -84,7 +75,7 @@ export function IngredientCard({
         </Typography>
         <Typography fontSize={12} color="text.secondary" noWrap>
           {ingredient.quantity} {ingredient.unit}
-          {creatorName && ` · Added by ${creatorName}`}
+          {ingredient.brand && ` · ${ingredient.brand}`}
         </Typography>
       </Box>
       <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
