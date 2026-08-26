@@ -156,6 +156,7 @@ function RecipeIngredientRow({
         </Typography>
         <Typography fontSize={11} color="text.secondary">
           {kcalContribution.toFixed(2)} kcal
+          {item.brand && ` · ${item.brand}`}
         </Typography>
       </Box>
 
@@ -178,7 +179,7 @@ function RecipeIngredientRow({
         onClick={() => onRemove(item.ingredient_id)}
         disabled={disabled}
       >
-        <DeleteOutlineIcon fontSize="small" />
+        <DeleteOutlineIcon fontSize="small" color="error" />
       </IconButton>
     </Box>
   );

@@ -20,6 +20,7 @@ export interface Ingredient {
   // from "edited" (show updated_at/updated_by) without comparing timestamps.
   updated_by: string | null;
   name: string;
+  brand: string | null;
   quantity: number;
   unit: IngredientUnit;
   kcal: number;

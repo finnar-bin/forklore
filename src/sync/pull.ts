@@ -37,6 +37,73 @@ function scopeKey(table: string, scope: PullScope): string {
   return scope.groupId === null ? `${table}:personal:${scope.userId}` : `${table}:group:${scope.groupId}`;
 }
 
+// Ids with a not-yet-synced outbox item (any status — pending, retrying, or
+// even failed) for this table. A row can be locally-cached but genuinely
+// absent from serverIds below just because its own insert hasn't landed yet
+// (or is mid-backoff, or parked failed) — not because anyone deleted it.
+// Only the initial-mount pull awaits drainPendingOutbox (useSyncEngine.ts),
+// so a periodic/online-triggered pull can race an in-flight write; excluding
+// these ids is what stops reconciliation from deleting a record the user
+// just created out from under them.
+async function pendingOutboxIds(table: string): Promise<Set<string>> {
+  const items = await db.outbox.toArray();
+  return new Set(
+    items.filter((item) => item.table === table).map((item) => item.payload.id as string),
+  );
+}
+
+// Shared by reconcileDeletes and pullCommunityIngredients below — both need
+// "delete every locally-cached row that's neither on the server nor still
+// mid-sync," differing only in how they arrive at serverIds/localRows.
+async function deleteStaleLocalRows(
+  table: string,
+  serverIds: Set<string>,
+  localRows: { id: string }[],
+): Promise<void> {
+  const pendingIds = await pendingOutboxIds(table);
+  const staleIds = localRows
+    .map((row) => row.id)
+    .filter((id) => !serverIds.has(id) && !pendingIds.has(id));
+  if (staleIds.length > 0) {
+    await db.table(table).bulkDelete(staleIds);
+  }
+}
+
+// The cursor-based query above can only ever add/refresh rows — a row
+// another user hard-deleted server-side never appears in a `gt(cursorColumn,
+// ...)` response, so it lingers in Dexie forever (docs/pending-deviations.md,
+// "Community pantry" section, "Known limitation, not fixed here"). This
+// closes that gap by fetching the full set of ids currently in scope
+// (cheap — id-only) and deleting any locally-cached row whose id isn't in
+// that set (and isn't still mid-sync, per pendingOutboxIds above). Runs
+// every pull rather than being cursor-gated itself, since a delete doesn't
+// bump any row's `updated_at` for this query to key off.
+async function reconcileDeletes(config: TableSyncConfig, scope: PullScope): Promise<void> {
+  let idQuery = supabase.from(config.table).select('id');
+  idQuery =
+    scope.groupId === null
+      ? idQuery.is('group_id', null).eq(config.ownerColumn, scope.userId)
+      : idQuery.eq('group_id', scope.groupId);
+
+  const { data, error } = await idQuery;
+  if (error) throw error;
+  const serverIds = new Set((data ?? []).map((row) => row.id as string));
+
+  const table = db.table(config.table);
+  // Mirrors pullTable's own scope filter above, not any particular screen's
+  // display query (e.g. log_entries' personal-history view deliberately
+  // skips the group_id === null check) — this has to match what was actually
+  // pulled into this scope, not how a screen chooses to display it.
+  const localRows =
+    scope.groupId === null
+      ? (await table.where(config.ownerColumn).equals(scope.userId).toArray()).filter(
+          (row) => row.group_id === null,
+        )
+      : await table.where('group_id').equals(scope.groupId).toArray();
+
+  await deleteStaleLocalRows(config.table, serverIds, localRows);
+}
+
 async function pullTable(config: TableSyncConfig, scope: PullScope): Promise<void> {
   const metaKey = scopeKey(config.table, scope);
   const lastSyncedAt = await getCursor(metaKey);
@@ -63,6 +130,7 @@ async function pullTable(config: TableSyncConfig, scope: PullScope): Promise<voi
     // as-is, same shape Dexie's own typed EntityTable would expect.
     await db.table(config.table).bulkPut(data);
   }
+  await reconcileDeletes(config, scope);
   await setCursor(metaKey, syncStartedAt);
 }
 
@@ -105,5 +173,19 @@ export async function pullCommunityIngredients(): Promise<void> {
   if (data && data.length > 0) {
     await db.ingredients.bulkPut(data);
   }
+
+  // Same reconciliation as pullTable/reconcileDeletes above, but is_community
+  // isn't an indexed Dexie field, so this filters in JS instead of via
+  // .where(). This scope has no owner/group query to reuse.
+  const { data: idData, error: idError } = await supabase
+    .from('ingredients')
+    .select('id')
+    .eq('is_community', true);
+  if (idError) throw idError;
+  const serverIds = new Set((idData ?? []).map((row) => row.id as string));
+
+  const localRows = await db.ingredients.filter((row) => row.is_community === true).toArray();
+  await deleteStaleLocalRows('ingredients', serverIds, localRows);
+
   await setCursor(metaKey, syncStartedAt);
 }

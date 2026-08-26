@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import { formatKcalPerUnit, kcalPerUnit } from '../../lib/kcal';
+import { kcalPerUnit } from '../../lib/kcal';
+import { IngredientKcalHeader } from '../pantry/IngredientKcalHeader';
 import type { Ingredient } from '../../types/ingredient';
 import type { MealType } from '../../types/log';
 import type { LogEntryInput } from './api';
@@ -19,10 +18,14 @@ import { MealTypeSelector } from './MealTypeSelector';
 // ingredient lines), then snapshots kcal scaled proportionally.
 export function LogIngredientStep({
   ingredient,
+  groupLabel,
   onLog,
   onCancel,
 }: {
   ingredient: Ingredient;
+  // Resolved by the caller (AddLogEntryDialog's own groupLabel helper) —
+  // "Personal"/the owning group's name/"Community".
+  groupLabel: string;
   onLog: (input: LogEntryInput) => Promise<void>;
   onCancel: () => void;
 }) {
@@ -64,18 +67,7 @@ export function LogIngredientStep({
     <>
       <DialogContent sx={{ pt: '12px !important' }}>
         <Stack spacing={2.5}>
-          {/* Name first and prominent, with the rate as its subtitle right
-              below — lets the user judge the amount before it's even
-              entered. Same "kcal per unit" figure IngredientCard.tsx/
-              IngredientDetail.tsx already show elsewhere. */}
-          <Box>
-            <Typography fontSize={18} fontWeight={500}>
-              {ingredient.name}
-            </Typography>
-            <Typography fontSize={13} color="text.secondary">
-              {formatKcalPerUnit(ingredient.kcal, ingredient.quantity)} kcal per {ingredient.unit}
-            </Typography>
-          </Box>
+          <IngredientKcalHeader ingredient={ingredient} groupLabel={groupLabel} kcal={kcal} />
           <TextField
             label="Quantity eaten"
             type="number"
@@ -92,9 +84,6 @@ export function LogIngredientStep({
               input: { endAdornment: <InputAdornment position="end">{ingredient.unit}</InputAdornment> },
             }}
           />
-          <Typography fontSize={12} color="text.secondary">
-            {kcal.toFixed(2)} kcal
-          </Typography>
           <MealTypeSelector value={mealType} onChange={setMealType} disabled={submitting} />
           {error && <Alert severity="error">{error}</Alert>}
         </Stack>

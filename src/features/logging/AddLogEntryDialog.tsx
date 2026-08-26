@@ -13,8 +13,10 @@ import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Typography from '@mui/material/Typography';
+import { formatKcalPerUnit } from '../../lib/kcal';
 import { useAppStore } from '../../store/useAppStore';
 import { fetchAllIngredients } from '../pantry/api';
+import { IngredientAutocompleteOption } from '../pantry/IngredientAutocompleteOption';
 import { fetchAllRecipes } from '../recipes/api';
 import { useMyGroups } from '../groups/useMyGroups';
 import { useMyProfile } from '../profiles/useMyProfile';
@@ -117,6 +119,7 @@ function AddLogEntryForm({
     return (
       <LogIngredientStep
         ingredient={selectedIngredient}
+        groupLabel={groupLabel(selectedIngredient.group_id, selectedIngredient.is_community)}
         onLog={(input) => handleLog(selectedIngredient.group_id, input)}
         onCancel={() => setSelectedIngredient(null)}
       />
@@ -127,6 +130,7 @@ function AddLogEntryForm({
     return (
       <LogRecipeStep
         recipe={selectedRecipe}
+        groupLabel={groupLabel(selectedRecipe.group_id)}
         onLog={(input) => handleLog(selectedRecipe.group_id, input)}
         onCancel={() => setSelectedRecipe(null)}
       />
@@ -166,17 +170,13 @@ function AddLogEntryForm({
                 trim: true,
                 stringify: (option) => option.name,
               })}
-              renderOption={({ key, ...props }, option) => (
-                <Box component="li" key={key} {...props}>
-                  <Stack sx={{ minWidth: 0 }}>
-                    <Typography fontSize={14} noWrap>
-                      {formatIngredientLabel(option)}
-                    </Typography>
-                    <Typography fontSize={11} color="text.secondary" noWrap>
-                      {groupLabel(option.group_id, option.is_community)}
-                    </Typography>
-                  </Stack>
-                </Box>
+              renderOption={({ key, ...liProps }, option) => (
+                <IngredientAutocompleteOption
+                  key={key}
+                  liProps={liProps}
+                  ingredient={option}
+                  groupLabel={groupLabel(option.group_id, option.is_community)}
+                />
               )}
               renderInput={(params) => <TextField {...params} label="Ingredient" autoFocus />}
             />
@@ -198,16 +198,29 @@ function AddLogEntryForm({
               trim: true,
               stringify: (option) => option.name,
             })}
-            renderOption={({ key, ...props }, option) => (
-              <Box component="li" key={key} {...props}>
-                <Stack sx={{ minWidth: 0 }}>
-                  <Typography fontSize={14} noWrap>
-                    {formatRecipeLabel(option)}
-                  </Typography>
-                  <Typography fontSize={11} color="text.secondary" noWrap>
+            renderOption={({ key, ...liProps }, option) => (
+              <Box component="li" key={key} {...liProps} sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, minWidth: 0 }}>
+                    <Typography fontSize={14} fontWeight={500} noWrap sx={{ minWidth: 0 }}>
+                      {option.name}
+                    </Typography>
+                    <Typography fontSize={14} color="text.secondary" sx={{ flexShrink: 0 }}>
+                      {option.weight_g} g
+                    </Typography>
+                  </Box>
+                  <Typography fontSize={12} color="text.secondary" noWrap>
                     {groupLabel(option.group_id)}
                   </Typography>
-                </Stack>
+                </Box>
+                <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+                  <Typography fontSize={14} fontWeight={500} color="primary.main">
+                    {option.total_kcal.toFixed(2)} kcal
+                  </Typography>
+                  <Typography fontSize={11} color="text.secondary">
+                    {formatKcalPerUnit(option.total_kcal, option.weight_g)}/g
+                  </Typography>
+                </Box>
               </Box>
             )}
             renderInput={(params) => <TextField {...params} label="Recipe" autoFocus />}

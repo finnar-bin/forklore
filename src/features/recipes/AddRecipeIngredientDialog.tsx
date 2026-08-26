@@ -14,10 +14,13 @@ import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { useAppStore } from '../../store/useAppStore';
+import { kcalPerUnit } from '../../lib/kcal';
 import { useMyGroups } from '../groups/useMyGroups';
 import { useMyProfile } from '../profiles/useMyProfile';
 import { createIngredient, fetchIngredients, type IngredientInput } from '../pantry/api';
+import { IngredientAutocompleteOption } from '../pantry/IngredientAutocompleteOption';
 import { IngredientForm } from '../pantry/IngredientForm';
+import { IngredientKcalHeader } from '../pantry/IngredientKcalHeader';
 import type { Ingredient } from '../../types/ingredient';
 
 // Purely client-side — adding an *existing* ingredient to the recipe only
@@ -120,9 +123,22 @@ function ExistingIngredientForm({
   // ("Community pantry") and PantryList.tsx's identical derivation.
   const profile = useMyProfile(userId);
   const groups = useMyGroups(userId);
+  const membership = groupId ? (groups ?? []).find((m) => m.group.id === groupId) : undefined;
   const communityEnabled = groupId
-    ? (groups ?? []).find((m) => m.group.id === groupId)?.group.community_pantry_enabled ?? false
+    ? membership?.group.community_pantry_enabled ?? false
     : profile?.community_pantry_enabled ?? false;
+
+  // fetchIngredients only ever returns this recipe's own context (personal
+  // or `groupId`) plus, when opted in, every community ingredient merged in
+  // (see docs/pending-deviations.md, "Community pantry") — so unlike
+  // AddLogEntryDialog's cross-context picker, every non-community option
+  // here is already known to belong to the same place; only "Community" vs.
+  // this context's own name needs distinguishing, so a same-named community
+  // ingredient and a context-owned one aren't indistinguishable in the list.
+  function groupLabel(isCommunity: boolean): string {
+    if (isCommunity) return 'Community';
+    return groupId ? membership?.group.name ?? 'Group' : 'Personal';
+  }
 
   const [options, setOptions] = useState<Ingredient[] | null>(null);
   const [selected, setSelected] = useState<Ingredient | null>(null);
@@ -159,12 +175,28 @@ function ExistingIngredientForm({
             </Alert>
           ) : (
             <>
+              {selected && (
+                <IngredientKcalHeader
+                  ingredient={selected}
+                  groupLabel={groupLabel(selected.is_community)}
+                  kcal={kcalPerUnit(selected.kcal, selected.quantity) * parsedQuantity}
+                />
+              )}
               <Autocomplete
                 options={availableOptions}
+                getOptionKey={(option) => option.id}
                 getOptionLabel={(option) => option.name}
                 value={selected}
                 onChange={(_, value) => setSelected(value)}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderOption={({ key, ...liProps }, option) => (
+                  <IngredientAutocompleteOption
+                    key={key}
+                    liProps={liProps}
+                    ingredient={option}
+                    groupLabel={groupLabel(option.is_community)}
+                  />
+                )}
                 renderInput={(params) => (
                   <TextField {...params} label="Ingredient" required autoFocus />
                 )}

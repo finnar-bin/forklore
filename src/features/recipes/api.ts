@@ -106,7 +106,7 @@ export async function deleteRecipe(id: string): Promise<void> {
 export async function fetchRecipeIngredients(recipeId: string): Promise<RecipeIngredientDetail[]> {
   const { data, error } = await supabase
     .from('recipe_ingredients')
-    .select('ingredient_id, quantity_used, ingredients ( name, unit, kcal, quantity, is_community )')
+    .select('ingredient_id, quantity_used, ingredients ( name, brand, unit, kcal, quantity, is_community )')
     .eq('recipe_id', recipeId);
   if (error) throw error;
   return (data ?? []).map((row) => {
@@ -115,6 +115,7 @@ export async function fetchRecipeIngredients(recipeId: string): Promise<RecipeIn
       ingredient_id: row.ingredient_id,
       quantity_used: row.quantity_used,
       name: ingredient.name,
+      brand: ingredient.brand,
       unit: ingredient.unit,
       kcal: ingredient.kcal,
       quantity: ingredient.quantity,

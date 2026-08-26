@@ -24,10 +24,14 @@ import { MealTypeSelector } from './MealTypeSelector';
 // grams eaten rather than servings eaten.
 export function LogRecipeStep({
   recipe,
+  groupLabel,
   onLog,
   onCancel,
 }: {
   recipe: Recipe;
+  // Resolved by the caller (AddLogEntryDialog's own groupLabel helper) —
+  // "Personal" or the owning group's name (recipes have no community tier).
+  groupLabel: string;
   onLog: (input: LogEntryInput) => Promise<void>;
   onCancel: () => void;
 }) {
@@ -72,16 +76,40 @@ export function LogRecipeStep({
     <>
       <DialogContent sx={{ pt: '12px !important' }}>
         <Stack spacing={2.5}>
-          {/* Name first and prominent, with the rate as its subtitle right
-              below — same "kcal per gram" figure RecipeDetail.tsx already
-              shows as one of its stat tiles. */}
-          <Box>
-            <Typography fontSize={18} fontWeight={500}>
-              {recipe.name}
-            </Typography>
-            <Typography fontSize={13} color="text.secondary">
-              {formatKcalPerUnit(recipe.total_kcal, recipe.weight_g)} kcal per g
-            </Typography>
+          {/* Name + its own weight (subtle, beside it — same treatment as
+              IngredientAutocompleteOption.tsx's ingredient row) on the
+              left, with a group subtitle below; the live-computed kcal for
+              the amount being typed, plus the "kcal per gram" rate below
+              it, on the right — vertically centered against the whole
+              left-side block, directly above the Amount field it
+              reflects. */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ minWidth: 0 }}>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, minWidth: 0 }}>
+                <Typography fontSize={18} fontWeight={500} noWrap sx={{ minWidth: 0 }}>
+                  {recipe.name}
+                </Typography>
+                <Typography fontSize={18} color="text.secondary" sx={{ flexShrink: 0 }}>
+                  {recipe.weight_g} g
+                </Typography>
+              </Box>
+              <Typography fontSize={13} color="text.secondary" noWrap>
+                {groupLabel}
+              </Typography>
+            </Box>
+            <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+              <Typography fontSize={20} color="primary.main">
+                <Box component="span" sx={{ fontWeight: 700 }}>
+                  {kcal.toFixed(2)}
+                </Box>{' '}
+                <Box component="span" sx={{ fontWeight: 400 }}>
+                  kcal
+                </Box>
+              </Typography>
+              <Typography fontSize={13} color="text.secondary">
+                {formatKcalPerUnit(recipe.total_kcal, recipe.weight_g)} kcal per g
+              </Typography>
+            </Box>
           </Box>
           <TextField
             label="Amount eaten"
@@ -105,9 +133,6 @@ export function LogRecipeStep({
               input: { endAdornment: <InputAdornment position="end">g</InputAdornment> },
             }}
           />
-          <Typography fontSize={12} color="text.secondary">
-            {kcal.toFixed(2)} kcal
-          </Typography>
           <MealTypeSelector value={mealType} onChange={setMealType} disabled={submitting} />
           {error && <Alert severity="error">{error}</Alert>}
         </Stack>

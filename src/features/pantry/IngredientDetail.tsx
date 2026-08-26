@@ -67,6 +67,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
 
   const [savedIngredient, setSavedIngredient] = useState<Ingredient | null>(null);
   const [name, setName] = useState('');
+  const [brand, setBrand] = useState('');
   const [quantity, setQuantity] = useState('0');
   const [unit, setUnit] = useState<IngredientUnit | ''>('');
   const [kcal, setKcal] = useState('0');
@@ -123,6 +124,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
   function applyIngredientBaseline(next: Ingredient) {
     setSavedIngredient(next);
     setName(next.name);
+    setBrand(next.brand ?? '');
     setQuantity(next.quantity.toString());
     setUnit(next.unit);
     setKcal(next.kcal.toString());
@@ -142,9 +144,12 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
   const parsedQuantity = Number(quantity);
   const parsedKcal = Number(kcal);
 
+  const trimmedBrand = brand.trim() === '' ? null : brand.trim();
+
   const isDirty = useMemo(() => {
     if (!savedIngredient) return false;
     if (name !== savedIngredient.name) return true;
+    if (trimmedBrand !== savedIngredient.brand) return true;
     if (parsedQuantity !== savedIngredient.quantity) return true;
     if (unit !== savedIngredient.unit) return true;
     if (parsedKcal !== savedIngredient.kcal) return true;
@@ -154,7 +159,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
     // dirty check to enable the Save button.
     if (pendingPhotoFile) return true;
     return false;
-  }, [name, parsedQuantity, unit, parsedKcal, photoUrl, pendingPhotoFile, savedIngredient]);
+  }, [name, trimmedBrand, parsedQuantity, unit, parsedKcal, photoUrl, pendingPhotoFile, savedIngredient]);
 
   const isValid =
     name.trim() !== '' &&
@@ -174,6 +179,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
         : photoUrl;
       const updated = await updateIngredient(ingredientId, userId, {
         name,
+        brand: trimmedBrand,
         quantity: parsedQuantity,
         unit,
         kcal: parsedKcal,
@@ -303,6 +309,13 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
               fullWidth
               disabled={saving}
             />
+            <TextField
+              label="Brand"
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              fullWidth
+              disabled={saving}
+            />
             <Stack direction="row" spacing={2}>
               <TextField
                 label="Quantity"
@@ -350,6 +363,11 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
             <Typography fontSize={18} fontWeight={500}>
               {ingredient.name}
             </Typography>
+            {ingredient.brand && (
+              <Typography fontSize={13} color="text.secondary">
+                {ingredient.brand}
+              </Typography>
+            )}
             <Typography color="text.secondary">
               {ingredient.quantity} {ingredient.unit} · {ingredient.kcal.toFixed(2)} kcal
             </Typography>
