@@ -11,6 +11,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useAppStore } from '../../store/useAppStore';
+import { formatKcalPerUnit, kcalPerUnit } from '../../lib/kcal';
 import { copyRecipe, findIngredientMatch, type IngredientMatch, type IngredientResolution } from '../copy/api';
 import { CopyTargetList } from '../copy/CopyTargetList';
 import { useCopyTargets } from '../copy/useCopyTargets';
@@ -247,7 +248,7 @@ function ConflictStep({
   onAddAsNew: () => void;
 }) {
   const { source, match } = conflict;
-  const sourceKcalPerUnit = source.quantity > 0 ? source.kcal / source.quantity : 0;
+  const sourceKcalPerUnit = kcalPerUnit(source.kcal, source.quantity);
   const kcalDiffers = Math.abs(sourceKcalPerUnit - match.kcal_per_unit) >= 0.01;
 
   return (
@@ -265,7 +266,7 @@ function ConflictStep({
               This recipe's copy
             </Typography>
             <Typography fontSize={14} fontWeight={500}>
-              {sourceKcalPerUnit.toFixed(2)} kcal/{source.unit}
+              {formatKcalPerUnit(source.kcal, source.quantity)} kcal/{source.unit}
             </Typography>
           </Box>
           <Box sx={{ flex: 1 }}>

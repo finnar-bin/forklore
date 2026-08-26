@@ -9,12 +9,17 @@ import type { Ingredient } from '../../types/ingredient';
 
 export function CreateIngredientDialog({
   open,
-  groupId,
+  groupId = null,
+  // Community pantry (docs/pending-deviations.md, "Community pantry") reuses
+  // this same dialog rather than duplicating it — the only difference is the
+  // created row's group_id/is_community and the dialog copy.
+  isCommunity = false,
   onClose,
   onCreated,
 }: {
   open: boolean;
-  groupId: string | null;
+  groupId?: string | null;
+  isCommunity?: boolean;
   onClose: () => void;
   onCreated: (ingredient: Ingredient) => void;
 }) {
@@ -47,17 +52,19 @@ export function CreateIngredientDialog({
 
   async function handleSubmit(input: IngredientInput) {
     if (!userId) return;
-    const created = await createIngredient(pendingId, userId, groupId, input);
+    const created = await createIngredient(pendingId, userId, groupId, input, isCommunity);
     onCreated(created);
   }
 
+  const label = isCommunity ? 'Add to community pantry' : 'Add ingredient';
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Add ingredient</DialogTitle>
+      <DialogTitle>{label}</DialogTitle>
       {/* Extra top padding — otherwise the first field's floating label
           clips against the dialog content's scroll edge once focused. */}
       <DialogContent sx={{ pt: '12px !important' }}>
-        <IngredientForm ingredientId={pendingId} submitLabel="Add ingredient" onSubmit={handleSubmit} />
+        <IngredientForm ingredientId={pendingId} submitLabel={label} onSubmit={handleSubmit} />
       </DialogContent>
     </Dialog>
   );

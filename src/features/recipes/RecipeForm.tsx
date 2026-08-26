@@ -66,7 +66,7 @@ export function RecipeForm({ initialValues, recipeId, submitLabel, onSubmit }: R
           onChange={setPhotoUrl}
           onFileSelected={setPendingPhotoFile}
           alt={name || 'recipe'}
-          size={120}
+          size={180}
         />
       </Box>
 

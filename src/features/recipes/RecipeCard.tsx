@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
+import { formatKcalPerUnit } from '../../lib/kcal';
 import { PhotoThumbnail } from '../../components/PhotoThumbnail';
 import type { Recipe } from '../../types/recipe';
 
@@ -21,7 +22,6 @@ export function RecipeCard({
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === 'system' ? systemMode : mode;
   const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
-  const perGram = recipe.weight_g > 0 ? recipe.total_kcal / recipe.weight_g : 0;
 
   return (
     <Box
@@ -49,10 +49,10 @@ export function RecipeCard({
       </Box>
       <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
         <Typography fontSize={14} fontWeight={500} color="primary.main">
-          {recipe.total_kcal.toFixed(0)} kcal
+          {recipe.total_kcal.toFixed(2)} kcal
         </Typography>
         <Typography fontSize={11} color="text.secondary">
-          {perGram.toFixed(2)}/g
+          {formatKcalPerUnit(recipe.total_kcal, recipe.weight_g)}/g
         </Typography>
       </Box>
     </Box>

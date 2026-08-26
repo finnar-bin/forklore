@@ -9,6 +9,7 @@ import '@fontsource/inter/500.css';
 import '@fontsource/inter/700.css';
 import { theme } from './theme/theme';
 import App from './App.tsx';
+import { UpdatePrompt } from './pwa/UpdatePrompt.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -16,6 +17,7 @@ createRoot(document.getElementById('root')!).render(
       <CssBaseline enableColorScheme />
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <App />
+        <UpdatePrompt />
       </LocalizationProvider>
     </ThemeProvider>
   </StrictMode>,

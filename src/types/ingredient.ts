@@ -24,6 +24,13 @@ export interface Ingredient {
   unit: IngredientUnit;
   kcal: number;
   photo_url: string | null;
+  // Community pantry ingredient — always paired with group_id === null (see
+  // the ingredients_community_no_group check constraint). Readable by any
+  // authenticated user regardless of anyone's opt-in switch; only created_by
+  // may edit/delete it (the existing "personal row" RLS branch already
+  // enforces creator-only writes on any group_id-null row). See
+  // docs/pending-deviations.md ("Community pantry").
+  is_community: boolean;
   created_at: string;
   updated_at: string;
 }

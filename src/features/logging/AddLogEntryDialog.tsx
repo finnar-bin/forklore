@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Alert from '@mui/material/Alert';
-import Autocomplete from '@mui/material/Autocomplete';
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -17,6 +17,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { fetchAllIngredients } from '../pantry/api';
 import { fetchAllRecipes } from '../recipes/api';
 import { useMyGroups } from '../groups/useMyGroups';
+import { useMyProfile } from '../profiles/useMyProfile';
 import { createLogEntry, type LogEntryInput } from './api';
 import { formatIngredientLabel, formatRecipeLabel } from './formatItemLabel';
 import { LogIngredientStep } from './LogIngredientStep';
@@ -76,6 +77,13 @@ function AddLogEntryForm({
   // time" above), which used to mean a fresh group_members fetch every tap
   // of the Log FAB.
   const groups = useMyGroups(userId) ?? EMPTY_GROUPS;
+  // Cross-context, so community ingredients are included if *either* the
+  // personal profile or *any* of the caller's groups has opted in — see
+  // docs/pending-deviations.md ("Community pantry").
+  const profile = useMyProfile(userId);
+  const communityEnabled =
+    (profile?.community_pantry_enabled ?? false) ||
+    groups.some((membership) => membership.group.community_pantry_enabled);
   const [ingredients, setIngredients] = useState<Ingredient[] | null>(null);
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
@@ -84,11 +92,17 @@ function AddLogEntryForm({
   useEffect(() => {
     if (!userId) return;
     const groupIds = groups.map((membership) => membership.group.id);
-    fetchAllIngredients(userId, groupIds).then(setIngredients).catch(() => setIngredients([]));
+    fetchAllIngredients(userId, groupIds, communityEnabled)
+      .then(setIngredients)
+      .catch(() => setIngredients([]));
     fetchAllRecipes(userId, groupIds).then(setRecipes).catch(() => setRecipes([]));
-  }, [userId, groups]);
+  }, [userId, groups, communityEnabled]);
 
-  function groupLabel(groupId: string | null): string {
+  // A community ingredient's own group_id is null, same as a personal item,
+  // but it isn't the viewer's personal item — checked first so it takes
+  // priority over the groupId-based label below.
+  function groupLabel(groupId: string | null, isCommunity?: boolean): string {
+    if (isCommunity) return 'Community';
     if (groupId === null) return 'Personal';
     return groups.find((membership) => membership.group.id === groupId)?.group.name ?? 'Group';
   }
@@ -144,9 +158,14 @@ function AddLogEntryForm({
           ) : (
             <Autocomplete
               options={ingredients}
+              getOptionKey={(option) => option.id}
               getOptionLabel={formatIngredientLabel}
               onChange={(_, value) => setSelectedIngredient(value)}
               isOptionEqualToValue={(option, value) => option.id === value.id}
+              filterOptions={createFilterOptions({
+                trim: true,
+                stringify: (option) => option.name,
+              })}
               renderOption={({ key, ...props }, option) => (
                 <Box component="li" key={key} {...props}>
                   <Stack sx={{ minWidth: 0 }}>
@@ -154,7 +173,7 @@ function AddLogEntryForm({
                       {formatIngredientLabel(option)}
                     </Typography>
                     <Typography fontSize={11} color="text.secondary" noWrap>
-                      {groupLabel(option.group_id)}
+                      {groupLabel(option.group_id, option.is_community)}
                     </Typography>
                   </Stack>
                 </Box>
@@ -171,9 +190,14 @@ function AddLogEntryForm({
         ) : (
           <Autocomplete
             options={recipes}
+            getOptionKey={(option) => option.id}
             getOptionLabel={formatRecipeLabel}
             onChange={(_, value) => setSelectedRecipe(value)}
             isOptionEqualToValue={(option, value) => option.id === value.id}
+            filterOptions={createFilterOptions({
+              trim: true,
+              stringify: (option) => option.name,
+            })}
             renderOption={({ key, ...props }, option) => (
               <Box component="li" key={key} {...props}>
                 <Stack sx={{ minWidth: 0 }}>

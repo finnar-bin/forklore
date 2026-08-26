@@ -14,6 +14,8 @@ import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { useAppStore } from '../../store/useAppStore';
+import { useMyGroups } from '../groups/useMyGroups';
+import { useMyProfile } from '../profiles/useMyProfile';
 import { createIngredient, fetchIngredients, type IngredientInput } from '../pantry/api';
 import { IngredientForm } from '../pantry/IngredientForm';
 import type { Ingredient } from '../../types/ingredient';
@@ -114,14 +116,22 @@ function ExistingIngredientForm({
 }) {
   const userId = useAppStore((state) => state.userId);
 
+  // This recipe's own context opt-in — see docs/pending-deviations.md
+  // ("Community pantry") and PantryList.tsx's identical derivation.
+  const profile = useMyProfile(userId);
+  const groups = useMyGroups(userId);
+  const communityEnabled = groupId
+    ? (groups ?? []).find((m) => m.group.id === groupId)?.group.community_pantry_enabled ?? false
+    : profile?.community_pantry_enabled ?? false;
+
   const [options, setOptions] = useState<Ingredient[] | null>(null);
   const [selected, setSelected] = useState<Ingredient | null>(null);
   const [quantity, setQuantity] = useState('');
 
   useEffect(() => {
     if (!userId) return;
-    fetchIngredients(userId, groupId).then(setOptions).catch(() => setOptions([]));
-  }, [userId, groupId]);
+    fetchIngredients(userId, groupId, communityEnabled).then(setOptions).catch(() => setOptions([]));
+  }, [userId, groupId, communityEnabled]);
 
   const availableOptions = useMemo(
     () => (options ?? []).filter((i) => !excludeIngredientIds.includes(i.id)),

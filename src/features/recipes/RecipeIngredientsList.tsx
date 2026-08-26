@@ -9,6 +9,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
+import { kcalPerUnit } from '../../lib/kcal';
 import { AddRecipeIngredientDialog } from './AddRecipeIngredientDialog';
 import type { RecipeIngredientDetail } from '../../types/recipe';
 import type { Ingredient } from '../../types/ingredient';
@@ -54,7 +55,7 @@ export function RecipeIngredientsList({
           No ingredients yet. Add some from your pantry.
         </Typography>
       ) : (
-        <Stack spacing={1.25}>
+        <Stack spacing={1.5}>
           {ingredients.map((item) => (
             <RecipeIngredientRow
               key={item.ingredient_id}
@@ -102,8 +103,7 @@ function RecipeIngredientRow({
   // positive number is pushed up to the parent (and the realtime kcal total).
   const [rawQuantity, setRawQuantity] = useState(item.quantity_used.toString());
 
-  const kcalContribution =
-    item.quantity > 0 ? (item.kcal * item.quantity_used) / item.quantity : 0;
+  const kcalContribution = kcalPerUnit(item.kcal, item.quantity) * item.quantity_used;
 
   function handleChange(value: string) {
     setRawQuantity(value);
@@ -116,21 +116,46 @@ function RecipeIngredientRow({
   return (
     <Box
       sx={{
+        position: 'relative',
         bgcolor: 'background.paper',
         borderRadius: '12px',
         boxShadow: tokens.sh1,
+        border: item.is_community ? '2px solid' : 'none',
+        borderColor: item.is_community ? 'secondary.main' : undefined,
         p: 1.25,
         display: 'flex',
         alignItems: 'center',
         gap: 1,
       }}
     >
+      {/* Small tab overlapping the row's own top-left corner — same
+          community indicator as IngredientCard.tsx, see
+          docs/pending-deviations.md ("Community pantry"). */}
+      {item.is_community && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: -9,
+            left: 10,
+            bgcolor: 'secondary.main',
+            color: 'secondary.contrastText',
+            fontSize: 10,
+            fontWeight: 600,
+            lineHeight: 1,
+            px: 0.75,
+            py: 0.375,
+            borderRadius: '4px',
+          }}
+        >
+          Community
+        </Box>
+      )}
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography fontSize={13} noWrap>
           {item.name}
         </Typography>
         <Typography fontSize={11} color="text.secondary">
-          {kcalContribution.toFixed(0)} kcal
+          {kcalContribution.toFixed(2)} kcal
         </Typography>
       </Box>
 

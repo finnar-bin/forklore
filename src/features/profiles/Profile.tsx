@@ -10,10 +10,12 @@ import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 import LogoutIcon from '@mui/icons-material/Logout';
+import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
 import { useColorScheme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import { shadows } from '../../theme/theme';
 import { useAppStore } from '../../store/useAppStore';
+import { checkForPwaUpdate, usePwaUpdateStore } from '../../store/usePwaUpdateStore';
 import { LogoutConfirmDialog } from '../../components/LogoutConfirmDialog';
 import { attemptLogout, performLogout } from '../auth/api';
 import { updateMyProfile, type ProfileInput } from './api';
@@ -22,10 +24,11 @@ import { ProfileForm } from './ProfileForm';
 
 const REPO_URL = 'https://github.com/finnar-bin/forklore';
 
-// Account-level info (name/avatar/height/birthdate) plus logout and the
-// theme toggle — see design-system.md's "Profile/account access" pattern and
-// frontend-architecture.md's "Logout behavior". Weight/goal editing is
-// explicitly out of scope, owned by Progress (Ticket 18).
+// Account-level info (name/avatar/height/birthdate) plus logout, the theme
+// toggle, and a manual PWA update check — see design-system.md's
+// "Profile/account access" pattern and frontend-architecture.md's "Logout
+// behavior". Weight/goal editing is explicitly out of scope, owned by
+// Progress (Ticket 18).
 export function Profile() {
   const userId = useAppStore((state) => state.userId);
   const { mode, systemMode, setMode } = useColorScheme();
@@ -34,11 +37,13 @@ export function Profile() {
 
   const profile = useMyProfile(userId);
   const loadError = useMyProfileLoadError(userId);
+  const checkingForUpdate = usePwaUpdateStore((state) => state.checking);
 
   const [justSaved, setJustSaved] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [upToDate, setUpToDate] = useState(false);
 
   async function handleSave(input: ProfileInput) {
     // Unreachable in practice — the form below can't render until `profile`
@@ -63,6 +68,17 @@ export function Profile() {
       }
     } finally {
       setLoggingOut(false);
+    }
+  }
+
+  // If a new version is already found (usePwaUpdateStore's needRefresh),
+  // UpdatePrompt's own root-level Snackbar already offers a Reload button —
+  // showing "up to date" feedback here too would be redundant/contradictory,
+  // so this only fires when the check comes back with nothing new.
+  async function handleCheckForUpdate() {
+    await checkForPwaUpdate();
+    if (!usePwaUpdateStore.getState().needRefresh) {
+      setUpToDate(true);
     }
   }
 
@@ -125,6 +141,16 @@ export function Profile() {
       </Paper>
 
       <Button
+        variant="outlined"
+        size="large"
+        startIcon={<SystemUpdateAltIcon />}
+        onClick={handleCheckForUpdate}
+        disabled={checkingForUpdate}
+      >
+        {checkingForUpdate ? 'Checking for updates…' : 'Check for updates'}
+      </Button>
+
+      <Button
         color="error"
         variant="outlined"
         size="large"
@@ -150,6 +176,14 @@ export function Profile() {
         autoHideDuration={3000}
         onClose={() => setJustSaved(false)}
         message="Profile saved"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
+
+      <Snackbar
+        open={upToDate}
+        autoHideDuration={3000}
+        onClose={() => setUpToDate(false)}
+        message="You're on the latest version"
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
 

@@ -5,16 +5,24 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Menu from '@mui/material/Menu';
 import Paper from '@mui/material/Paper';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useColorScheme } from '@mui/material/styles';
 import { shadows } from '../../theme/theme';
 import { DeferredPhotoUpload } from '../../components/DeferredPhotoUpload';
 import { ItemMetadata } from '../../components/ItemMetadata';
+import { formatKcalPerUnit, kcalPerUnit } from '../../lib/kcal';
 import { deletePhoto, uploadPhoto } from '../../lib/photoUpload';
 import { useAppStore } from '../../store/useAppStore';
 import { useProfileNames } from '../profiles/useProfileNames';
@@ -89,6 +97,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
   const [justCopied, setJustCopied] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
   // Group-context metadata only, read from the last-persisted baseline
   // (not the live draft) — see docs/pending-deviations.md (Ticket 12). `!=
@@ -166,14 +175,9 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   // formula as the recalculate_recipe_kcal trigger (schema.md), so it
   // matches what the server will compute once saved.
   const totalKcal = useMemo(
-    () =>
-      ingredients.reduce(
-        (sum, item) => sum + (item.quantity > 0 ? (item.kcal * item.quantity_used) / item.quantity : 0),
-        0,
-      ),
+    () => ingredients.reduce((sum, item) => sum + kcalPerUnit(item.kcal, item.quantity) * item.quantity_used, 0),
     [ingredients],
   );
-  const perGram = weightG > 0 ? totalKcal / weightG : 0;
 
   const isDirty = useMemo(() => {
     if (!savedRecipe) return false;
@@ -203,6 +207,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         unit: ingredient.unit,
         kcal: ingredient.kcal,
         quantity: ingredient.quantity,
+        is_community: ingredient.is_community,
       },
     ]);
   }
@@ -352,14 +357,21 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
 
   return (
     <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
         <DeferredPhotoUpload
           photoUrl={photoUrl}
           onChange={setPhotoUrl}
           onFileSelected={setPendingPhotoFile}
           alt={name}
-          size={120}
+          size={200}
         />
+        <IconButton
+          aria-label="Recipe actions"
+          onClick={(e) => setMenuAnchor(e.currentTarget)}
+          sx={{ position: 'absolute', top: 0, right: 0 }}
+        >
+          <MoreVertIcon />
+        </IconButton>
       </Box>
 
       {groupId && (
@@ -381,7 +393,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
       <Stack direction="row" spacing={1.5}>
         <Paper sx={{ flex: 1, p: 1.5, textAlign: 'center', borderRadius: '12px', boxShadow: tokens.sh1 }}>
           <Typography fontSize={18} fontWeight={500} color="primary.main">
-            {totalKcal.toFixed(0)}
+            {totalKcal.toFixed(2)}
           </Typography>
           <Typography fontSize={11} color="text.secondary">
             total kcal
@@ -389,7 +401,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         </Paper>
         <Paper sx={{ flex: 1, p: 1.5, textAlign: 'center', borderRadius: '12px', boxShadow: tokens.sh1 }}>
           <Typography fontSize={18} fontWeight={500} color="primary.main">
-            {perGram.toFixed(2)}
+            {formatKcalPerUnit(totalKcal, weightG)}
           </Typography>
           <Typography fontSize={11} color="text.secondary">
             kcal per gram
@@ -434,6 +446,37 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         </Stack>
       </Paper>
 
+      <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
+        {/* Disabled while dirty — copying always uses the last-persisted
+            version (savedRecipe/savedIngredients), so an unsaved edit
+            copying silently instead of what's on screen would be
+            surprising. See docs/pending-deviations.md (Ticket 14). */}
+        <MenuItem
+          disabled={isDirty}
+          onClick={() => {
+            setMenuAnchor(null);
+            setCopyOpen(true);
+          }}
+        >
+          <ListItemIcon>
+            <ContentCopyIcon fontSize="small" sx={{ color: 'text.primary' }} />
+          </ListItemIcon>
+          <ListItemText>Copy</ListItemText>
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            setMenuAnchor(null);
+            setDeleteOpen(true);
+          }}
+        >
+          <ListItemIcon>
+            <DeleteOutlineIcon fontSize="small" color="error" />
+          </ListItemIcon>
+          <ListItemText sx={{ color: 'error.main' }}>Delete</ListItemText>
+        </MenuItem>
+      </Menu>
+
       {ingredientsLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
           <CircularProgress size={24} />
@@ -460,23 +503,6 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         disabled={!isValid || !isDirty || saving}
       >
         {saving ? 'Saving…' : 'Save changes'}
-      </Button>
-
-      {/* Disabled while dirty — copying always uses the last-persisted
-          version (savedRecipe/savedIngredients), so an unsaved edit copying
-          silently instead of what's on screen would be surprising. See
-          docs/pending-deviations.md (Ticket 14). */}
-      <Button
-        variant="outlined"
-        size="large"
-        onClick={() => setCopyOpen(true)}
-        disabled={isDirty}
-      >
-        Copy to…
-      </Button>
-
-      <Button color="error" variant="outlined" size="large" onClick={() => setDeleteOpen(true)}>
-        Delete recipe
       </Button>
 
       <DeleteRecipeDialog

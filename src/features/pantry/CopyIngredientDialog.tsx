@@ -18,6 +18,7 @@ export function CopyIngredientDialog({
   ingredientId,
   ingredientName,
   groupId,
+  isCommunity = false,
   onClose,
   onCopied,
 }: {
@@ -25,11 +26,16 @@ export function CopyIngredientDialog({
   ingredientId: string;
   ingredientName: string;
   groupId: string | null;
+  // See useCopyTargets' isCommunitySource — the community pantry isn't
+  // "in" whichever context this dialog happened to be opened from, so
+  // nothing gets excluded from the target list on its account. See
+  // docs/pending-deviations.md ("Community pantry").
+  isCommunity?: boolean;
   onClose: () => void;
   onCopied: () => void;
 }) {
   const userId = useAppStore((state) => state.userId);
-  const targets = useCopyTargets(open ? userId : null, groupId);
+  const targets = useCopyTargets(open ? userId : null, groupId, isCommunity);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [copying, setCopying] = useState(false);

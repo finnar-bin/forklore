@@ -50,4 +50,5 @@ export interface RecipeIngredientDetail {
   unit: IngredientUnit;
   kcal: number;
   quantity: number;
+  is_community: boolean;
 }

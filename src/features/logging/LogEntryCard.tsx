@@ -61,7 +61,7 @@ export function LogEntryCard({
       </Box>
       <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
         <Typography fontSize={14} fontWeight={500} color="primary.main">
-          {entry.snapshot_kcal.toFixed(0)} kcal
+          {entry.snapshot_kcal.toFixed(2)} kcal
         </Typography>
         <Typography fontSize={11} color="text.secondary">
           {sourceLabel}

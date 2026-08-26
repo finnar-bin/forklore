@@ -16,6 +16,7 @@ import { LogPage } from './routes/LogPage';
 import { LogsPage } from './routes/LogsPage';
 import { GroupLogsPage } from './routes/GroupLogsPage';
 import { GroupsPage } from './routes/GroupsPage';
+import { CommunityPantryPage } from './routes/CommunityPantryPage';
 import { InvitePage } from './routes/InvitePage';
 import { SyncStatusPage } from './routes/SyncStatusPage';
 import { RequireAuth } from './routes/RequireAuth';
@@ -110,6 +111,12 @@ function App() {
                 </Route>
               </Route>
               <Route path="/groups" element={<GroupsPage />} />
+              {/* Browsable by everyone regardless of anyone's opt-in switch
+                  — see docs/pending-deviations.md ("Community pantry").
+                  IngredientDetailPage (same component as /pantry/:id) reuses
+                  its permission gating unchanged. */}
+              <Route path="/community-pantry" element={<CommunityPantryPage />} />
+              <Route path="/community-pantry/:ingredientId" element={<IngredientDetailPage />} />
               <Route path="/sync-status" element={<SyncStatusPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>

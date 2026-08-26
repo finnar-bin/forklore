@@ -80,7 +80,7 @@ export function IngredientForm({ initialValues, ingredientId, submitLabel, onSub
           onChange={setPhotoUrl}
           onFileSelected={setPendingPhotoFile}
           alt={name || 'ingredient'}
-          size={120}
+          size={180}
         />
       </Box>
 
