@@ -267,12 +267,14 @@ export function OnboardingStepper() {
       }
 
       setOnboardingComplete(true);
-      // "/" would resolve to the same place via HomeRedirect, but going
-      // straight there avoids a redirect hop right as onboarding finishes.
-      // Same resolveDefaultGroupId convention HomeRedirect/BottomNav use
-      // (not just groups[0]) — a user who accepted an invite before
-      // finishing onboarding, on top of already belonging to a group, can
-      // reach this with more than one membership.
+      // Same resolveDefaultGroupId convention HomeRedirect/BottomNav use —
+      // nothing's been explicitly picked yet at this point (creating/joining
+      // a group in CreateOrJoinGroupStep doesn't itself persist a pick), so
+      // this almost always resolves to null and falls through to "/", which
+      // HomeRedirect then sends to /groups to choose — requested directly,
+      // rather than guessing which of the user's groups (there can be more
+      // than one, e.g. if they also accepted an invite before finishing
+      // onboarding) to drop them into.
       const groupId = resolveDefaultGroupId(groups, getStoredGroupId());
       navigate(groupId ? `/groups/${groupId}/pantry` : "/", { replace: true });
     } catch (err) {

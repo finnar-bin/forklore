@@ -46,9 +46,12 @@ export function useSyncedActiveGroupId(
 // GroupsPage, CommunityPantryPage, ProfilePage) should land — there's no
 // bare /pantry to fall back to anymore (see docs/pending-deviations.md,
 // "Remove personal mode"), so this resolves the same default group
-// BottomNav falls back to. Returns null only while `groups` hasn't loaded
-// yet — callers either show a brief loading state (the "/" redirect) or
-// fall back to the always-valid `/groups` list screen (everywhere else).
+// BottomNav falls back to. Lands on `/groups` (not a guessed group) on
+// login, right after onboarding, or anytime nothing's been explicitly
+// picked yet — see resolveDefaultGroupId. Returns null only while `groups`
+// itself hasn't loaded yet — callers either show a brief loading state (the
+// "/" redirect) or fall back to the always-valid `/groups` list screen
+// (everywhere else).
 export function useHomePath(): string | null {
   const userId = useAppStore((state) => state.userId);
   const groups = useMyGroups(userId);

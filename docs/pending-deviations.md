@@ -1032,3 +1032,15 @@ A live UI surface was found to have quietly lost its only home in the process: `
 **Why:** Requested directly — "have the changes reviewed."
 
 **Not yet verified:** Same as above — these are code-level fixes, `tsc -b`/`oxlint`/`prettier --check` clean, no live click-through possible until the migrations are pushed.
+
+**Deviation (follow-up, requested directly — clicking a `GroupCard` switches context):** `GroupCard.tsx` (`/groups`) previously had no click handler of its own — only its owner-only invite/settings icon buttons were interactive. Clicking the card itself now runs the same persist-and-navigate action as `ContextSwitcher.tsx`'s `selectContext` (`setStoredGroupId` + `navigate` into that group's pantry), so `/groups` doubles as a group picker, not just a management list. The two icon buttons now call `event.stopPropagation()` so tapping them doesn't also trigger the card's own navigation.
+
+**Why:** Requested directly — "Update GroupCard.tsx so that clicking on the card itself changes the group context."
+
+**Not yet verified:** No database change — pure client-side. `tsc -b`, `oxlint`, `prettier --check` clean. Manual follow-up: tap a group card's body → confirm it navigates into that group's pantry and the pick persists across a reload; tap the invite icon and the settings gear (owner-only) → confirm each still opens its own dialog/screen without also navigating into the card's group.
+
+**Deviation (follow-up, requested directly — land on `/groups` instead of guessing a default group):** `resolveDefaultGroupId` (`src/lib/defaultGroup.ts`) previously fell back to the caller's alphabetically-first group membership whenever nothing was stored or the stored pick was stale. Changed to return `null` in both of those cases instead of guessing — it now only ever returns a group the user explicitly picked (via `ContextSwitcher` or, since the GroupCard change above, tapping a card on `/groups`). `HomeRedirect`/`useHomePath`, `BottomNav`, and `OnboardingStepper`'s `handleFinish` already treated a `null` result as "send to `/groups`" (built that way for the loading-state case), so this needed no changes at their call sites — the single change in the shared helper is what makes login, a fresh page load, and finishing onboarding all land on `/groups` to choose whenever nothing's been picked yet, instead of silently dropping the user into whichever group happens to sort first.
+
+**Why:** Requested directly — "When a user logs in or after going through onboarding, take them to /group to select a group if there's nothing set yet in local storage."
+
+**Not yet verified:** No database change — pure client-side. `tsc -b`, `oxlint`, `prettier --check` clean. Manual follow-up: log in on a fresh browser profile (or clear `localStorage`) as a user with 2+ groups → confirm landing on `/groups`, not a guessed one; tap a `GroupCard` → confirm it lands in that group and a reload now goes straight there; finish onboarding as a brand-new user → confirm landing on `/groups` showing the one group just created/joined; from `/progress` with nothing stored, tap the Pantry tab → confirm it also goes to `/groups` rather than guessing.

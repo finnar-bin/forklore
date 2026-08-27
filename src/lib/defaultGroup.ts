@@ -2,22 +2,23 @@ import type { GroupMembership } from "../types/group";
 
 // Picks which group a groupAware screen should land in when the current
 // route doesn't already carry a :groupId (the "/" redirect, BottomNav
-// tapped from Progress/Profile/a bare cross-context log view) — every
-// account is guaranteed at least one group now (see
-// docs/pending-deviations.md, "Remove personal mode"), so there's always a
-// real answer once `groups` has loaded. Prefers the last group explicitly
-// picked via ContextSwitcher (see activeGroupStorage.ts), falling back to
-// the first membership if that's stale (no longer a member) or nothing was
-// ever stored. Returns null only while `groups` hasn't loaded yet, or for
-// the small window before onboarding's group step where an account
-// genuinely has none.
+// tapped from Progress/Profile/a bare cross-context log view). Only ever
+// returns the group the user last explicitly picked via ContextSwitcher or
+// GroupCard (see activeGroupStorage.ts) — deliberately does **not** guess a
+// "first" group when nothing's stored or the stored one is stale (no longer
+// a member), so a user with no established context (first login, right
+// after onboarding, or after leaving their last-picked group) lands on
+// `/groups` to explicitly choose instead of being silently dropped into
+// whichever group happens to sort first. Every account is guaranteed at
+// least one group now (see docs/pending-deviations.md, "Remove personal
+// mode"), so `/groups` always has something to pick from once `groups` has
+// loaded.
 export function resolveDefaultGroupId(
   groups: GroupMembership[] | undefined,
   storedGroupId: string | null,
 ): string | null {
-  if (!groups || groups.length === 0) return null;
-  if (storedGroupId && groups.some((m) => m.group.id === storedGroupId)) {
-    return storedGroupId;
-  }
-  return groups[0].group.id;
+  if (!groups || !storedGroupId) return null;
+  return groups.some((m) => m.group.id === storedGroupId)
+    ? storedGroupId
+    : null;
 }

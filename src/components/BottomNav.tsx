@@ -72,9 +72,11 @@ export function BottomNav() {
   const activeTab = getBottomTab(location.pathname);
 
   // Only Pantry/Recipes need this — tapping one from Progress/Profile
-  // (neither carries a :groupId) needs a real group to land in, same
-  // fallback the "/" redirect uses. Log's own "group-or-bare" nav never
-  // consults this.
+  // (neither carries a :groupId) needs somewhere to land, same resolution
+  // the "/" redirect uses. Null (nothing explicitly picked yet — see
+  // resolveDefaultGroupId) falls through to the `else` branch below,
+  // sending the tap to /groups to choose instead of guessing one. Log's own
+  // "group-or-bare" nav never consults this.
   const fallbackGroupId =
     routeGroupId ?? resolveDefaultGroupId(groups, getStoredGroupId());
 
