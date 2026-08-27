@@ -29,7 +29,7 @@ export function LogIngredientStep({
 }: {
   ingredient: Ingredient;
   // Resolved by the caller (AddLogEntryDialog's own groupLabel helper) —
-  // "Personal"/the owning group's name/"Community".
+  // the owning group's name, or "Community".
   groupLabel: string;
   // Who this entry will count against — only rendered as a picker
   // (LoggedForSelector) when `loggedForGroupId` is set.

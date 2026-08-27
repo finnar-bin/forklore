@@ -7,32 +7,27 @@ import Fab from "@mui/material/Fab";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
-import { useAppStore } from "../../store/useAppStore";
 import { FloatingPortal } from "../../components/FloatingPortal";
 import { useProfileNames } from "../profiles/useProfileNames";
 import { fetchRecipes } from "./api";
 import { RecipeCard } from "./RecipeCard";
 import { CreateRecipeDialog } from "./CreateRecipeDialog";
 
-export function RecipeList({ groupId }: { groupId: string | null }) {
-  const userId = useAppStore((state) => state.userId);
+export function RecipeList({ groupId }: { groupId: string }) {
   const navigate = useNavigate();
 
   const [createOpen, setCreateOpen] = useState(false);
 
   // Reads from Dexie, not Supabase — re-renders automatically on local
   // writes (this device) and pulled remote changes alike.
-  const recipes = useLiveQuery(
-    () => (userId ? fetchRecipes(userId, groupId) : []),
-    [userId, groupId],
-  );
+  const recipes = useLiveQuery(() => fetchRecipes(groupId), [groupId]);
   const loading = recipes === undefined;
-  const detailPath = groupId ? `/groups/${groupId}/recipes` : "/recipes";
+  const detailPath = `/groups/${groupId}/recipes`;
 
-  // Group context only — see RecipeCard's creatorName prop and
-  // docs/pending-deviations.md (Ticket 12).
+  // See RecipeCard's creatorName prop and docs/pending-deviations.md
+  // (Ticket 12).
   const creatorNames = useProfileNames(
-    groupId ? (recipes ?? []).map((r) => r.created_by) : [],
+    (recipes ?? []).map((r) => r.created_by),
   );
 
   return (
@@ -54,9 +49,7 @@ export function RecipeList({ groupId }: { groupId: string | null }) {
 
         {!loading && recipes?.length === 0 && (
           <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-            {groupId
-              ? "This group's recipes are empty. Add the first recipe to get started."
-              : "Your recipes are empty. Add your first recipe to get started."}
+            This group's recipes are empty. Add the first recipe to get started.
           </Typography>
         )}
 
@@ -64,7 +57,7 @@ export function RecipeList({ groupId }: { groupId: string | null }) {
           <RecipeCard
             key={recipe.id}
             recipe={recipe}
-            creatorName={groupId ? creatorNames[recipe.created_by] : undefined}
+            creatorName={creatorNames[recipe.created_by]}
             onClick={() => navigate(`${detailPath}/${recipe.id}`)}
           />
         ))}

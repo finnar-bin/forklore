@@ -4,12 +4,13 @@
 // hardcoded per-route, so any future route slots into the right category
 // automatically:
 //
-// - Both paths resolve to one of the four bottom-tab roots (personal or
-//   group-scoped) -> 'tab': covers a literal tab switch (Pantry -> Recipes)
-//   and a context switch within the same tab (Pantry -> a group's Pantry),
-//   neither of which should slide directionally.
-// - Next path is a descendant of the previous one (e.g. /pantry ->
-//   /pantry/:id) -> 'push': drilling into a detail screen.
+// - Both paths resolve to one of the four bottom-tab roots -> 'tab': covers
+//   a literal tab switch (Pantry -> Recipes) and a context switch within the
+//   same tab (one group's Pantry -> another group's Pantry), neither of
+//   which should slide directionally.
+// - Next path is a descendant of the previous one (e.g.
+//   /groups/:id/pantry -> /groups/:id/pantry/:ingredientId) -> 'push':
+//   drilling into a detail screen.
 // - Previous path is a descendant of the next one (the reverse) -> 'pop':
 //   backing out of a detail screen.
 // - Next path is a bottom-tab root and the previous path isn't -> 'pop':

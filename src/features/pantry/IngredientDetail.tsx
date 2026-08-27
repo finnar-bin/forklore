@@ -99,9 +99,9 @@ export function IngredientDetail({
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
   // Derived from the loaded row itself, not the route's groupId prop — a
-  // community ingredient can be reached from /pantry, any
-  // /groups/:id/pantry, or /community-pantry alike, and permission has
-  // nothing to do with which of those it was opened from. Only the creator
+  // community ingredient can be reached from any /groups/:id/pantry or
+  // /community-pantry alike, and permission has nothing to do with which of
+  // those it was opened from. Only the creator
   // may edit/delete a community ingredient (the RLS rule this mirrors on
   // the client — see docs/pending-deviations.md, "Community pantry");
   // everyone else gets a read-only view.
@@ -120,11 +120,10 @@ export function IngredientDetail({
   // permanently rejected by Supabase, so it's gated out here client-side too.
   const canMoveToCommunity = !isCommunity && ingredient?.created_by === userId;
 
-  // Shown for group context (design-system.md's "who added it" pattern has
-  // no reason to name the user to themselves in personal context — see
+  // Shown for group context (design-system.md's "who added it" pattern — see
   // docs/pending-deviations.md, Ticket 12) or for any community ingredient
-  // regardless of context, since its creator isn't necessarily "you" even
-  // in your own personal pantry. `!= null` (not `!== null`) so a
+  // regardless of context, since its creator isn't necessarily "you". `!=
+  // null` (not `!== null`) so a
   // pre-migration Dexie row that's missing `updated_by` entirely (`undefined`,
   // not `null` — see useProfileNames) doesn't slip through.
   const profileIds =
@@ -437,9 +436,8 @@ export function IngredientDetail({
       >
         {/* "Copy" stays available regardless of canEdit — forking a
             community ingredient into your own, independently-editable
-            personal or group pantry row is allowed for everyone, not just
-            its creator. See docs/pending-deviations.md ("Community
-            pantry"). */}
+            group pantry row is allowed for everyone, not just its creator.
+            See docs/pending-deviations.md ("Community pantry"). */}
         <MenuItem
           onClick={() => {
             setMenuAnchor(null);

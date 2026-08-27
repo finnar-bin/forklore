@@ -6,6 +6,7 @@ import MobileStepper from "@mui/material/MobileStepper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useAppStore } from "../../store/useAppStore";
+import { useMyGroups } from "../groups/useMyGroups";
 import { fetchMyProfile, updateMyProfile } from "../profiles/api";
 import { deletePhoto } from "../../lib/photoUpload";
 import { completeOnboarding } from "./api";
@@ -30,6 +31,7 @@ import {
   CalorieTargetStep,
   type CalorieSelection,
 } from "./steps/CalorieTargetStep";
+import { CreateOrJoinGroupStep } from "./steps/CreateOrJoinGroupStep";
 import type {
   ActivityLevel,
   BiologicalSex,
@@ -37,13 +39,17 @@ import type {
 } from "../../types/profile";
 import type { MealType } from "../../types/meal";
 
+// "Group" is mandatory — every account must belong to at least one group
+// now (see docs/pending-deviations.md, "Remove personal mode").
 const STEP_LABELS = [
   "About you",
   "Body metrics",
   "Activity level",
   "Goal",
   "Calorie target",
+  "Group",
 ];
+const GROUP_STEP_INDEX = STEP_LABELS.length - 1;
 
 function isValidNumberInRange(
   value: string,
@@ -64,6 +70,11 @@ export function OnboardingStepper() {
   const navigate = useNavigate();
 
   const [activeStep, setActiveStep] = useState(0);
+  // Shared cache — createGroup/acceptGroupInvite (called from
+  // CreateOrJoinGroupStep) invalidate it themselves, so this flips to true
+  // reactively once either succeeds, with no callback plumbing needed.
+  const groups = useMyGroups(userId);
+  const hasGroup = (groups?.length ?? 0) > 0;
 
   const [name, setName] = useState("");
   const [birthdate, setBirthdate] = useState("");
@@ -110,6 +121,15 @@ export function OnboardingStepper() {
         setName(profile.name);
         setAvatarUrl(profile.avatar_url);
         setOriginalAvatarUrl(profile.avatar_url);
+        // A returning user who already finished the profile steps in an
+        // earlier session but bailed before the group step (this flow has
+        // no other persistence — see the stepper's own local-state-only
+        // design) lands straight on it instead of retyping everything from
+        // "About you." See docs/pending-deviations.md ("Remove personal
+        // mode").
+        if (profile.daily_kcal_target != null) {
+          setActiveStep(GROUP_STEP_INDEX);
+        }
       })
       .catch(() => {});
   }, [userId]);
@@ -165,6 +185,7 @@ export function OnboardingStepper() {
         mealKcalTargets,
         getResolvedDailyKcal(calorieSelection, customKcal, calorieOptions),
       ),
+    hasGroup,
   ];
 
   function handleBack() {
@@ -244,7 +265,10 @@ export function OnboardingStepper() {
       }
 
       setOnboardingComplete(true);
-      navigate("/", { replace: true });
+      // "/" would resolve to the same place via HomeRedirect, but going
+      // straight there avoids a redirect hop right as onboarding finishes.
+      const groupId = groups?.[0]?.group.id;
+      navigate(groupId ? `/groups/${groupId}/pantry` : "/", { replace: true });
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Something went wrong. Try again.",

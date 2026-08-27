@@ -51,10 +51,10 @@ db.version(3).stores({
 // on the server hasn't changed, so it falls outside every future pull's
 // range until something else happens to touch it. Without this transform
 // such a row would simply vanish from every `logged_for`-keyed query
-// (fetchTodayLogEntries'/fetchAllLogEntries' personal-scope branch,
-// reconcileDeletes' personal branch) — not corrupted, just silently
-// unqueryable — until it happens to be updated server-side again. Mirrors
-// the server migration's own backfill (`created_by = logged_for`) exactly.
+// (fetchTodayLogEntries'/fetchAllLogEntries', reconcileDeletes) — not
+// corrupted, just silently unqueryable — until it happens to be updated
+// server-side again. Mirrors the server migration's own backfill
+// (`created_by = logged_for`) exactly.
 db.version(4)
   .stores({
     log_entries: "id, group_id, logged_for, created_by, logged_at",

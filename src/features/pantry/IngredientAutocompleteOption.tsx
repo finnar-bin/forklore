@@ -14,7 +14,7 @@ import type { Ingredient } from "../../types/ingredient";
 export function IngredientAutocompleteOption({
   liProps,
   ingredient,
-  // "Personal"/the owning group's name/"Community" — resolved by the caller
+  // The owning group's name, or "Community" — resolved by the caller
   // (each picker already has its own reason to know this). The brand half
   // of the second line is composed here, not by the caller, so every
   // consumer of this row gets the same "<group> · <brand>" shape for free —

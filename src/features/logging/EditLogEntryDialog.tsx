@@ -136,17 +136,15 @@ function EditLogEntryForm({
 
   // Not resolved to the group's actual name (unlike AddLogEntryDialog's own
   // groupLabel helper) — this dialog already knows exactly which entry it's
-  // editing, so "Personal"/"Group" is enough context without pulling in
-  // useMyGroups just for this header.
-  const groupLabel = entry.group_id === null ? "Personal" : "Group";
+  // editing, so "Group" is enough context without pulling in useMyGroups
+  // just for this header.
+  const groupLabel = "Group";
 
-  // Who this entry counts against — always shown in group context (even
-  // when it's the viewer's own entry, matching LogEntryCard's identical
-  // treatment), not surfaced at all outside a group. Display-only:
-  // reassigning logged_for after creation isn't supported — see
-  // docs/pending-deviations.md.
-  const names = useProfileNames(entry.group_id ? [entry.logged_for] : []);
-  const loggedForName = entry.group_id ? names[entry.logged_for] : null;
+  // Who this entry counts against — always shown (matching LogEntryCard's
+  // identical treatment). Display-only: reassigning logged_for after
+  // creation isn't supported — see docs/pending-deviations.md.
+  const names = useProfileNames([entry.logged_for]);
+  const loggedForName = names[entry.logged_for];
 
   // Whether the entry's own logged_for has meal-type breakdown enabled —
   // same reasoning as AddLogEntryDialog's identical lookup: the selector

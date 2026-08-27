@@ -25,7 +25,7 @@ export function RecipeIngredientsList({
   onQuantityChange,
   onRemove,
 }: {
-  groupId: string | null;
+  groupId: string;
   ingredients: RecipeIngredientDetail[];
   disabled: boolean;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;

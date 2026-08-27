@@ -8,6 +8,7 @@ import { LoginPage } from "./routes/LoginPage";
 import { SignupPage } from "./routes/SignupPage";
 import { OnboardingPage } from "./routes/OnboardingPage";
 import { AnimatedAppShell } from "./routes/AnimatedAppShell";
+import { HomeRedirect } from "./routes/HomeRedirect";
 import { PantryPage } from "./routes/PantryPage";
 import { IngredientDetailPage } from "./routes/IngredientDetailPage";
 import { RecipesPage } from "./routes/RecipesPage";
@@ -61,6 +62,15 @@ function App() {
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
         <Route path="/terms" element={<TermsPage />} />
 
+        {/* Public regardless of auth state — a not-yet-signed-up invitee
+            needs to preview an invite, then land back here (still
+            authenticated) after signup/login before ever reaching
+            onboarding, so they join the group they were actually invited to
+            rather than creating a redundant one in onboarding's mandatory
+            group step. See docs/pending-deviations.md ("Remove personal
+            mode") and AcceptInvite.tsx. */}
+        <Route path="/invite/:inviteCode" element={<InvitePage />} />
+
         <Route element={<RedirectIfAuthed />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
@@ -70,11 +80,6 @@ function App() {
           <Route element={<RedirectIfOnboarded />}>
             <Route path="/onboarding" element={<OnboardingPage />} />
           </Route>
-          {/* Only RequireAuth, not RequireOnboarded — routes.md notes this
-              route must work for a logged-in user clicking a link from
-              anywhere, so accepting an invite isn't blocked behind
-              onboarding completion. See docs/pending-deviations.md (Ticket 11). */}
-          <Route path="/invite/:inviteCode" element={<InvitePage />} />
           <Route element={<RequireOnboarded />}>
             {/* AnimatedAppShell wraps the router outlet in AnimatePresence
                 (push/pop vs. tab-switch transitions) and renders BottomNav
@@ -82,22 +87,18 @@ function App() {
                 frontend-architecture.md "Navigation animation" and
                 docs/pending-deviations.md (Ticket 16). */}
             <Route element={<AnimatedAppShell />}>
-              <Route path="/" element={<Navigate to="/pantry" replace />} />
-              <Route path="/pantry" element={<PantryPage />} />
-              <Route
-                path="/pantry/:ingredientId"
-                element={<IngredientDetailPage />}
-              />
-              <Route path="/recipes" element={<RecipesPage />} />
-              <Route path="/recipes/:recipeId" element={<RecipeDetailPage />} />
+              <Route path="/" element={<HomeRedirect />} />
+              {/* Bare /log and /logs are cross-context by design — everything
+                  logged across every group the caller is in, not tied to any
+                  single group (see docs/pending-deviations.md, Ticket 12
+                  follow-up and "Remove personal mode"). Pantry and Recipes
+                  have no equivalent bare route — a group's inventory isn't
+                  meaningfully aggregatable the way a daily kcal total is. */}
               <Route path="/log" element={<LogPage />} />
               <Route path="/logs" element={<LogsPage />} />
               <Route path="/logs/groups" element={<GroupLogsPage />} />
               <Route path="/progress" element={<ProgressPage />} />
-              {/* Same component as the personal routes above, just with a
-                  :groupId param present — see routes.md's "Personal vs. group"
-                  note and docs/pending-deviations.md (Ticket 12).
-                  RequireGroupMember guards every route under this parent —
+              {/* RequireGroupMember guards every route under this parent —
                   see issue #34's audit ("group routes trust the local cache
                   with no server-side membership check"). */}
               <Route path="/groups/:groupId" element={<RequireGroupMember />}>
@@ -122,8 +123,9 @@ function App() {
               <Route path="/groups" element={<GroupsPage />} />
               {/* Browsable by everyone regardless of anyone's opt-in switch
                   — see docs/pending-deviations.md ("Community pantry").
-                  IngredientDetailPage (same component as /pantry/:id) reuses
-                  its permission gating unchanged. */}
+                  IngredientDetailPage (same component as
+                  /groups/:groupId/pantry/:ingredientId) reuses its
+                  permission gating unchanged. */}
               <Route
                 path="/community-pantry"
                 element={<CommunityPantryPage />}

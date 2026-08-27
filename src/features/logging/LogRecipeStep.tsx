@@ -34,7 +34,7 @@ export function LogRecipeStep({
 }: {
   recipe: Recipe;
   // Resolved by the caller (AddLogEntryDialog's own groupLabel helper) —
-  // "Personal" or the owning group's name (recipes have no community tier).
+  // the owning group's name (recipes have no community tier).
   groupLabel: string;
   // Who this entry will count against — only rendered as a picker
   // (LoggedForSelector) when `loggedForGroupId` is set.

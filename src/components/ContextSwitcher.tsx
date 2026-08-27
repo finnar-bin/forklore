@@ -8,7 +8,6 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import GroupIcon from "@mui/icons-material/Group";
-import PersonIcon from "@mui/icons-material/Person";
 import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../theme/theme";
 import { useAppStore } from "../store/useAppStore";
@@ -17,18 +16,12 @@ import { setStoredGroupId } from "../lib/activeGroupStorage";
 
 // design-system.md "Context switcher chip" — pill-shaped, sits below the
 // header on Pantry/Recipes screens (Progress ignores it — see routes.md; Log
-// dropped it too, see this file's tab type note below). Personal vs. group
-// is a route concern, not a Zustand one (see
-// routes.md's own note on why /pantry and /groups/:groupId/pantry stay two
-// route entries) — this component navigates between them directly rather
-// than writing to useAppStore itself. It's the sole writer of the
-// localStorage-backed "last group" (see activeGroupStorage.ts) — an
-// explicit pick, group or Personal — so useSyncedActiveGroupId's
-// restore-on-bare-route effect never fights a choice made here. That
-// effect deliberately doesn't persist on its own passive re-renders
-// (e.g. a still-mounted, mid-exit-animation group screen reacting to an
-// unrelated useMyGroups update) — see its comment for why that used to
-// resurrect a group right after picking Personal.
+// dropped it too, see this file's tab type note below). This component
+// navigates between groups directly (a route concern, not a Zustand one —
+// see routes.md) rather than writing to useAppStore itself. It's the sole
+// writer of the localStorage-backed "last group" (see
+// activeGroupStorage.ts), which BottomNav/the "/" redirect fall back to
+// when landing on a screen with no :groupId of its own.
 export function ContextSwitcher({
   tab,
   activeGroupId,
@@ -37,7 +30,7 @@ export function ContextSwitcher({
   // GroupLogPicker flow. See docs/pending-deviations.md (Ticket 12
   // follow-up, "/log shows everything").
   tab: "pantry" | "recipes";
-  activeGroupId: string | null;
+  activeGroupId: string;
 }) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
@@ -54,29 +47,30 @@ export function ContextSwitcher({
   const groups = useMyGroups(userId);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
-  const activeMembership = activeGroupId
-    ? groups?.find((membership) => membership.group.id === activeGroupId)
-    : null;
-  const label = activeGroupId
-    ? (activeMembership?.group.name ?? "Group")
-    : "Personal";
+  const activeMembership = groups?.find(
+    (membership) => membership.group.id === activeGroupId,
+  );
+  const label = activeMembership?.group.name ?? "Group";
 
   function openMenu(event: { currentTarget: HTMLElement }) {
     setAnchorEl(event.currentTarget);
   }
 
-  function selectContext(groupId: string | null) {
+  function selectContext(groupId: string) {
     setAnchorEl(null);
     setStoredGroupId(groupId);
-    navigate(groupId ? `/groups/${groupId}/${tab}` : `/${tab}`);
+    navigate(`/groups/${groupId}/${tab}`);
   }
 
-  // Nothing to switch to — requested directly: a user in no groups at all
-  // shouldn't see a picker whose only real option is the context they're
-  // already in. Still renders (with whatever's loaded so far) if a group
-  // route is actually active, even if the membership list hasn't resolved
-  // yet or came back inconsistent, so there's always a way back to Personal.
-  if (groups?.length === 0 && activeGroupId === null) {
+  // Nothing to switch to with only one group — every account has at least
+  // one now (see docs/pending-deviations.md, "Remove personal mode"), so
+  // this hides once there's genuinely no other option, mirroring its old
+  // "hide with zero groups" behavior back when Personal was a real choice.
+  // `groups === undefined` (still loading) deliberately does *not* hide it —
+  // this is rendered from an active group route, so there's always at least
+  // this one group; hiding here would just flash the chip away and back
+  // once the fetch resolves for anyone who belongs to 2+.
+  if (groups !== undefined && groups.length < 2) {
     return null;
   }
 
@@ -84,13 +78,7 @@ export function ContextSwitcher({
     <Box sx={{ px: 2, pt: 1.5 }}>
       <Chip
         label={label}
-        icon={
-          activeGroupId ? (
-            <GroupIcon fontSize="small" />
-          ) : (
-            <PersonIcon fontSize="small" />
-          )
-        }
+        icon={<GroupIcon fontSize="small" />}
         deleteIcon={<ArrowDropDownIcon />}
         onDelete={openMenu}
         onClick={openMenu}
@@ -105,15 +93,6 @@ export function ContextSwitcher({
         open={anchorEl !== null}
         onClose={() => setAnchorEl(null)}
       >
-        <MenuItem
-          selected={activeGroupId === null}
-          onClick={() => selectContext(null)}
-        >
-          <ListItemIcon>
-            <PersonIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Personal</ListItemText>
-        </MenuItem>
         {(groups ?? []).map((membership) => (
           <MenuItem
             key={membership.group.id}

@@ -98,6 +98,8 @@ db.version(1).stores({
 export { db };
 ```
 
+(Also stale — current Dexie schema is at `version(4)`, per `docs/pending-deviations.md`. `group_id` remains an index on all three tables, but is only ever nullable now for a community-flagged `ingredients` row; `recipes`/`log_entries` always have a real `group_id` once personal mode was removed. `log_entries`' index list uses `logged_for`/`created_by`, not `logged_by`.)
+
 Reads go through `dexie-react-hooks`' `useLiveQuery` for automatic re-render on local data changes — not through RTK Query or manual polling.
 
 ### Zustand stores
@@ -113,6 +115,8 @@ interface AppState {
   setActiveGroup: (groupId: string | null) => void;
 }
 ```
+
+(Stale on two counts now, both explained in `docs/pending-deviations.md`: `activeGroupId`/`setActiveGroup` were removed in a Ticket 12 follow-up — see the logout-behavior note below — and "personal context" itself no longer exists as a concept at all once every account is required to belong to a group ("Remove personal mode"). The real `useAppStore` today only has `userId` and `onboardingComplete`.)
 
 ```ts
 // useSyncStore.ts — sync status for UI feedback

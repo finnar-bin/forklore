@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
@@ -7,11 +7,13 @@ import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { getPendingInviteCode } from "../../lib/pendingInviteStorage";
 import { signInWithEmail, signInWithGoogle } from "./api";
 import { friendlyAuthError } from "./errors";
 import { GoogleIcon } from "./GoogleIcon";
 
 export function LoginForm() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +26,15 @@ export function LoginForm() {
     setSubmitting(true);
     try {
       await signInWithEmail(email, password);
+      // Unlike signup/Google (redirect-driven, so the invite page itself is
+      // the next thing rendered), email/password login resolves in place —
+      // nothing else would send an invited existing user back to the invite
+      // they came from. See docs/pending-deviations.md ("Remove personal
+      // mode").
+      const pendingInviteCode = getPendingInviteCode();
+      if (pendingInviteCode) {
+        navigate(`/invite/${pendingInviteCode}`, { replace: true });
+      }
     } catch (err) {
       setError(friendlyAuthError(err));
     } finally {

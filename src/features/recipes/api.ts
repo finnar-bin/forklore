@@ -9,36 +9,22 @@ import type {
 } from "../../types/recipe";
 
 // Reads come from Dexie, not Supabase — see frontend-architecture.md
-// "Offline sync — outbox pattern". Same personal-vs-group split as
-// fetchIngredients (pantry/api.ts) — see docs/pending-deviations.md (Ticket 12).
-export async function fetchRecipes(
-  userId: string,
-  groupId: string | null,
-): Promise<Recipe[]> {
-  const rows =
-    groupId === null
-      ? (await db.recipes.where("created_by").equals(userId).toArray()).filter(
-          (r) => r.group_id === null,
-        )
-      : await db.recipes.where("group_id").equals(groupId).toArray();
+// "Offline sync — outbox pattern". See docs/pending-deviations.md
+// (Ticket 12, "Remove personal mode").
+export async function fetchRecipes(groupId: string): Promise<Recipe[]> {
+  const rows = await db.recipes.where("group_id").equals(groupId).toArray();
   return rows.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 // Cross-context read for the log entry dialog — see fetchAllIngredients
 // (pantry/api.ts) for why this exists alongside the strict fetchRecipes
 // above. See docs/pending-deviations.md (Ticket 12 follow-up).
-export async function fetchAllRecipes(
-  userId: string,
-  groupIds: string[],
-): Promise<Recipe[]> {
-  const personal = (
-    await db.recipes.where("created_by").equals(userId).toArray()
-  ).filter((r) => r.group_id === null);
+export async function fetchAllRecipes(groupIds: string[]): Promise<Recipe[]> {
   const grouped =
     groupIds.length > 0
       ? await db.recipes.where("group_id").anyOf(groupIds).toArray()
       : [];
-  return [...personal, ...grouped].sort((a, b) => a.name.localeCompare(b.name));
+  return grouped.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function fetchRecipe(id: string): Promise<Recipe | undefined> {
@@ -55,7 +41,7 @@ export async function fetchRecipe(id: string): Promise<Recipe | undefined> {
 export async function createRecipe(
   id: string,
   userId: string,
-  groupId: string | null,
+  groupId: string,
   input: RecipeInput,
 ): Promise<Recipe> {
   const now = new Date().toISOString();

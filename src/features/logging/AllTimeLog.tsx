@@ -12,7 +12,7 @@ import { LogEntryCard } from "./LogEntryCard";
 import type { LogEntry } from "../../types/log";
 
 // All-time history. `groupId: null` (the /logs route) is cross-context —
-// everything the caller has logged, personal and every group combined (see
+// everything the caller has logged, across every group combined (see
 // fetchAllLogEntries). A group id (the /groups/:groupId/logs route, Ticket
 // 12 follow-up) instead shows that one group's own shared history — every
 // entry logged into it by any member, same scoping DailyLog's group branch

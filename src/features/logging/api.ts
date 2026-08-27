@@ -24,8 +24,8 @@ export function todayLocalDate(): string {
 
 // Reads come from Dexie, not Supabase — see frontend-architecture.md
 // "Offline sync — outbox pattern". `groupId: null` is the cross-context
-// "today" view — everything the caller logged today, personal and every
-// group combined, same query shape as fetchAllLogEntries below (Ticket 12
+// "today" view — everything the caller logged today, across every group
+// they're in, same query shape as fetchAllLogEntries below (Ticket 12
 // follow-up, "/log shows everything"); a group id instead shows that one
 // group's shared log — every entry logged into it by any member, per
 // schema.md's "filter by group_id for the group view" note.
@@ -59,7 +59,7 @@ export async function fetchTodayLogEntries(
 
 // /logs (all-time, cross-context): queries by logged_for only, no group_id
 // filter, by design — see schema.md/routes.md ("everything the user has
-// logged, personal and every group combined"). Fixed in Ticket 12 — this
+// logged, across every group"). Fixed in Ticket 12 — this
 // previously also filtered to group_id === null, which happened to look
 // correct only because no group entries existed yet (see
 // docs/pending-deviations.md, Ticket 12).
@@ -97,14 +97,12 @@ export async function fetchAllGroupLogEntries(
 // fellow member's behalf (docs/pending-deviations.md) — `actorUserId` is
 // always the caller (`created_by`, matches the insert RLS policy's
 // `created_by = auth.uid()` check), `loggedFor` is who it counts against.
-// For a personal entry (`groupId` null) the two must already be the same
-// caller — the insert RLS policy has no delegation clause without a group
-// to delegate within — so every call site with `groupId: null` should just
-// pass `actorUserId` again for `loggedFor`.
+// `groupId` is required — every log entry belongs to a real group now (see
+// docs/pending-deviations.md, "Remove personal mode").
 export async function createLogEntry(
   actorUserId: string,
   loggedFor: string,
-  groupId: string | null,
+  groupId: string,
   input: LogEntryInput,
 ): Promise<LogEntry> {
   const now = new Date().toISOString();

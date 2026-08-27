@@ -18,13 +18,11 @@ import { useAppStore } from "../../store/useAppStore";
 import { FloatingPortal } from "../../components/FloatingPortal";
 import { setGroupCommunityPantryEnabled } from "../groups/api";
 import { useMyGroups } from "../groups/useMyGroups";
-import { setCommunityPantryEnabled } from "../profiles/api";
-import { useMyProfile } from "../profiles/useMyProfile";
 import { fetchIngredients } from "./api";
 import { IngredientCard } from "./IngredientCard";
 import { CreateIngredientDialog } from "./CreateIngredientDialog";
 
-export function PantryList({ groupId }: { groupId: string | null }) {
+export function PantryList({ groupId }: { groupId: string }) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
   const { mode, systemMode } = useColorScheme();
@@ -33,27 +31,20 @@ export function PantryList({ groupId }: { groupId: string | null }) {
 
   const [createOpen, setCreateOpen] = useState(false);
 
-  // This context's own community pantry opt-in — the personal profile's
-  // switch in personal context, or the viewed group's own switch in group
-  // context, each editable right here (not on /profile or group settings —
-  // see docs/pending-deviations.md, "Community pantry"). Only the group's
-  // owner can see/toggle it in group context: RLS's "owner manages group"
+  // This group's own community pantry opt-in, editable right here (not on
+  // group settings — see docs/pending-deviations.md, "Community pantry").
+  // Only the group's owner can see/toggle it: RLS's "owner manages group"
   // policy already restricts who can actually change it, same reason the
   // gear icon to group settings is owner-only elsewhere.
-  const profile = useMyProfile(userId);
   const groups = useMyGroups(userId);
-  const membership = groupId
-    ? (groups ?? []).find((m) => m.group.id === groupId)
-    : undefined;
+  const membership = (groups ?? []).find((m) => m.group.id === groupId);
   const isGroupOwner = membership?.role === "owner";
-  const communityEnabled = groupId
-    ? (membership?.group.community_pantry_enabled ?? false)
-    : (profile?.community_pantry_enabled ?? false);
+  const communityEnabled = membership?.group.community_pantry_enabled ?? false;
 
   // Optimistic override while a toggle request is in flight — communityEnabled
-  // above only updates once the profile/groups cache re-fetches after
-  // invalidation, which would otherwise make the switch briefly look like it
-  // snapped back before catching up.
+  // above only updates once the groups cache re-fetches after invalidation,
+  // which would otherwise make the switch briefly look like it snapped back
+  // before catching up.
   const [pendingCommunityEnabled, setPendingCommunityEnabled] = useState<
     boolean | null
   >(null);
@@ -66,11 +57,7 @@ export function PantryList({ groupId }: { groupId: string | null }) {
     setPendingCommunityEnabled(checked);
     setCommunityToggleError(null);
     try {
-      if (groupId) {
-        await setGroupCommunityPantryEnabled(groupId, checked);
-      } else if (userId) {
-        await setCommunityPantryEnabled(userId, checked);
-      }
+      await setGroupCommunityPantryEnabled(groupId, checked);
     } catch (err) {
       setCommunityToggleError(
         err instanceof Error
@@ -86,11 +73,11 @@ export function PantryList({ groupId }: { groupId: string | null }) {
   // writes (this device) and pulled remote changes alike, so no manual
   // refetch/merge is needed after create/delete.
   const ingredients = useLiveQuery(
-    () => (userId ? fetchIngredients(userId, groupId, communityEnabled) : []),
-    [userId, groupId, communityEnabled],
+    () => fetchIngredients(groupId, communityEnabled),
+    [groupId, communityEnabled],
   );
   const loading = ingredients === undefined;
-  const detailPath = groupId ? `/groups/${groupId}/pantry` : "/pantry";
+  const detailPath = `/groups/${groupId}/pantry`;
 
   return (
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
@@ -107,7 +94,7 @@ export function PantryList({ groupId }: { groupId: string | null }) {
           Browse community pantry
         </Button>
 
-        {(!groupId || isGroupOwner) && (
+        {isGroupOwner && (
           <Paper
             sx={{
               p: 1,
@@ -135,9 +122,7 @@ export function PantryList({ groupId }: { groupId: string | null }) {
               }
               label={
                 <Typography fontSize={13}>
-                  {groupId
-                    ? "Use community pantry ingredients in this group"
-                    : "Use community pantry ingredients"}
+                  Use community pantry ingredients in this group
                 </Typography>
               }
             />
@@ -155,9 +140,8 @@ export function PantryList({ groupId }: { groupId: string | null }) {
 
         {!loading && ingredients?.length === 0 && (
           <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-            {groupId
-              ? "This group's pantry is empty. Add the first ingredient to get started."
-              : "Your pantry is empty. Add your first ingredient to get started."}
+            This group's pantry is empty. Add the first ingredient to get
+            started.
           </Typography>
         )}
 

@@ -5,9 +5,9 @@ import { AllTimeLog } from "../features/logging/AllTimeLog";
 import { useMyGroups } from "../features/groups/useMyGroups";
 import { useAppStore } from "../store/useAppStore";
 
-// /logs (personal, cross-context) and /groups/:groupId/logs (one group's own
-// all-time history — Ticket 12 follow-up, "group's all-time history") share
-// this page, same pattern LogPage already uses for /log vs.
+// /logs (cross-context, every group combined) and /groups/:groupId/logs (one
+// group's own all-time history — Ticket 12 follow-up, "group's all-time
+// history") share this page, same pattern LogPage already uses for /log vs.
 // /groups/:groupId/log.
 export function LogsPage() {
   const { groupId } = useParams<{ groupId?: string }>();

@@ -20,7 +20,6 @@ import { IngredientAutocompleteOption } from "../pantry/IngredientAutocompleteOp
 import { fetchAllRecipes } from "../recipes/api";
 import { useMyGroups } from "../groups/useMyGroups";
 import { useMemberKcalProfiles } from "../profiles/useMemberKcalProfiles";
-import { useMyProfile } from "../profiles/useMyProfile";
 import { createLogEntry, type LogEntryInput } from "./api";
 import { formatIngredientLabel, formatRecipeLabel } from "./formatItemLabel";
 import { LogIngredientStep } from "./LogIngredientStep";
@@ -43,18 +42,20 @@ const EMPTY_GROUPS: GroupMembership[] = [];
 // Cross-context by design (Ticket 12 follow-up, "/log shows everything"):
 // unlike the pantry/recipes tabs, this dialog doesn't take a groupId to
 // scope its own ingredient/recipe lists — it lists every ingredient/recipe
-// the caller can see, personal and every group they're in, each labeled
-// with where it lives (see groupLabel below). Which log the resulting
-// entry lands on is decided by what gets picked (the item's own
-// group_id)... with one exception: `groupId` below (the group screen this
-// was opened from, when opened from one — DailyLog passes its own groupId
-// through) is used to let a *community* ingredient's entry land on that
-// specific group's log instead of always personal, so it can be logged for
-// a fellow member the same way a group-owned item can — see
-// resolveGroupId below and docs/pending-deviations.md ("log for a group
-// member" rework, community ingredients follow-up). See
-// docs/pending-deviations.md (Ticket 12) for the original cross-context
-// design.
+// the caller can see across every group they're in, each labeled with where
+// it lives (see groupLabel below). Which log the resulting entry lands on
+// is decided by what gets picked (the item's own group_id)... with one
+// exception: `groupId` below (the group screen this was opened from, when
+// opened from one — DailyLog passes its own groupId through) is used to let
+// a *community* ingredient's entry land on that specific group's log, so it
+// can be logged for a fellow member the same way a group-owned item can —
+// see resolveGroupId below and docs/pending-deviations.md ("log for a group
+// member" rework, community ingredients follow-up). A community ingredient
+// has no group of its own to fall back on, so it's excluded from the picker
+// entirely when this dialog is opened without a group context (the bare,
+// cross-context /log screen) — see docs/pending-deviations.md ("Remove
+// personal mode"). See docs/pending-deviations.md (Ticket 12) for the
+// original cross-context design.
 export function AddLogEntryDialog({
   open,
   groupId,
@@ -63,8 +64,8 @@ export function AddLogEntryDialog({
 }: {
   open: boolean;
   // The group screen this was opened from (DailyLog's own groupId prop),
-  // or undefined/null when opened from the personal /log screen. Only
-  // consulted for a community ingredient — see resolveGroupId below.
+  // or undefined/null when opened from the bare, cross-context /log screen.
+  // Only consulted for a community ingredient — see resolveGroupId below.
   groupId?: string | null;
   onClose: () => void;
   onLogged: (entry: LogEntry) => void;
@@ -101,13 +102,15 @@ function AddLogEntryForm({
   // time" above), which used to mean a fresh group_members fetch every tap
   // of the Log FAB.
   const groups = useMyGroups(userId) ?? EMPTY_GROUPS;
-  // Cross-context, so community ingredients are included if *either* the
-  // personal profile or *any* of the caller's groups has opted in — see
-  // docs/pending-deviations.md ("Community pantry").
-  const profile = useMyProfile(userId);
-  const communityEnabled =
-    (profile?.community_pantry_enabled ?? false) ||
-    groups.some((membership) => membership.group.community_pantry_enabled);
+  // Cross-context, so community ingredients are included if *any* of the
+  // caller's groups has opted in — see docs/pending-deviations.md
+  // ("Community pantry"). Only actually merged into the fetched list below
+  // when contextGroupId is set, though — a community ingredient has no
+  // group of its own to land its log entry in, so it's meaningless to offer
+  // one from the bare, cross-context /log screen (see resolveGroupId).
+  const communityEnabled = groups.some(
+    (membership) => membership.group.community_pantry_enabled,
+  );
   const [ingredients, setIngredients] = useState<Ingredient[] | null>(null);
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
   const [selectedIngredient, setSelectedIngredient] =
@@ -117,9 +120,8 @@ function AddLogEntryForm({
   // back to them on every selection change so a picker from a *previous*
   // group's LoggedForSelector can't linger onto an item from a different
   // group whose members don't overlap. Only ever surfaced as an actual
-  // picker (see LogIngredientStep/LogRecipeStep) for a group-owned item;
-  // otherwise it's just always the caller, matching what createLogEntry's
-  // own personal-entry contract requires.
+  // picker (see LogIngredientStep/LogRecipeStep) when the resolved group has
+  // more than one member; otherwise it's just always the caller.
   const [loggedFor, setLoggedFor] = useState(userId ?? "");
   useEffect(() => {
     setLoggedFor(userId ?? "");
@@ -139,38 +141,40 @@ function AddLogEntryForm({
 
   // The group_id the resulting entry will actually be created with. Matches
   // the picked item's own group_id, *except* a community ingredient (whose
-  // own group_id is always null — it isn't owned by any group) opened from
-  // a specific group's log screen instead lands on that group's shared log,
-  // so it can be logged for a fellow member the same way any other
-  // group-owned item can. A community *recipe* doesn't exist (recipes have
-  // no community tier), and a personal item is left untouched either way —
-  // this override only applies to community ingredients, not to sharing a
-  // personal item into a group's log.
+  // own group_id is always null — it isn't owned by any group) instead
+  // lands on the group screen this dialog was opened from, so it can be
+  // logged for a fellow member the same way any other group-owned item can.
+  // A community *recipe* doesn't exist (recipes have no community tier).
+  // Only ever called on an already-selected ingredient/recipe, and a
+  // community ingredient is excluded from the picker entirely when
+  // contextGroupId is null (see the fetch effect below), so this always
+  // resolves to a real group in practice — `string | null` is kept only so
+  // TypeScript doesn't have to trust that invariant, and handleLog guards
+  // against it defensively.
   function resolveGroupId(
     item: { group_id: string | null; is_community?: boolean } | null,
   ): string | null {
     if (!item) return null;
-    if (item.is_community && contextGroupId) return contextGroupId;
+    if (item.is_community) return contextGroupId;
     return item.group_id;
   }
 
   useEffect(() => {
     if (!userId) return;
     const groupIds = groups.map((membership) => membership.group.id);
-    fetchAllIngredients(userId, groupIds, communityEnabled)
+    // See this file's own top comment — a community ingredient has no group
+    // of its own, so it's only worth including when there's an actual group
+    // screen (contextGroupId) to attribute its log entry to.
+    fetchAllIngredients(groupIds, contextGroupId !== null && communityEnabled)
       .then(setIngredients)
       .catch(() => setIngredients([]));
-    fetchAllRecipes(userId, groupIds)
+    fetchAllRecipes(groupIds)
       .then(setRecipes)
       .catch(() => setRecipes([]));
-  }, [userId, groups, communityEnabled]);
+  }, [userId, groups, communityEnabled, contextGroupId]);
 
-  // A community ingredient's own group_id is null, same as a personal item,
-  // but it isn't the viewer's personal item — checked first so it takes
-  // priority over the groupId-based label below.
   function groupLabel(groupId: string | null, isCommunity?: boolean): string {
     if (isCommunity) return "Community";
-    if (groupId === null) return "Personal";
     return (
       groups.find((membership) => membership.group.id === groupId)?.group
         .name ?? "Group"
@@ -178,16 +182,8 @@ function AddLogEntryForm({
   }
 
   async function handleLog(groupId: string | null, input: LogEntryInput) {
-    if (!userId) return;
-    // A personal entry has no group to delegate within — always the caller,
-    // regardless of whatever loggedFor happens to hold (see createLogEntry's
-    // own comment on this contract).
-    const entry = await createLogEntry(
-      userId,
-      groupId === null ? userId : loggedFor,
-      groupId,
-      input,
-    );
+    if (!userId || !groupId) return;
+    const entry = await createLogEntry(userId, loggedFor, groupId, input);
     onLogged(entry);
   }
 

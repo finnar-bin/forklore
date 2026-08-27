@@ -44,11 +44,11 @@ export function DailyLog({
   // docs/pending-deviations.md (Ticket 12 follow-up, "group's all-time
   // history"). Only meaningful when groupId is set.
   groupName?: string | null;
-  // Whether the caller belongs to any group at all — hides "View group
-  // logs" entirely (personal context only) when there's nowhere for it to
-  // lead. Requested directly. Undefined while LogPage's own group-list fetch
-  // is still in flight, treated the same as false (the button pops in once
-  // it resolves, rather than flashing then disappearing for a no-groups user).
+  // Every account belongs to at least one group now (see
+  // docs/pending-deviations.md, "Remove personal mode"), so this is really
+  // just an initial-load guard: undefined while LogPage's own group-list
+  // fetch is still in flight, treated the same as false so "View group
+  // logs" pops in once it resolves rather than flashing on click-before-ready.
   hasGroups?: boolean;
 }) {
   const userId = useAppStore((state) => state.userId);
@@ -174,7 +174,7 @@ export function DailyLog({
           </Button>
           {groupId ? (
             <Button onClick={() => navigate("/log")} sx={{ flex: 1 }}>
-              View personal logs
+              View log across all groups
             </Button>
           ) : (
             hasGroups && (
