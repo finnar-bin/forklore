@@ -39,4 +39,39 @@ db.version(3).stores({
   sync_meta: 'key',
 });
 
+// log_entries' logged_by -> logged_for rename plus its new created_by
+// column ("log for a fellow group member" — see docs/pending-deviations.md
+// and supabase/migrations/20260910000000_log_entries_logged_for.sql).
+//
+// Needs an explicit .upgrade() transform, not just a `.stores()` reindex —
+// a pre-existing local row still has a `logged_by` property and no
+// `logged_for`/`created_by` at all, and sync/pull.ts's cursor
+// (`gt(cursorColumn, lastSyncedAt)`) will *not* naturally re-fetch and
+// overwrite it just because this version bumped: that row's `updated_at`
+// on the server hasn't changed, so it falls outside every future pull's
+// range until something else happens to touch it. Without this transform
+// such a row would simply vanish from every `logged_for`-keyed query
+// (fetchTodayLogEntries'/fetchAllLogEntries' personal-scope branch,
+// reconcileDeletes' personal branch) — not corrupted, just silently
+// unqueryable — until it happens to be updated server-side again. Mirrors
+// the server migration's own backfill (`created_by = logged_for`) exactly.
+db.version(4)
+  .stores({
+    log_entries: 'id, group_id, logged_for, created_by, logged_at',
+  })
+  .upgrade(async (tx) => {
+    await tx
+      .table('log_entries')
+      .toCollection()
+      .modify((entry) => {
+        if ('logged_by' in entry) {
+          entry.logged_for = entry.logged_by;
+          delete entry.logged_by;
+        }
+        if (entry.created_by === undefined) {
+          entry.created_by = entry.logged_for;
+        }
+      });
+  });
+
 export { db };

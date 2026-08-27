@@ -10,7 +10,11 @@ import DialogTitle from '@mui/material/DialogTitle';
 // Plain confirm — removing a member only deletes their group_members row
 // (schema.md); it never touches ingredients/recipes/log entries they
 // already contributed to that group (those keep their own created_by/
-// logged_by, same as any other row).
+// logged_for, same as any other row). Note this can leave a log entry's
+// logged_for pointing at someone no longer in the group (e.g. they were
+// removed after having entries logged for them) — its own update/delete RLS
+// then only allows a *current* member to touch it, not the removed logged_for
+// themselves; see docs/pending-deviations.md.
 export function RemoveMemberDialog({
   open,
   memberName,

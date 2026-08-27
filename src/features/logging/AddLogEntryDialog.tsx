@@ -19,6 +19,7 @@ import { fetchAllIngredients } from '../pantry/api';
 import { IngredientAutocompleteOption } from '../pantry/IngredientAutocompleteOption';
 import { fetchAllRecipes } from '../recipes/api';
 import { useMyGroups } from '../groups/useMyGroups';
+import { useMemberKcalProfiles } from '../profiles/useMemberKcalProfiles';
 import { useMyProfile } from '../profiles/useMyProfile';
 import { createLogEntry, type LogEntryInput } from './api';
 import { formatIngredientLabel, formatRecipeLabel } from './formatItemLabel';
@@ -40,18 +41,31 @@ const EMPTY_GROUPS: GroupMembership[] = [];
 // instead of an existing/new toggle.
 //
 // Cross-context by design (Ticket 12 follow-up, "/log shows everything"):
-// unlike the pantry/recipes tabs, this dialog doesn't take a groupId — it
-// lists every ingredient/recipe the caller can see, personal and every
-// group they're in, each labeled with where it lives (see groupLabel
-// below). Which log the resulting entry lands on is decided by what gets
-// picked (the item's own group_id), not by whichever screen the dialog was
-// opened from. See docs/pending-deviations.md (Ticket 12).
+// unlike the pantry/recipes tabs, this dialog doesn't take a groupId to
+// scope its own ingredient/recipe lists — it lists every ingredient/recipe
+// the caller can see, personal and every group they're in, each labeled
+// with where it lives (see groupLabel below). Which log the resulting
+// entry lands on is decided by what gets picked (the item's own
+// group_id)... with one exception: `groupId` below (the group screen this
+// was opened from, when opened from one — DailyLog passes its own groupId
+// through) is used to let a *community* ingredient's entry land on that
+// specific group's log instead of always personal, so it can be logged for
+// a fellow member the same way a group-owned item can — see
+// resolveGroupId below and docs/pending-deviations.md ("log for a group
+// member" rework, community ingredients follow-up). See
+// docs/pending-deviations.md (Ticket 12) for the original cross-context
+// design.
 export function AddLogEntryDialog({
   open,
+  groupId,
   onClose,
   onLogged,
 }: {
   open: boolean;
+  // The group screen this was opened from (DailyLog's own groupId prop),
+  // or undefined/null when opened from the personal /log screen. Only
+  // consulted for a community ingredient — see resolveGroupId below.
+  groupId?: string | null;
   onClose: () => void;
   onLogged: (entry: LogEntry) => void;
 }) {
@@ -59,15 +73,17 @@ export function AddLogEntryDialog({
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>Log an entry</DialogTitle>
       {/* Mounted only while open, so selection state starts fresh each time. */}
-      {open && <AddLogEntryForm onClose={onClose} onLogged={onLogged} />}
+      {open && <AddLogEntryForm contextGroupId={groupId ?? null} onClose={onClose} onLogged={onLogged} />}
     </Dialog>
   );
 }
 
 function AddLogEntryForm({
+  contextGroupId,
   onClose,
   onLogged,
 }: {
+  contextGroupId: string | null;
   onClose: () => void;
   onLogged: (entry: LogEntry) => void;
 }) {
@@ -90,6 +106,43 @@ function AddLogEntryForm({
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  // Who the entry-to-be counts against — defaults to the caller, and reset
+  // back to them on every selection change so a picker from a *previous*
+  // group's LoggedForSelector can't linger onto an item from a different
+  // group whose members don't overlap. Only ever surfaced as an actual
+  // picker (see LogIngredientStep/LogRecipeStep) for a group-owned item;
+  // otherwise it's just always the caller, matching what createLogEntry's
+  // own personal-entry contract requires.
+  const [loggedFor, setLoggedFor] = useState(userId ?? '');
+  useEffect(() => {
+    setLoggedFor(userId ?? '');
+  }, [userId, selectedIngredient, selectedRecipe]);
+
+  // Whether *loggedFor's own* profile has opted into meal-type breakdown —
+  // requested directly: the meal-type selector should reflect whichever
+  // person the entry will actually count against, not always the caller's
+  // own preference (relevant now that they can differ — see LoggedForSelector).
+  // Re-fetches automatically whenever `loggedFor` changes, so switching who
+  // it's for immediately reflects that person's own setting. `false` (hidden)
+  // while the fetch is in flight, same "pops in once resolved" treatment as
+  // this dialog's own `hasGroups`/community-pantry-driven UI elsewhere.
+  const loggedForProfiles = useMemberKcalProfiles(loggedFor ? [loggedFor] : []);
+  const mealBreakdownEnabled = loggedForProfiles[loggedFor]?.meal_breakdown_enabled ?? false;
+
+  // The group_id the resulting entry will actually be created with. Matches
+  // the picked item's own group_id, *except* a community ingredient (whose
+  // own group_id is always null — it isn't owned by any group) opened from
+  // a specific group's log screen instead lands on that group's shared log,
+  // so it can be logged for a fellow member the same way any other
+  // group-owned item can. A community *recipe* doesn't exist (recipes have
+  // no community tier), and a personal item is left untouched either way —
+  // this override only applies to community ingredients, not to sharing a
+  // personal item into a group's log.
+  function resolveGroupId(item: { group_id: string | null; is_community?: boolean } | null): string | null {
+    if (!item) return null;
+    if (item.is_community && contextGroupId) return contextGroupId;
+    return item.group_id;
+  }
 
   useEffect(() => {
     if (!userId) return;
@@ -111,7 +164,10 @@ function AddLogEntryForm({
 
   async function handleLog(groupId: string | null, input: LogEntryInput) {
     if (!userId) return;
-    const entry = await createLogEntry(userId, groupId, input);
+    // A personal entry has no group to delegate within — always the caller,
+    // regardless of whatever loggedFor happens to hold (see createLogEntry's
+    // own comment on this contract).
+    const entry = await createLogEntry(userId, groupId === null ? userId : loggedFor, groupId, input);
     onLogged(entry);
   }
 
@@ -120,7 +176,11 @@ function AddLogEntryForm({
       <LogIngredientStep
         ingredient={selectedIngredient}
         groupLabel={groupLabel(selectedIngredient.group_id, selectedIngredient.is_community)}
-        onLog={(input) => handleLog(selectedIngredient.group_id, input)}
+        loggedFor={loggedFor}
+        onLoggedForChange={setLoggedFor}
+        loggedForGroupId={resolveGroupId(selectedIngredient)}
+        mealBreakdownEnabled={mealBreakdownEnabled}
+        onLog={(input) => handleLog(resolveGroupId(selectedIngredient), input)}
         onCancel={() => setSelectedIngredient(null)}
       />
     );
@@ -131,7 +191,11 @@ function AddLogEntryForm({
       <LogRecipeStep
         recipe={selectedRecipe}
         groupLabel={groupLabel(selectedRecipe.group_id)}
-        onLog={(input) => handleLog(selectedRecipe.group_id, input)}
+        loggedFor={loggedFor}
+        onLoggedForChange={setLoggedFor}
+        loggedForGroupId={resolveGroupId(selectedRecipe)}
+        mealBreakdownEnabled={mealBreakdownEnabled}
+        onLog={(input) => handleLog(resolveGroupId(selectedRecipe), input)}
         onCancel={() => setSelectedRecipe(null)}
       />
     );

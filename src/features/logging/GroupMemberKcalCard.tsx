@@ -49,7 +49,7 @@ export function GroupMemberKcalCard({
         {(members ?? []).map((member) => {
           const profile = profiles[member.user_id];
           const loggedToday = entries
-            .filter((entry) => entry.logged_by === member.user_id)
+            .filter((entry) => entry.logged_for === member.user_id)
             .reduce((sum, entry) => sum + entry.kcal, 0);
           const target = profile?.daily_kcal_target ?? null;
           const mealTargets = profile ? getMealKcalTargets(profile) : null;
@@ -75,7 +75,7 @@ export function GroupMemberKcalCard({
                     // `?? null` guards a pre-feature row cached before
                     // meal_type existed — see DailyLog's own identical guard.
                     const consumed = entries
-                      .filter((entry) => entry.logged_by === member.user_id && (entry.meal_type ?? null) === meal)
+                      .filter((entry) => entry.logged_for === member.user_id && (entry.meal_type ?? null) === meal)
                       .reduce((sum, entry) => sum + entry.kcal, 0);
                     const remaining = mealTarget - consumed;
                     return (

@@ -177,13 +177,14 @@ create table public.recipe_ingredients (
 
 **Live-referenced, not snapshotted.** `name`/`kcal`/`unit` are refreshed from the *current* source ingredient/recipe's data (kcal-per-unit × `quantity`) whenever the entry is created or its `quantity` is edited — they are not copied once at insert time and left to drift from later corrections to the source, and they remain the only fields used for calorie math. `source_ingredient_id`/`source_recipe_id` are real (soft) references, not mere breadcrumbs: they're what a quantity edit re-derives `name`/`kcal`/`unit` from. They go null on `ON DELETE SET NULL` if the source is deleted — at that point `name`/`kcal`/`quantity`/`unit` become permanently frozen at their last-refreshed values, and the app disables editing them further (see `EditLogEntryDialog.tsx`; `meal_type` and delete still work).
 
-`group_id` follows the same nullable ownership pattern (null = personal log, value = that group's shared log). `logged_by` is always set regardless — it's who actually logged the entry, independent of which log it displays on. This split is what allows a shared group log to exist alongside per-user goal tracking: filter by `group_id` for the group view, by `logged_by` for an individual's own intake history.
+`group_id` follows the same nullable ownership pattern (null = personal log, value = that group's shared log). `logged_for`/`created_by` split *who this entry counts against* from *who actually wrote it* — until the "log for a group member" rework (docs/pending-deviations.md) these were the same column (`logged_by`); now a group member can log an entry on a fellow member's behalf, so a personal entry (`group_id` null) still requires them to be the same person (nothing to delegate within), but a group entry's `logged_for` can be any member of that group regardless of who (`created_by`) posted it. This split is what allows a shared group log to exist alongside per-user goal tracking: filter by `group_id` for the group view, by `logged_for` for an individual's own intake history.
 
 ```sql
 create table public.log_entries (
   id uuid primary key default gen_random_uuid(),
   group_id uuid references public.groups(id) on delete cascade,
-  logged_by uuid not null references public.profiles(id),
+  logged_for uuid not null references public.profiles(id),
+  created_by uuid not null references public.profiles(id),
   source_ingredient_id uuid references public.ingredients(id) on delete set null,
   source_recipe_id uuid references public.recipes(id) on delete set null,
   name text not null,
@@ -196,11 +197,12 @@ create table public.log_entries (
   updated_at timestamptz not null default now()
 );
 
-create index idx_log_entries_logged_by_date on public.log_entries (logged_by, logged_at);
+create index idx_log_entries_logged_for_date on public.log_entries (logged_for, logged_at);
+create index idx_log_entries_created_by on public.log_entries (created_by);
 create index idx_log_entries_group_date on public.log_entries (group_id, logged_at);
 ```
 
-The `/logs` (all-time, cross-context) view queries `where logged_by = :userId` with no `group_id` filter — it deliberately spans personal and every group the user has logged into. The `/log` and `/groups/:groupId/log` views filter by `group_id` (null or a specific group) instead.
+The `/logs` (all-time, cross-context) view queries `where logged_for = :userId` with no `group_id` filter — it deliberately spans personal and every group the user has logged into. The `/log` and `/groups/:groupId/log` views filter by `group_id` (null or a specific group) instead.
 
 ### Triggers
 
@@ -275,7 +277,25 @@ using (
 );
 ```
 
-Apply the same three-policy shape (select/insert/update) to `recipes` and `log_entries` — **except** `log_entries`' update/delete policies (`"update own log entries"` / `"delete own log entries"`) must be owner-only (`logged_by = auth.uid()`), not the group-inclusive OR shown above: `log_entries` represents an individual's own intake history, unlike `ingredients`/`recipes` where "any group member can edit" is the intended behavior. Only `log_entries`' select policy keeps the group-inclusive OR — a group member still needs to be able to view the shared log. `recipe_ingredients` policies should check the parent recipe's ownership via a subquery join rather than duplicating the ownership columns.
+Apply the same three-policy shape (select/insert/update) to `recipes` and `log_entries`, plus a fourth (delete) — `log_entries`' select/update/delete all use the group-inclusive OR shown above, same as `ingredients`/`recipes` (`"read/update/delete own or group log entries"`), reversing an earlier decision to make its update/delete owner-only: that was reasoned around `log_entries` being "an individual's own intake history," which stopped holding once one group member can log an entry on another's behalf (docs/pending-deviations.md, "log for a group member") — a group entry is now a shared-group resource any fellow member can correct, same as an ingredient or recipe. `log_entries`' insert policy is its own shape, not the shared one above — it additionally requires `created_by = auth.uid()` (the actor can never be forged) and, for a group entry, that `logged_for` is itself a member of that same group, not just the caller:
+
+```sql
+create policy "write for self or group member"
+on public.log_entries for insert
+with check (
+  created_by = auth.uid()
+  and (
+    (group_id is null and logged_for = auth.uid())
+    or (
+      group_id is not null
+      and group_id in (select group_id from public.group_members where user_id = auth.uid())
+      and group_id in (select group_id from public.group_members where user_id = logged_for)
+    )
+  )
+);
+```
+
+`recipe_ingredients` policies should check the parent recipe's ownership via a subquery join rather than duplicating the ownership columns.
 
 Groups: only members can read; only the owner can update or delete.
 

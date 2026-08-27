@@ -21,7 +21,7 @@ interface TableSyncConfig {
   // Column that identifies "this row is personal to the caller" when
   // `scope.groupId` is null. Group-scoped rows (Ticket 12) rely on RLS
   // membership instead, so this column isn't filtered on in that case.
-  ownerColumn: 'created_by' | 'logged_by';
+  ownerColumn: 'created_by' | 'logged_for';
 }
 
 async function getCursor(metaKey: string): Promise<string | null> {
@@ -137,7 +137,7 @@ async function pullTable(config: TableSyncConfig, scope: PullScope): Promise<voi
 const TABLE_CONFIGS: TableSyncConfig[] = [
   { table: 'ingredients', cursorColumn: 'updated_at', ownerColumn: 'created_by' },
   { table: 'recipes', cursorColumn: 'updated_at', ownerColumn: 'created_by' },
-  { table: 'log_entries', cursorColumn: 'updated_at', ownerColumn: 'logged_by' },
+  { table: 'log_entries', cursorColumn: 'updated_at', ownerColumn: 'logged_for' },
 ];
 
 // Pulls every table for one scope (personal, or — once Ticket 12 lands — a

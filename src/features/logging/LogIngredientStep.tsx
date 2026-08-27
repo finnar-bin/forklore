@@ -11,6 +11,7 @@ import { IngredientKcalHeader } from '../pantry/IngredientKcalHeader';
 import type { Ingredient } from '../../types/ingredient';
 import type { MealType } from '../../types/log';
 import type { LogEntryInput } from './api';
+import { LoggedForSelector } from './LoggedForSelector';
 import { MealTypeSelector } from './MealTypeSelector';
 
 // Asks how much of this ingredient was eaten, in the ingredient's own unit
@@ -19,6 +20,10 @@ import { MealTypeSelector } from './MealTypeSelector';
 export function LogIngredientStep({
   ingredient,
   groupLabel,
+  loggedFor,
+  onLoggedForChange,
+  loggedForGroupId,
+  mealBreakdownEnabled,
   onLog,
   onCancel,
 }: {
@@ -26,6 +31,23 @@ export function LogIngredientStep({
   // Resolved by the caller (AddLogEntryDialog's own groupLabel helper) —
   // "Personal"/the owning group's name/"Community".
   groupLabel: string;
+  // Who this entry will count against — only rendered as a picker
+  // (LoggedForSelector) when `loggedForGroupId` is set.
+  loggedFor: string;
+  onLoggedForChange: (userId: string) => void;
+  // The group this entry will actually land on, resolved by the caller
+  // (AddLogEntryDialog's own resolveGroupId) — usually `ingredient.group_id`,
+  // except a community ingredient opened from a specific group's log
+  // screen, which resolves to that group instead (its own group_id is
+  // always null). Passed separately from `ingredient` rather than read off
+  // it directly since a community ingredient's own group_id can't reflect
+  // this.
+  loggedForGroupId: string | null;
+  // Whether `loggedFor`'s own profile has meal-type breakdown enabled —
+  // resolved by the caller (AddLogEntryDialog's own useMemberKcalProfiles
+  // lookup), since it's a property of whichever person this entry is for,
+  // not of this component. Gates whether MealTypeSelector renders at all.
+  mealBreakdownEnabled: boolean;
   onLog: (input: LogEntryInput) => Promise<void>;
   onCancel: () => void;
 }) {
@@ -84,7 +106,17 @@ export function LogIngredientStep({
               input: { endAdornment: <InputAdornment position="end">{ingredient.unit}</InputAdornment> },
             }}
           />
-          <MealTypeSelector value={mealType} onChange={setMealType} disabled={submitting} />
+          {loggedForGroupId && (
+            <LoggedForSelector
+              groupId={loggedForGroupId}
+              value={loggedFor}
+              onChange={onLoggedForChange}
+              disabled={submitting}
+            />
+          )}
+          {mealBreakdownEnabled && (
+            <MealTypeSelector value={mealType} onChange={setMealType} disabled={submitting} />
+          )}
           {error && <Alert severity="error">{error}</Alert>}
         </Stack>
       </DialogContent>

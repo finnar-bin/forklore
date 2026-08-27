@@ -11,6 +11,7 @@ import { RecipeKcalHeader } from '../recipes/RecipeKcalHeader';
 import type { Recipe } from '../../types/recipe';
 import type { MealType } from '../../types/log';
 import type { LogEntryInput } from './api';
+import { LoggedForSelector } from './LoggedForSelector';
 import { MealTypeSelector } from './MealTypeSelector';
 
 // Asks how many grams of this recipe were eaten, then computes kcal scaled
@@ -24,6 +25,10 @@ import { MealTypeSelector } from './MealTypeSelector';
 export function LogRecipeStep({
   recipe,
   groupLabel,
+  loggedFor,
+  onLoggedForChange,
+  loggedForGroupId,
+  mealBreakdownEnabled,
   onLog,
   onCancel,
 }: {
@@ -31,6 +36,19 @@ export function LogRecipeStep({
   // Resolved by the caller (AddLogEntryDialog's own groupLabel helper) —
   // "Personal" or the owning group's name (recipes have no community tier).
   groupLabel: string;
+  // Who this entry will count against — only rendered as a picker
+  // (LoggedForSelector) when `loggedForGroupId` is set.
+  loggedFor: string;
+  onLoggedForChange: (userId: string) => void;
+  // The group this entry will actually land on, resolved by the caller
+  // (AddLogEntryDialog's own resolveGroupId) — always just `recipe.group_id`
+  // in practice (recipes have no community tier to override it), but taken
+  // as an explicit prop so this component doesn't need its own copy of
+  // that resolution logic. See LogIngredientStep's identical prop.
+  loggedForGroupId: string | null;
+  // Whether `loggedFor`'s own profile has meal-type breakdown enabled — see
+  // LogIngredientStep's identical prop.
+  mealBreakdownEnabled: boolean;
   onLog: (input: LogEntryInput) => Promise<void>;
   onCancel: () => void;
 }) {
@@ -98,7 +116,17 @@ export function LogRecipeStep({
               input: { endAdornment: <InputAdornment position="end">g</InputAdornment> },
             }}
           />
-          <MealTypeSelector value={mealType} onChange={setMealType} disabled={submitting} />
+          {loggedForGroupId && (
+            <LoggedForSelector
+              groupId={loggedForGroupId}
+              value={loggedFor}
+              onChange={onLoggedForChange}
+              disabled={submitting}
+            />
+          )}
+          {mealBreakdownEnabled && (
+            <MealTypeSelector value={mealType} onChange={setMealType} disabled={submitting} />
+          )}
           {error && <Alert severity="error">{error}</Alert>}
         </Stack>
       </DialogContent>
