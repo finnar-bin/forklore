@@ -5,18 +5,25 @@ import type { Ingredient } from '../../types/ingredient';
 
 // Shared header for any screen that asks "how much of this ingredient" and
 // wants a live kcal preview above the quantity input — LogIngredientStep.tsx
-// ("quantity eaten") and AddRecipeIngredientDialog.tsx's ExistingIngredientForm
-// ("quantity used in this recipe"). Name + the ingredient's own quantity/unit
-// (subtle, beside it — same treatment as IngredientAutocompleteOption.tsx)
-// on the left, with a group (+ brand) subtitle below; the caller's
-// live-computed kcal for whatever quantity is currently being typed, plus
-// the ingredient's own kcal-per-unit rate below it, on the right.
+// ("quantity eaten"), AddRecipeIngredientDialog.tsx's ExistingIngredientForm
+// ("quantity used in this recipe"), and EditLogEntryDialog.tsx (both its
+// live-source case and, with a synthetic object built from the entry's own
+// frozen fields, its source-deleted case — see that file). Name + the
+// ingredient's own quantity/unit (subtle, beside it — same treatment as
+// IngredientAutocompleteOption.tsx) on the left, with a group (+ brand)
+// subtitle below; the caller's live-computed kcal for whatever quantity is
+// currently being typed, plus the ingredient's own kcal-per-unit rate below
+// it, on the right.
+//
+// Takes just the fields it renders (`Pick`, not the full `Ingredient`) so a
+// caller with only those values on hand — not an actual persisted
+// ingredient — can still use this header.
 export function IngredientKcalHeader({
   ingredient,
   groupLabel,
   kcal,
 }: {
-  ingredient: Ingredient;
+  ingredient: Pick<Ingredient, 'name' | 'quantity' | 'unit' | 'brand' | 'kcal'>;
   // "Personal"/the owning group's name/"Community" — resolved by the caller
   // (each screen already has its own reason to know this).
   groupLabel: string;

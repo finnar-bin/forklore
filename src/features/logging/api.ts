@@ -6,10 +6,10 @@ import type { LogEntry, MealType } from '../../types/log';
 export interface LogEntryInput {
   source_ingredient_id: string | null;
   source_recipe_id: string | null;
-  snapshot_name: string;
-  snapshot_kcal: number;
-  snapshot_quantity: number | null;
-  snapshot_unit: IngredientUnit;
+  name: string;
+  kcal: number;
+  quantity: number;
+  unit: IngredientUnit;
   meal_type: MealType | null;
 }
 
@@ -98,18 +98,22 @@ export async function createLogEntry(
   return entry;
 }
 
-export interface LogEntrySnapshotInput {
-  snapshot_name: string;
-  snapshot_kcal: number;
-  snapshot_quantity: number | null;
+export interface LogEntryUpdateInput {
+  name: string;
+  kcal: number;
+  quantity: number;
+  unit: IngredientUnit;
   meal_type: MealType | null;
 }
 
 // Fast-follow mentioned (but explicitly out of scope) in Ticket 8: editing an
-// already-logged entry's own snapshot values. Only the snapshot fields are
-// editable — source_ingredient_id/source_recipe_id and logged_at are left
-// alone, since this edits the log entry itself, not what it was logged from.
-export async function updateLogEntry(id: string, input: LogEntrySnapshotInput): Promise<LogEntry> {
+// already-logged entry. `source_ingredient_id`/`source_recipe_id` and
+// `logged_at` are left alone — this edits the log entry itself, not what it
+// was logged from. `name`/`kcal`/`unit` are re-derived by the caller
+// (EditLogEntryDialog) from the entry's current source before this is
+// called, when a source still exists — see docs/schema.md's
+// "live-referenced, not snapshotted" note.
+export async function updateLogEntry(id: string, input: LogEntryUpdateInput): Promise<LogEntry> {
   const updated_at = new Date().toISOString();
   await db.log_entries.update(id, { ...input, updated_at });
   const entry = await db.log_entries.get(id);

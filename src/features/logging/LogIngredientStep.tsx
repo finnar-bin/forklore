@@ -15,7 +15,7 @@ import { MealTypeSelector } from './MealTypeSelector';
 
 // Asks how much of this ingredient was eaten, in the ingredient's own unit
 // (read-only, inherited — never user-selectable, same rule as recipe
-// ingredient lines), then snapshots kcal scaled proportionally.
+// ingredient lines), then computes kcal scaled proportionally.
 export function LogIngredientStep({
   ingredient,
   groupLabel,
@@ -50,10 +50,10 @@ export function LogIngredientStep({
       await onLog({
         source_ingredient_id: ingredient.id,
         source_recipe_id: null,
-        snapshot_name: ingredient.name,
-        snapshot_kcal: kcal,
-        snapshot_quantity: parsedQuantity,
-        snapshot_unit: ingredient.unit,
+        name: ingredient.name,
+        kcal,
+        quantity: parsedQuantity,
+        unit: ingredient.unit,
         meal_type: mealType,
       });
     } catch (err) {

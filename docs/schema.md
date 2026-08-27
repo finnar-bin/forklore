@@ -175,7 +175,7 @@ create table public.recipe_ingredients (
 
 ### log_entries
 
-**Snapshotted at creation time — never reads live ingredient/recipe data.** `snapshot_name`/`snapshot_kcal`/`snapshot_quantity` are copied in at insert time and are the only fields used for calorie math thereafter. `source_ingredient_id`/`source_recipe_id` are soft breadcrumbs only (for "logged from: X" UI and re-log shortcuts) — they go null on `ON DELETE SET NULL` if the source is deleted, with zero effect on the log entry's own values.
+**Live-referenced, not snapshotted.** `name`/`kcal`/`unit` are refreshed from the *current* source ingredient/recipe's data (kcal-per-unit × `quantity`) whenever the entry is created or its `quantity` is edited — they are not copied once at insert time and left to drift from later corrections to the source, and they remain the only fields used for calorie math. `source_ingredient_id`/`source_recipe_id` are real (soft) references, not mere breadcrumbs: they're what a quantity edit re-derives `name`/`kcal`/`unit` from. They go null on `ON DELETE SET NULL` if the source is deleted — at that point `name`/`kcal`/`quantity`/`unit` become permanently frozen at their last-refreshed values, and the app disables editing them further (see `EditLogEntryDialog.tsx`; `meal_type` and delete still work).
 
 `group_id` follows the same nullable ownership pattern (null = personal log, value = that group's shared log). `logged_by` is always set regardless — it's who actually logged the entry, independent of which log it displays on. This split is what allows a shared group log to exist alongside per-user goal tracking: filter by `group_id` for the group view, by `logged_by` for an individual's own intake history.
 
@@ -186,9 +186,11 @@ create table public.log_entries (
   logged_by uuid not null references public.profiles(id),
   source_ingredient_id uuid references public.ingredients(id) on delete set null,
   source_recipe_id uuid references public.recipes(id) on delete set null,
-  snapshot_name text not null,
-  snapshot_kcal numeric not null,
-  snapshot_quantity numeric,
+  name text not null,
+  kcal numeric not null,
+  quantity numeric not null,
+  unit ingredient_unit not null,
+  meal_type text check (meal_type in ('breakfast', 'lunch', 'dinner', 'snack')),
   logged_at date not null default current_date,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -236,7 +238,7 @@ for each row execute function recalculate_recipe_kcal();
 ### Delete behavior summary
 
 - Deleting an ingredient **cascades** to remove it from any `recipe_ingredients` rows (via `on delete cascade`) — the recalc trigger then updates affected recipes' `total_kcal` automatically. The client is responsible for warning the user before calling delete (see `check_ingredient_usage` RPC in rpcs.md) — the database always performs the cascade regardless of whether a warning was shown.
-- Deleting an ingredient or recipe **never affects existing log entries** — `source_ingredient_id`/`source_recipe_id` go null, snapshot fields are untouched.
+- Deleting an ingredient or recipe **never retroactively changes an existing log entry's own values** — `source_ingredient_id`/`source_recipe_id` go null and `name`/`kcal`/`quantity`/`unit` stay exactly as last refreshed, now permanently (the entry can no longer be quantity-edited/re-derived from a source once detached).
 - Deleting a group cascades to its ingredients, recipes, and log entries (via `on delete cascade` on `group_id`).
 
 ### RLS policy pattern
@@ -273,7 +275,7 @@ using (
 );
 ```
 
-Apply the same three-policy shape (select/insert/update) to `recipes` and `log_entries` — **except** `log_entries`' update/delete policies must be owner-only (`logged_by = auth.uid()`), not the group-inclusive OR shown above: `log_entries` represents an individual's own intake history, unlike `ingredients`/`recipes` where "any group member can edit" is the intended behavior. Only `log_entries`' select policy keeps the group-inclusive OR — a group member still needs to be able to view the shared log. `recipe_ingredients` policies should check the parent recipe's ownership via a subquery join rather than duplicating the ownership columns.
+Apply the same three-policy shape (select/insert/update) to `recipes` and `log_entries` — **except** `log_entries`' update/delete policies (`"update own log entries"` / `"delete own log entries"`) must be owner-only (`logged_by = auth.uid()`), not the group-inclusive OR shown above: `log_entries` represents an individual's own intake history, unlike `ingredients`/`recipes` where "any group member can edit" is the intended behavior. Only `log_entries`' select policy keeps the group-inclusive OR — a group member still needs to be able to view the shared log. `recipe_ingredients` policies should check the parent recipe's ownership via a subquery join rather than duplicating the ownership columns.
 
 Groups: only members can read; only the owner can update or delete.
 

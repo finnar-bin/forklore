@@ -75,7 +75,7 @@ export function DailyLog({
   );
   const loading = entries === undefined;
 
-  const totalKcal = (entries ?? []).reduce((sum, entry) => sum + entry.snapshot_kcal, 0);
+  const totalKcal = (entries ?? []).reduce((sum, entry) => sum + entry.kcal, 0);
 
   // Group context only — see LogEntryCard's loggerName prop and
   // docs/pending-deviations.md (Ticket 12 follow-up, "logged by" name).
@@ -120,7 +120,7 @@ export function DailyLog({
                     // identical guard below.
                     const consumed = (entries ?? [])
                       .filter((entry) => (entry.meal_type ?? null) === meal)
-                      .reduce((sum, entry) => sum + entry.snapshot_kcal, 0);
+                      .reduce((sum, entry) => sum + entry.kcal, 0);
                     const remaining = target - consumed;
                     return (
                       <Stack key={meal} alignItems="center" spacing={0.25}>

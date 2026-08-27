@@ -63,7 +63,7 @@ export function AllTimeLog({ groupId }: { groupId: string | null }) {
       )}
 
       {groups.map(([date, dayEntries]) => {
-        const dayTotal = dayEntries.reduce((sum, entry) => sum + entry.snapshot_kcal, 0);
+        const dayTotal = dayEntries.reduce((sum, entry) => sum + entry.kcal, 0);
         return (
           <Stack key={date} spacing={1.5}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>

@@ -42,17 +42,15 @@ export function LogEntryCard({
         cursor: onClick ? 'pointer' : undefined,
       }}
     >
-      <PhotoThumbnail photoUrl={null} alt={entry.snapshot_name} />
+      <PhotoThumbnail photoUrl={null} alt={entry.name} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, minWidth: 0 }}>
           <Typography fontSize={14} fontWeight={500} noWrap sx={{ minWidth: 0 }}>
-            {entry.snapshot_name}
+            {entry.name}
           </Typography>
-          {entry.snapshot_quantity !== null && (
-            <Typography fontSize={12} color="text.secondary" noWrap sx={{ flexShrink: 0 }}>
-              {entry.snapshot_quantity} {entry.snapshot_unit}
-            </Typography>
-          )}
+          <Typography fontSize={12} color="text.secondary" noWrap sx={{ flexShrink: 0 }}>
+            {entry.quantity} {entry.unit}
+          </Typography>
         </Box>
         <Typography fontSize={12} color="text.secondary" noWrap>
           {subtitle}
@@ -61,7 +59,7 @@ export function LogEntryCard({
       </Box>
       <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
         <Typography fontSize={14} fontWeight={500} color="primary.main">
-          {entry.snapshot_kcal.toFixed(2)} kcal
+          {entry.kcal.toFixed(2)} kcal
         </Typography>
         <Typography fontSize={11} color="text.secondary">
           {sourceLabel}
