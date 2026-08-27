@@ -1,10 +1,10 @@
-import type { IngredientUnit } from './ingredient';
+import type { IngredientUnit } from "./ingredient";
 
 // Entry-convenience unit for the recipe weight fields (RecipeForm,
 // RecipeDetail) — never persisted; weight_g is always converted to grams
 // before it reaches the server. See docs/pending-deviations.md (Ticket 12
 // follow-up, "servings -> weight").
-export type WeightUnit = 'g' | 'kg';
+export type WeightUnit = "g" | "kg";
 
 export interface Recipe {
   id: string;

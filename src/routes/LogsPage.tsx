@@ -1,9 +1,9 @@
-import { useNavigate, useParams } from 'react-router-dom';
-import Box from '@mui/material/Box';
-import { AppHeader } from '../components/AppHeader';
-import { AllTimeLog } from '../features/logging/AllTimeLog';
-import { useMyGroups } from '../features/groups/useMyGroups';
-import { useAppStore } from '../store/useAppStore';
+import { useNavigate, useParams } from "react-router-dom";
+import Box from "@mui/material/Box";
+import { AppHeader } from "../components/AppHeader";
+import { AllTimeLog } from "../features/logging/AllTimeLog";
+import { useMyGroups } from "../features/groups/useMyGroups";
+import { useAppStore } from "../store/useAppStore";
 
 // /logs (personal, cross-context) and /groups/:groupId/logs (one group's own
 // all-time history — Ticket 12 follow-up, "group's all-time history") share
@@ -15,13 +15,17 @@ export function LogsPage() {
   const navigate = useNavigate();
   // Shared cache (see useMyGroups) rather than this page's own fetch.
   const groups = useMyGroups(userId);
-  const groupName = groupId ? (groups?.find((m) => m.group.id === groupId)?.group.name ?? 'Group') : null;
+  const groupName = groupId
+    ? (groups?.find((m) => m.group.id === groupId)?.group.name ?? "Group")
+    : null;
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
       <AppHeader
-        title={groupId ? `${groupName ?? 'Group'} all-time log` : 'All-time log'}
-        onBack={() => navigate(groupId ? `/groups/${groupId}/log` : '/log')}
+        title={
+          groupId ? `${groupName ?? "Group"} all-time log` : "All-time log"
+        }
+        onBack={() => navigate(groupId ? `/groups/${groupId}/log` : "/log")}
       />
       <AllTimeLog groupId={groupId ?? null} />
     </Box>

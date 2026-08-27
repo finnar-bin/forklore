@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { create } from 'zustand';
-import { fetchMyProfile } from './api';
-import type { Profile } from '../../types/profile';
+import { useEffect } from "react";
+import { create } from "zustand";
+import { fetchMyProfile } from "./api";
+import type { Profile } from "../../types/profile";
 
 interface CacheState {
   userId: string | null;
@@ -35,7 +35,11 @@ const useProfileCacheStore = create<CacheState & CacheActions>((set, get) => ({
 
   ensureLoaded: (userId) => {
     const state = get();
-    if (state.userId === userId && (state.profile !== undefined || state.error || state.inflight)) return;
+    if (
+      state.userId === userId &&
+      (state.profile !== undefined || state.error || state.inflight)
+    )
+      return;
     // Swallows a fetch failure rather than rethrowing — nothing awaits this
     // promise besides the dedup check above, so an unhandled rejection would
     // otherwise surface with no consumer able to catch it. Caches `error:
@@ -63,9 +67,15 @@ const useProfileCacheStore = create<CacheState & CacheActions>((set, get) => ({
 // error), fetching once per userId and automatically re-fetching if
 // invalidateMyProfile() is called while mounted (e.g. after a profile edit).
 export function useMyProfile(userId: string | null): Profile | undefined {
-  const profile = useProfileCacheStore((state) => (state.userId === userId ? state.profile : undefined));
-  const error = useProfileCacheStore((state) => (state.userId === userId ? state.error : false));
-  const inflight = useProfileCacheStore((state) => (state.userId === userId ? state.inflight : null));
+  const profile = useProfileCacheStore((state) =>
+    state.userId === userId ? state.profile : undefined,
+  );
+  const error = useProfileCacheStore((state) =>
+    state.userId === userId ? state.error : false,
+  );
+  const inflight = useProfileCacheStore((state) =>
+    state.userId === userId ? state.inflight : null,
+  );
 
   useEffect(() => {
     if (userId && profile === undefined && !error && !inflight) {
@@ -82,7 +92,9 @@ export function useMyProfile(userId: string | null): Profile | undefined {
 // avatar icon doesn't need this distinction — it falls back to the same
 // placeholder tile either way.
 export function useMyProfileLoadError(userId: string | null): boolean {
-  return useProfileCacheStore((state) => (state.userId === userId ? state.error : false));
+  return useProfileCacheStore((state) =>
+    state.userId === userId ? state.error : false,
+  );
 }
 
 // Called after a successful updateMyProfile (see api.ts) so every mounted

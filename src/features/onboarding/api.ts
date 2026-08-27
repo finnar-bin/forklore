@@ -1,5 +1,10 @@
-import { supabase } from '../../lib/supabase';
-import type { ActivityLevel, BiologicalSex, GoalPace, GoalType } from '../../types/profile';
+import { supabase } from "../../lib/supabase";
+import type {
+  ActivityLevel,
+  BiologicalSex,
+  GoalPace,
+  GoalType,
+} from "../../types/profile";
 
 export interface OnboardingInput {
   name: string;
@@ -21,8 +26,10 @@ export interface OnboardingInput {
 
 // Atomic profiles update + weight_logs insert — see the complete_onboarding
 // RPC (supabase/migrations/20260824000000_onboarding_profile_and_calorie_target.sql).
-export async function completeOnboarding(input: OnboardingInput): Promise<void> {
-  const { error } = await supabase.rpc('complete_onboarding', {
+export async function completeOnboarding(
+  input: OnboardingInput,
+): Promise<void> {
+  const { error } = await supabase.rpc("complete_onboarding", {
     p_name: input.name,
     p_birthdate: input.birthdate,
     p_sex: input.sex,

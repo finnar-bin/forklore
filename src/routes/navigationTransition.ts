@@ -23,28 +23,33 @@
 //   per-route special case.
 // - Anything else (e.g. opening /groups or /sync-status from the header) is
 //   treated as 'push' — a new screen being opened, not a sibling swap.
-export type TransitionVariant = 'push' | 'pop' | 'tab';
-export type BottomTab = 'pantry' | 'recipes' | 'log' | 'progress';
+export type TransitionVariant = "push" | "pop" | "tab";
+export type BottomTab = "pantry" | "recipes" | "log" | "progress";
 
 const TAB_ROOT_PATTERNS: Array<[BottomTab, RegExp]> = [
-  ['pantry', /^\/(groups\/[^/]+\/)?pantry$/],
-  ['recipes', /^\/(groups\/[^/]+\/)?recipes$/],
-  ['log', /^\/(groups\/[^/]+\/)?log$/],
-  ['progress', /^\/progress$/],
+  ["pantry", /^\/(groups\/[^/]+\/)?pantry$/],
+  ["recipes", /^\/(groups\/[^/]+\/)?recipes$/],
+  ["log", /^\/(groups\/[^/]+\/)?log$/],
+  ["progress", /^\/progress$/],
 ];
 
 // Used both to classify transitions below and to drive BottomNav's active
 // highlight — null for any screen that isn't a bottom-tab root (details,
 // /groups, /sync-status, etc).
 export function getBottomTab(pathname: string): BottomTab | null {
-  return TAB_ROOT_PATTERNS.find(([, pattern]) => pattern.test(pathname))?.[0] ?? null;
+  return (
+    TAB_ROOT_PATTERNS.find(([, pattern]) => pattern.test(pathname))?.[0] ?? null
+  );
 }
 
-export function classifyTransition(prevPath: string, nextPath: string): TransitionVariant {
-  if (prevPath === nextPath) return 'tab';
-  if (getBottomTab(prevPath) && getBottomTab(nextPath)) return 'tab';
-  if (nextPath.startsWith(`${prevPath}/`)) return 'push';
-  if (prevPath.startsWith(`${nextPath}/`)) return 'pop';
-  if (getBottomTab(nextPath) && !getBottomTab(prevPath)) return 'pop';
-  return 'push';
+export function classifyTransition(
+  prevPath: string,
+  nextPath: string,
+): TransitionVariant {
+  if (prevPath === nextPath) return "tab";
+  if (getBottomTab(prevPath) && getBottomTab(nextPath)) return "tab";
+  if (nextPath.startsWith(`${prevPath}/`)) return "push";
+  if (prevPath.startsWith(`${nextPath}/`)) return "pop";
+  if (getBottomTab(nextPath) && !getBottomTab(prevPath)) return "pop";
+  return "push";
 }

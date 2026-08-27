@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import { useAppStore } from '../../store/useAppStore';
-import { createIngredient, type IngredientInput } from './api';
-import { IngredientForm } from './IngredientForm';
-import type { Ingredient } from '../../types/ingredient';
+import { useState } from "react";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import { useAppStore } from "../../store/useAppStore";
+import { createIngredient, type IngredientInput } from "./api";
+import { IngredientForm } from "./IngredientForm";
+import type { Ingredient } from "../../types/ingredient";
 
 export function CreateIngredientDialog({
   open,
@@ -52,19 +52,29 @@ export function CreateIngredientDialog({
 
   async function handleSubmit(input: IngredientInput) {
     if (!userId) return;
-    const created = await createIngredient(pendingId, userId, groupId, input, isCommunity);
+    const created = await createIngredient(
+      pendingId,
+      userId,
+      groupId,
+      input,
+      isCommunity,
+    );
     onCreated(created);
   }
 
-  const label = isCommunity ? 'Add to community pantry' : 'Add ingredient';
+  const label = isCommunity ? "Add to community pantry" : "Add ingredient";
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{label}</DialogTitle>
       {/* Extra top padding — otherwise the first field's floating label
           clips against the dialog content's scroll edge once focused. */}
-      <DialogContent sx={{ pt: '12px !important' }}>
-        <IngredientForm ingredientId={pendingId} submitLabel={label} onSubmit={handleSubmit} />
+      <DialogContent sx={{ pt: "12px !important" }}>
+        <IngredientForm
+          ingredientId={pendingId}
+          submitLabel={label}
+          onSubmit={handleSubmit}
+        />
       </DialogContent>
     </Dialog>
   );

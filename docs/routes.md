@@ -57,7 +57,7 @@ Same component, same hook, same query logic — the route just determines which 
 
 ### `/logs` sits outside the `/groups/:groupId/` nesting deliberately
 
-It's a cross-context view by definition — everything the user has logged, personal and every group combined — so it's a peer of `/pantry` and `/groups`, not a child of either. Query: `where logged_by = :userId` with no `group_id` filter.
+It's a cross-context view by definition — everything the user has logged, personal and every group combined — so it's a peer of `/pantry` and `/groups`, not a child of either. Query: `where logged_for = :userId` with no `group_id` filter.
 
 ### `/progress` ignores the active group context entirely
 

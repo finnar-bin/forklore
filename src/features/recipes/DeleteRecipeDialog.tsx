@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
+import { useState } from "react";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 
 // Unlike DeleteIngredientDialog, there's no other recipe that references
 // this one — deleting only removes this recipe's own recipe_ingredients
@@ -37,7 +37,11 @@ export function DeleteRecipeDialog({
     try {
       await onConfirm();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete this recipe. Try again.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to delete this recipe. Try again.",
+      );
     } finally {
       setDeleting(false);
     }
@@ -53,16 +57,21 @@ export function DeleteRecipeDialog({
           </Alert>
         )}
         <DialogContentText>
-          This can't be undone. Entries you've already logged from this recipe will keep their
-          values.
+          This can't be undone. Entries you've already logged from this recipe
+          will keep their values.
         </DialogContentText>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={deleting}>
           Cancel
         </Button>
-        <Button color="error" variant="contained" onClick={handleConfirm} disabled={deleting}>
-          {deleting ? 'Deleting…' : 'Delete recipe'}
+        <Button
+          color="error"
+          variant="contained"
+          onClick={handleConfirm}
+          disabled={deleting}
+        >
+          {deleting ? "Deleting…" : "Delete recipe"}
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { fetchProfileNames } from './api';
+import { useEffect, useState } from "react";
+import { fetchProfileNames } from "./api";
 
 // Keyed on a sorted, deduped join of the ids rather than the array itself —
 // callers typically pass a freshly-mapped array every render (e.g.
@@ -10,7 +10,9 @@ export function useProfileNames(userIds: string[]): Record<string, string> {
   // undefined/empty id in `key` would otherwise stringify to an empty
   // segment via Array.join, which `fetchProfileNames` would also catch, but
   // filtering here too keeps a bad id from ever entering the cache key.
-  const key = Array.from(new Set(userIds.filter(Boolean))).sort().join(',');
+  const key = Array.from(new Set(userIds.filter(Boolean)))
+    .sort()
+    .join(",");
   const [names, setNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -19,7 +21,7 @@ export function useProfileNames(userIds: string[]): Record<string, string> {
       return;
     }
     let cancelled = false;
-    fetchProfileNames(key.split(','))
+    fetchProfileNames(key.split(","))
       .then((result) => {
         if (!cancelled) setNames(result);
       })

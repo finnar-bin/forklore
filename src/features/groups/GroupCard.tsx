@@ -1,13 +1,13 @@
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
-import SettingsIcon from '@mui/icons-material/Settings';
-import GroupIcon from '@mui/icons-material/Group';
-import { useColorScheme } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
-import { shadows } from '../../theme/theme';
-import type { GroupMembership } from '../../types/group';
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import Typography from "@mui/material/Typography";
+import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
+import SettingsIcon from "@mui/icons-material/Settings";
+import GroupIcon from "@mui/icons-material/Group";
+import { useColorScheme } from "@mui/material/styles";
+import { useNavigate } from "react-router-dom";
+import { shadows } from "../../theme/theme";
+import type { GroupMembership } from "../../types/group";
 
 // Card / list item pattern from design-system.md: thumbnail, title +
 // subtitle, action on the right. Groups have no photo_url (schema.md), so
@@ -22,34 +22,34 @@ export function GroupCard({
   onInvite: () => void;
 }) {
   const { mode, systemMode } = useColorScheme();
-  const resolvedMode = mode === 'system' ? systemMode : mode;
-  const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
+  const resolvedMode = mode === "system" ? systemMode : mode;
+  const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
   const navigate = useNavigate();
   const { group, role } = membership;
 
   return (
     <Box
       sx={{
-        bgcolor: 'background.paper',
-        borderRadius: '14px',
+        bgcolor: "background.paper",
+        borderRadius: "14px",
         boxShadow: tokens.sh2,
         p: 1.5,
-        display: 'flex',
+        display: "flex",
         gap: 1.5,
-        alignItems: 'center',
+        alignItems: "center",
       }}
     >
       <Box
         sx={{
           width: 52,
           height: 52,
-          borderRadius: '12px',
-          bgcolor: 'action.hover',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          borderRadius: "12px",
+          bgcolor: "action.hover",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           flexShrink: 0,
-          color: 'text.secondary',
+          color: "text.secondary",
         }}
       >
         <GroupIcon />
@@ -59,11 +59,15 @@ export function GroupCard({
           {group.name}
         </Typography>
         <Typography fontSize={12} color="text.secondary" noWrap>
-          {group.description || (role === 'owner' ? "You're the owner" : 'Member')}
+          {group.description ||
+            (role === "owner" ? "You're the owner" : "Member")}
         </Typography>
       </Box>
-      {role === 'owner' && (
-        <IconButton aria-label={`Invite someone to ${group.name}`} onClick={onInvite}>
+      {role === "owner" && (
+        <IconButton
+          aria-label={`Invite someone to ${group.name}`}
+          onClick={onInvite}
+        >
           <PersonAddAltIcon />
         </IconButton>
       )}
@@ -71,7 +75,7 @@ export function GroupCard({
           non-owners per this ticket's acceptance criteria (RequireGroupOwner
           also enforces this server-side-backed check if the URL is typed
           directly). See docs/pending-deviations.md (Ticket 13). */}
-      {role === 'owner' && (
+      {role === "owner" && (
         <IconButton
           aria-label={`${group.name} settings`}
           onClick={() => navigate(`/groups/${group.id}/settings`)}

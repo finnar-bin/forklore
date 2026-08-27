@@ -1,15 +1,15 @@
 export type IngredientUnit =
-  | 'g'
-  | 'kg'
-  | 'ml'
-  | 'l'
-  | 'tsp'
-  | 'tbsp'
-  | 'cup'
-  | 'piece'
-  | 'slice'
-  | 'serving'
-  | 'sachet';
+  | "g"
+  | "kg"
+  | "ml"
+  | "l"
+  | "tsp"
+  | "tbsp"
+  | "cup"
+  | "piece"
+  | "slice"
+  | "serving"
+  | "sachet";
 
 export interface Ingredient {
   id: string;

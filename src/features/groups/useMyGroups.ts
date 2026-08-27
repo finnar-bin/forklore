@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { create } from 'zustand';
-import { fetchMyGroups } from './api';
-import type { GroupMembership } from '../../types/group';
+import { useEffect } from "react";
+import { create } from "zustand";
+import { fetchMyGroups } from "./api";
+import type { GroupMembership } from "../../types/group";
 
 interface CacheState {
   userId: string | null;
@@ -37,7 +37,11 @@ const useGroupsCacheStore = create<CacheState & CacheActions>((set, get) => ({
 
   ensureLoaded: (userId) => {
     const state = get();
-    if (state.userId === userId && (state.groups !== undefined || state.inflight)) return;
+    if (
+      state.userId === userId &&
+      (state.groups !== undefined || state.inflight)
+    )
+      return;
     // Reached only when there's nothing usable cached for this userId yet
     // (either it's a different user than last time, or the same user with
     // no groups loaded and no fetch already in flight) — groups is always
@@ -62,9 +66,15 @@ const useGroupsCacheStore = create<CacheState & CacheActions>((set, get) => ({
 // Read-only hook: returns cached groups (undefined while loading), fetching
 // once per userId and automatically re-fetching if invalidateMyGroups() is
 // called while mounted (e.g. after this user creates/joins/leaves a group).
-export function useMyGroups(userId: string | null): GroupMembership[] | undefined {
-  const groups = useGroupsCacheStore((state) => (state.userId === userId ? state.groups : undefined));
-  const inflight = useGroupsCacheStore((state) => (state.userId === userId ? state.inflight : null));
+export function useMyGroups(
+  userId: string | null,
+): GroupMembership[] | undefined {
+  const groups = useGroupsCacheStore((state) =>
+    state.userId === userId ? state.groups : undefined,
+  );
+  const inflight = useGroupsCacheStore((state) =>
+    state.userId === userId ? state.inflight : null,
+  );
 
   useEffect(() => {
     if (userId && groups === undefined && !inflight) {

@@ -1,15 +1,15 @@
-import { useMemo, useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import { useAppStore } from '../../store/useAppStore';
-import { useProfileNames } from '../profiles/useProfileNames';
-import { fetchAllGroupLogEntries, fetchAllLogEntries } from './api';
-import { EditLogEntryDialog } from './EditLogEntryDialog';
-import { LogEntryCard } from './LogEntryCard';
-import type { LogEntry } from '../../types/log';
+import { useMemo, useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import { useAppStore } from "../../store/useAppStore";
+import { useProfileNames } from "../profiles/useProfileNames";
+import { fetchAllGroupLogEntries, fetchAllLogEntries } from "./api";
+import { EditLogEntryDialog } from "./EditLogEntryDialog";
+import { LogEntryCard } from "./LogEntryCard";
+import type { LogEntry } from "../../types/log";
 
 // All-time history. `groupId: null` (the /logs route) is cross-context —
 // everything the caller has logged, personal and every group combined (see
@@ -25,13 +25,20 @@ export function AllTimeLog({ groupId }: { groupId: string | null }) {
   // Reads from Dexie, not Supabase — re-renders automatically on
   // create/edit/delete (this device) and pulled remote changes alike.
   const entries = useLiveQuery(
-    () => (groupId ? fetchAllGroupLogEntries(groupId) : userId ? fetchAllLogEntries(userId) : []),
+    () =>
+      groupId
+        ? fetchAllGroupLogEntries(groupId)
+        : userId
+          ? fetchAllLogEntries(userId)
+          : [],
     [userId, groupId],
   );
   const loading = entries === undefined;
 
-  // Group context only — same reasoning as DailyLog's own loggerNames.
-  const loggerNames = useProfileNames(groupId ? (entries ?? []).map((e) => e.logged_by) : []);
+  // Group context only — same reasoning as DailyLog's own `names` lookup.
+  const names = useProfileNames(
+    groupId ? (entries ?? []).map((e) => e.logged_for) : [],
+  );
 
   const groups = useMemo(() => {
     const byDate = new Map<string, LogEntry[]>();
@@ -47,9 +54,9 @@ export function AllTimeLog({ groupId }: { groupId: string | null }) {
   }, [entries]);
 
   return (
-    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 4 }}>
+    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 4 }}>
       {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
           <CircularProgress />
         </Box>
       )}
@@ -57,21 +64,27 @@ export function AllTimeLog({ groupId }: { groupId: string | null }) {
       {!loading && groups.length === 0 && (
         <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
           {groupId
-            ? 'Nothing logged yet in this group. Entries logged here will show up.'
-            : 'Nothing logged yet. Entries you log will show up here.'}
+            ? "Nothing logged yet in this group. Entries logged here will show up."
+            : "Nothing logged yet. Entries you log will show up here."}
         </Typography>
       )}
 
       {groups.map(([date, dayEntries]) => {
-        const dayTotal = dayEntries.reduce((sum, entry) => sum + entry.snapshot_kcal, 0);
+        const dayTotal = dayEntries.reduce((sum, entry) => sum + entry.kcal, 0);
         return (
           <Stack key={date} spacing={1.5}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+              }}
+            >
               <Typography fontSize={13} fontWeight={500} color="text.secondary">
                 {new Date(`${date}T00:00:00`).toLocaleDateString([], {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
                 })}
               </Typography>
               <Typography fontSize={12} color="text.secondary">
@@ -83,11 +96,15 @@ export function AllTimeLog({ groupId }: { groupId: string | null }) {
                 key={entry.id}
                 entry={entry}
                 subtitle={new Date(entry.created_at).toLocaleTimeString([], {
-                  hour: 'numeric',
-                  minute: '2-digit',
+                  hour: "numeric",
+                  minute: "2-digit",
                 })}
-                loggerName={groupId ? loggerNames[entry.logged_by] : undefined}
-                onClick={entry.logged_by === userId ? () => setEditingEntry(entry) : undefined}
+                loggedForName={groupId ? names[entry.logged_for] : undefined}
+                // See DailyLog's identical onClick comment — every entry
+                // here is already something the update RLS lets the viewer
+                // edit, group-inclusive since the "log for a group member"
+                // rework.
+                onClick={() => setEditingEntry(entry)}
               />
             ))}
           </Stack>

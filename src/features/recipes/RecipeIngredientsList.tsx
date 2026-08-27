@@ -1,18 +1,18 @@
-import { useState } from 'react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { useColorScheme } from '@mui/material/styles';
-import { shadows } from '../../theme/theme';
-import { kcalPerUnit } from '../../lib/kcal';
-import { AddRecipeIngredientDialog } from './AddRecipeIngredientDialog';
-import type { RecipeIngredientDetail } from '../../types/recipe';
-import type { Ingredient } from '../../types/ingredient';
+import { useState } from "react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import { useColorScheme } from "@mui/material/styles";
+import { shadows } from "../../theme/theme";
+import { kcalPerUnit } from "../../lib/kcal";
+import { AddRecipeIngredientDialog } from "./AddRecipeIngredientDialog";
+import type { RecipeIngredientDetail } from "../../types/recipe";
+import type { Ingredient } from "../../types/ingredient";
 
 // Every change here (add/remove/quantity edit) only touches the in-memory
 // draft passed down from RecipeDetail — nothing is written to Supabase until
@@ -36,7 +36,12 @@ export function RecipeIngredientsList({
 
   return (
     <Box>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ mb: 1 }}
+      >
         <Typography fontSize={13} fontWeight={500} color="text.secondary">
           Ingredients
         </Typography>
@@ -94,8 +99,8 @@ function RecipeIngredientRow({
   onRemove: (ingredientId: string) => void;
 }) {
   const { mode, systemMode } = useColorScheme();
-  const resolvedMode = mode === 'system' ? systemMode : mode;
-  const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
+  const resolvedMode = mode === "system" ? systemMode : mode;
+  const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
 
   // Local raw text, separate from the committed draft value — lets the user
   // pass through intermediate states like "1." while typing "1.5" without
@@ -103,7 +108,8 @@ function RecipeIngredientRow({
   // positive number is pushed up to the parent (and the realtime kcal total).
   const [rawQuantity, setRawQuantity] = useState(item.quantity_used.toString());
 
-  const kcalContribution = kcalPerUnit(item.kcal, item.quantity) * item.quantity_used;
+  const kcalContribution =
+    kcalPerUnit(item.kcal, item.quantity) * item.quantity_used;
 
   function handleChange(value: string) {
     setRawQuantity(value);
@@ -116,15 +122,15 @@ function RecipeIngredientRow({
   return (
     <Box
       sx={{
-        position: 'relative',
-        bgcolor: 'background.paper',
-        borderRadius: '12px',
+        position: "relative",
+        bgcolor: "background.paper",
+        borderRadius: "12px",
         boxShadow: tokens.sh1,
-        border: item.is_community ? '2px solid' : 'none',
-        borderColor: item.is_community ? 'secondary.main' : undefined,
+        border: item.is_community ? "2px solid" : "none",
+        borderColor: item.is_community ? "secondary.main" : undefined,
         p: 1.25,
-        display: 'flex',
-        alignItems: 'center',
+        display: "flex",
+        alignItems: "center",
         gap: 1,
       }}
     >
@@ -134,17 +140,17 @@ function RecipeIngredientRow({
       {item.is_community && (
         <Box
           sx={{
-            position: 'absolute',
+            position: "absolute",
             top: -9,
             left: 10,
-            bgcolor: 'secondary.main',
-            color: 'secondary.contrastText',
+            bgcolor: "secondary.main",
+            color: "secondary.contrastText",
             fontSize: 10,
             fontWeight: 600,
             lineHeight: 1,
             px: 0.75,
             py: 0.375,
-            borderRadius: '4px',
+            borderRadius: "4px",
           }}
         >
           Community
@@ -166,7 +172,9 @@ function RecipeIngredientRow({
         value={rawQuantity}
         onChange={(e) => handleChange(e.target.value)}
         disabled={disabled}
-        slotProps={{ htmlInput: { min: 0, step: 0.01, style: { textAlign: 'right' } } }}
+        slotProps={{
+          htmlInput: { min: 0, step: 0.01, style: { textAlign: "right" } },
+        }}
         sx={{ width: 88 }}
       />
       <Typography fontSize={12} color="text.secondary" sx={{ minWidth: 32 }}>

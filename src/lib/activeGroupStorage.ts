@@ -3,7 +3,7 @@
 // restores it instead of always resetting to Personal. Route params remain
 // the source of truth while a group route is actually active; see
 // useSyncedActiveGroupId in useAppStore.ts for how this is consulted.
-const STORAGE_KEY = 'forklore:activeGroupId';
+const STORAGE_KEY = "forklore:activeGroupId";
 
 export function getStoredGroupId(): string | null {
   try {

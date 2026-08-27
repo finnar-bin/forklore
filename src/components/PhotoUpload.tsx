@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import IconButton from '@mui/material/IconButton';
-import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { PhotoThumbnail } from './PhotoThumbnail';
-import { uploadPhoto } from '../lib/photoUpload';
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
+import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import { PhotoThumbnail } from "./PhotoThumbnail";
+import { uploadPhoto } from "../lib/photoUpload";
 
 // Wraps PhotoThumbnail with a file-picker trigger and the compress ->
 // presign -> PUT flow (src/lib/photoUpload.ts), uploading immediately on
@@ -57,14 +57,14 @@ export function PhotoUpload({
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    event.target.value = '';
+    event.target.value = "";
     if (!file) return;
 
     setError(null);
     setUploading(true);
     onUploadingChange?.(true);
     try {
-      const url = await uploadPhoto(file, 'avatar');
+      const url = await uploadPhoto(file, "avatar");
       // The parent may have unmounted this component while the upload was
       // in flight (e.g. a dialog closed) — calling onChange/setState after
       // that would warn at best and, if the parent doesn't gate navigation
@@ -76,7 +76,9 @@ export function PhotoUpload({
       onChange(url);
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
+      setError(
+        err instanceof Error ? err.message : "Something went wrong. Try again.",
+      );
     } finally {
       if (mountedRef.current) {
         setUploading(false);
@@ -87,7 +89,7 @@ export function PhotoUpload({
 
   return (
     <Box>
-      <Box sx={{ position: 'relative', width: size, height: size }}>
+      <Box sx={{ position: "relative", width: size, height: size }}>
         <PhotoThumbnail photoUrl={photoUrl} alt={alt} size={size} />
 
         <input
@@ -104,13 +106,13 @@ export function PhotoUpload({
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
           sx={{
-            position: 'absolute',
+            position: "absolute",
             inset: 0,
-            borderRadius: '12px',
-            bgcolor: 'rgba(0, 0, 0, 0.15)',
-            color: 'common.white',
+            borderRadius: "12px",
+            bgcolor: "rgba(0, 0, 0, 0.15)",
+            color: "common.white",
             opacity: 0,
-            '&:hover, &:focus-visible': { opacity: 1 },
+            "&:hover, &:focus-visible": { opacity: 1 },
           }}
         >
           <PhotoCameraOutlinedIcon fontSize="small" />
@@ -125,19 +127,19 @@ export function PhotoUpload({
         {!uploading && (
           <Box
             sx={{
-              position: 'absolute',
+              position: "absolute",
               bottom: -4,
               right: -4,
               width: 22,
               height: 22,
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: "primary.main",
+              color: "primary.contrastText",
               boxShadow: 1,
-              pointerEvents: 'none',
+              pointerEvents: "none",
             }}
           >
             <PhotoCameraOutlinedIcon sx={{ fontSize: 13 }} />
@@ -147,16 +149,19 @@ export function PhotoUpload({
         {uploading && (
           <Box
             sx={{
-              position: 'absolute',
+              position: "absolute",
               inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '12px',
-              bgcolor: 'rgba(0, 0, 0, 0.35)',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "12px",
+              bgcolor: "rgba(0, 0, 0, 0.35)",
             }}
           >
-            <CircularProgress size={Math.min(24, size * 0.4)} sx={{ color: 'common.white' }} />
+            <CircularProgress
+              size={Math.min(24, size * 0.4)}
+              sx={{ color: "common.white" }}
+            />
           </Box>
         )}
 
@@ -166,12 +171,12 @@ export function PhotoUpload({
             size="small"
             onClick={() => onChange(null)}
             sx={{
-              position: 'absolute',
+              position: "absolute",
               top: -8,
               right: -8,
-              bgcolor: 'background.paper',
+              bgcolor: "background.paper",
               boxShadow: 1,
-              '&:hover': { bgcolor: 'background.paper' },
+              "&:hover": { bgcolor: "background.paper" },
             }}
           >
             <DeleteOutlineIcon fontSize="small" />

@@ -3,6 +3,7 @@
 Living document. Covers server-side logic that lives outside plain RLS-gated CRUD — anything needing atomicity across multiple tables, or needing to call an external API.
 
 **Decision rule for where logic goes:**
+
 - Plain ownership-checked reads/writes on a single table → RLS handles it, no function needed.
 - Multi-table writes that must succeed or fail together (e.g. forking a recipe and its ingredients) → **Postgres RPC function**, called via `supabase.rpc(...)`. Runs inside the database, transactional by nature, no cold start.
 - Anything needing an external HTTP call (AI vision, hidden API keys) → **Supabase Edge Function**. RPC cannot cleanly do this.
@@ -150,6 +151,7 @@ $$ language plpgsql security definer;
 Generates an R2 presigned upload URL. Needs to be an Edge Function (not client-side) because generating an R2 presigned URL requires the R2 secret key, which cannot be exposed to the browser.
 
 **Contract:**
+
 - Input: verifies the caller's Supabase JWT (must be authenticated)
 - Generates a presigned `PUT` URL scoped to a UUID-based path (`ingredient-photos/{uuid}.webp` or `recipe-photos/{uuid}.webp`)
 - Returns the presigned URL to the client, which then `PUT`s the already-compressed WebP file directly to R2

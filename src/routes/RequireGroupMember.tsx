@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Navigate, Outlet, useParams } from 'react-router-dom';
-import { useAppStore } from '../store/useAppStore';
-import { fetchMyGroups } from '../features/groups/api';
+import { useEffect, useState } from "react";
+import { Navigate, Outlet, useParams } from "react-router-dom";
+import { useAppStore } from "../store/useAppStore";
+import { fetchMyGroups } from "../features/groups/api";
 
 // Guards /groups/:groupId/* routes — previously any authenticated,
 // onboarded user could navigate to any groupId in the URL and the page
@@ -17,26 +17,32 @@ import { fetchMyGroups } from '../features/groups/api';
 export function RequireGroupMember() {
   const { groupId } = useParams<{ groupId: string }>();
   const userId = useAppStore((state) => state.userId);
-  const [state, setState] = useState<'checking' | 'member' | 'not-member'>('checking');
+  const [state, setState] = useState<"checking" | "member" | "not-member">(
+    "checking",
+  );
 
   useEffect(() => {
     if (!userId || !groupId) return;
     let cancelled = false;
-    setState('checking');
+    setState("checking");
     fetchMyGroups(userId)
       .then((groups) => {
         if (cancelled) return;
-        setState(groups.some((membership) => membership.group.id === groupId) ? 'member' : 'not-member');
+        setState(
+          groups.some((membership) => membership.group.id === groupId)
+            ? "member"
+            : "not-member",
+        );
       })
       .catch(() => {
-        if (!cancelled) setState('member');
+        if (!cancelled) setState("member");
       });
     return () => {
       cancelled = true;
     };
   }, [userId, groupId]);
 
-  if (state === 'checking') return null;
-  if (state === 'not-member') return <Navigate to="/groups" replace />;
+  if (state === "checking") return null;
+  if (state === "not-member") return <Navigate to="/groups" replace />;
   return <Outlet />;
 }

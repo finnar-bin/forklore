@@ -1,6 +1,6 @@
-import { supabase } from '../../lib/supabase';
-import { invalidateMyProfile } from './useMyProfile';
-import type { Profile } from '../../types/profile';
+import { supabase } from "../../lib/supabase";
+import { invalidateMyProfile } from "./useMyProfile";
+import type { Profile } from "../../types/profile";
 
 export interface ProfileInput {
   name: string;
@@ -17,17 +17,24 @@ export interface ProfileInput {
 // 2 migration) is what makes this safe — a caller can only ever affect their
 // own row.
 export async function fetchMyProfile(userId: string): Promise<Profile> {
-  const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
   if (error) throw error;
   return data;
 }
 
-export async function updateMyProfile(userId: string, input: Partial<ProfileInput>): Promise<Profile> {
+export async function updateMyProfile(
+  userId: string,
+  input: Partial<ProfileInput>,
+): Promise<Profile> {
   const { data, error } = await supabase
-    .from('profiles')
+    .from("profiles")
     .update(input)
-    .eq('id', userId)
-    .select('*')
+    .eq("id", userId)
+    .select("*")
     .single();
   if (error) throw error;
   // Invalidation lives here, not in the caller — same "unforgettable by
@@ -42,11 +49,14 @@ export async function updateMyProfile(userId: string, input: Partial<ProfileInpu
 // opt-in — lives on /pantry (PantryList.tsx), not ProfileForm, since there's
 // no "Save changes" button on a list screen to batch it with. See
 // docs/pending-deviations.md ("Community pantry").
-export async function setCommunityPantryEnabled(userId: string, enabled: boolean): Promise<void> {
+export async function setCommunityPantryEnabled(
+  userId: string,
+  enabled: boolean,
+): Promise<void> {
   const { error } = await supabase
-    .from('profiles')
+    .from("profiles")
     .update({ community_pantry_enabled: enabled })
-    .eq('id', userId);
+    .eq("id", userId);
   if (error) throw error;
   invalidateMyProfile();
 }
@@ -58,7 +68,9 @@ export async function setCommunityPantryEnabled(userId: string, enabled: boolean
 // makes this safe to call for a group's ingredient/recipe creators/updaters:
 // the caller is necessarily a member of any group whose data they're
 // viewing. See docs/pending-deviations.md (Ticket 12).
-export async function fetchProfileNames(userIds: string[]): Promise<Record<string, string>> {
+export async function fetchProfileNames(
+  userIds: string[],
+): Promise<Record<string, string>> {
   // Filters falsy ids defensively, not just per the `string[]` signature —
   // a caller can pass an id read off a Dexie row that predates a newer
   // optional column (e.g. `updated_by` on a row cached before that column
@@ -70,7 +82,10 @@ export async function fetchProfileNames(userIds: string[]): Promise<Record<strin
   const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
   if (uniqueIds.length === 0) return {};
 
-  const { data, error } = await supabase.from('profiles').select('id, name').in('id', uniqueIds);
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, name")
+    .in("id", uniqueIds);
   if (error) throw error;
 
   return Object.fromEntries((data ?? []).map((row) => [row.id, row.name]));
@@ -91,17 +106,21 @@ export interface MemberKcalProfile {
 // already relies on (see that function's own comment) — selects just the
 // columns GroupMemberKcalCard needs to show each member's own daily target
 // and optional per-meal breakdown on /groups/:groupId/log, not the full row.
-export async function fetchMemberKcalProfiles(userIds: string[]): Promise<Record<string, MemberKcalProfile>> {
+export async function fetchMemberKcalProfiles(
+  userIds: string[],
+): Promise<Record<string, MemberKcalProfile>> {
   const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
   if (uniqueIds.length === 0) return {};
 
   const { data, error } = await supabase
-    .from('profiles')
+    .from("profiles")
     .select(
-      'id, name, daily_kcal_target, meal_breakdown_enabled, breakfast_kcal_target, lunch_kcal_target, dinner_kcal_target, snack_kcal_target',
+      "id, name, daily_kcal_target, meal_breakdown_enabled, breakfast_kcal_target, lunch_kcal_target, dinner_kcal_target, snack_kcal_target",
     )
-    .in('id', uniqueIds);
+    .in("id", uniqueIds);
   if (error) throw error;
 
-  return Object.fromEntries((data ?? []).map((row) => [row.id, row as MemberKcalProfile]));
+  return Object.fromEntries(
+    (data ?? []).map((row) => [row.id, row as MemberKcalProfile]),
+  );
 }

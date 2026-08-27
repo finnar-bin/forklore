@@ -1,12 +1,12 @@
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString([], {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   });
 }
 
@@ -32,12 +32,13 @@ export function ItemMetadata({
   return (
     <Stack spacing={0.25}>
       <Typography fontSize={12} color="text.secondary">
-        Added by {creatorName ?? 'someone'}
+        Added by {creatorName ?? "someone"}
         {!wasUpdated && ` · ${formatDateTime(createdAt)}`}
       </Typography>
       {wasUpdated && (
         <Typography fontSize={12} color="text.secondary">
-          Last updated by {updaterName ?? 'someone'} · {formatDateTime(updatedAt)}
+          Last updated by {updaterName ?? "someone"} ·{" "}
+          {formatDateTime(updatedAt)}
         </Typography>
       )}
     </Stack>

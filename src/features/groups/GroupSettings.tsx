@@ -1,20 +1,20 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import Paper from '@mui/material/Paper';
-import Snackbar from '@mui/material/Snackbar';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
-import { useColorScheme } from '@mui/material/styles';
-import { shadows } from '../../theme/theme';
-import { useAppStore } from '../../store/useAppStore';
-import { useProfileNames } from '../profiles/useProfileNames';
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
+import Snackbar from "@mui/material/Snackbar";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
+import { useColorScheme } from "@mui/material/styles";
+import { shadows } from "../../theme/theme";
+import { useAppStore } from "../../store/useAppStore";
+import { useProfileNames } from "../profiles/useProfileNames";
 import {
   deleteGroup,
   fetchGroupMembers,
@@ -22,11 +22,11 @@ import {
   removeGroupMember,
   updateGroup,
   type GroupInput,
-} from './api';
-import { GroupForm } from './GroupForm';
-import { DeleteGroupDialog } from './DeleteGroupDialog';
-import { RemoveMemberDialog } from './RemoveMemberDialog';
-import type { Group, GroupMember } from '../../types/group';
+} from "./api";
+import { GroupForm } from "./GroupForm";
+import { DeleteGroupDialog } from "./DeleteGroupDialog";
+import { RemoveMemberDialog } from "./RemoveMemberDialog";
+import type { Group, GroupMember } from "../../types/group";
 
 // Owner-only screen (RequireGroupOwner guards the route this is rendered
 // under) — rename/edit description, remove a member, delete the group. See
@@ -36,8 +36,8 @@ export function GroupSettings({ groupId }: { groupId: string }) {
   const navigate = useNavigate();
   const userId = useAppStore((state) => state.userId);
   const { mode, systemMode } = useColorScheme();
-  const resolvedMode = mode === 'system' ? systemMode : mode;
-  const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
+  const resolvedMode = mode === "system" ? systemMode : mode;
+  const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
 
   const [group, setGroup] = useState<Group | undefined>(undefined);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -67,7 +67,9 @@ export function GroupSettings({ groupId }: { groupId: string }) {
         setGroup(found);
       })
       .catch((err) => {
-        setLoadError(err instanceof Error ? err.message : "Couldn't load this group.");
+        setLoadError(
+          err instanceof Error ? err.message : "Couldn't load this group.",
+        );
       });
   }, [userId, groupId]);
 
@@ -76,7 +78,11 @@ export function GroupSettings({ groupId }: { groupId: string }) {
     fetchGroupMembers(groupId)
       .then(setMembers)
       .catch((err) => {
-        setMembersError(err instanceof Error ? err.message : "Couldn't load this group's members.");
+        setMembersError(
+          err instanceof Error
+            ? err.message
+            : "Couldn't load this group's members.",
+        );
       });
   }, [groupId]);
 
@@ -105,12 +111,12 @@ export function GroupSettings({ groupId }: { groupId: string }) {
 
   async function handleDeleteGroup() {
     await deleteGroup(groupId);
-    navigate('/groups', { replace: true });
+    navigate("/groups", { replace: true });
   }
 
   if (loadError) {
     return (
-      <Box sx={{ p: 2, maxWidth: 480, mx: 'auto' }}>
+      <Box sx={{ p: 2, maxWidth: 480, mx: "auto" }}>
         <Alert severity="error">{loadError}</Alert>
       </Box>
     );
@@ -118,15 +124,15 @@ export function GroupSettings({ groupId }: { groupId: string }) {
 
   if (!group) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 4 }}>
-      <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
+    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 4 }}>
+      <Paper sx={{ p: 3, borderRadius: "14px", boxShadow: tokens.sh2 }}>
         <GroupForm
           initialValues={{ name: group.name, description: group.description }}
           submitLabel="Save changes"
@@ -134,7 +140,7 @@ export function GroupSettings({ groupId }: { groupId: string }) {
         />
       </Paper>
 
-      <Paper sx={{ p: 2, borderRadius: '14px', boxShadow: tokens.sh2 }}>
+      <Paper sx={{ p: 2, borderRadius: "14px", boxShadow: tokens.sh2 }}>
         <Typography fontWeight={500} sx={{ mb: 1.5 }}>
           Members
         </Typography>
@@ -146,7 +152,7 @@ export function GroupSettings({ groupId }: { groupId: string }) {
         )}
 
         {members === undefined && !membersError && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
             <CircularProgress size={24} />
           </Box>
         )}
@@ -155,20 +161,20 @@ export function GroupSettings({ groupId }: { groupId: string }) {
           {(members ?? []).map((member) => (
             <Box
               key={member.user_id}
-              sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}
+              sx={{ display: "flex", alignItems: "center", gap: 1, py: 1 }}
             >
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography fontSize={14} noWrap>
-                  {memberNames[member.user_id] ?? 'Loading…'}
-                  {member.user_id === userId ? ' (you)' : ''}
+                  {memberNames[member.user_id] ?? "Loading…"}
+                  {member.user_id === userId ? " (you)" : ""}
                 </Typography>
                 <Typography fontSize={12} color="text.secondary">
-                  {member.role === 'owner' ? 'Owner' : 'Member'}
+                  {member.role === "owner" ? "Owner" : "Member"}
                 </Typography>
               </Box>
-              {member.role !== 'owner' && (
+              {member.role !== "owner" && (
                 <IconButton
-                  aria-label={`Remove ${memberNames[member.user_id] ?? 'this member'}`}
+                  aria-label={`Remove ${memberNames[member.user_id] ?? "this member"}`}
                   onClick={() => setRemoveTarget(member)}
                 >
                   <PersonRemoveIcon />
@@ -179,13 +185,20 @@ export function GroupSettings({ groupId }: { groupId: string }) {
         </Stack>
       </Paper>
 
-      <Button color="error" variant="outlined" size="large" onClick={() => setDeleteOpen(true)}>
+      <Button
+        color="error"
+        variant="outlined"
+        size="large"
+        onClick={() => setDeleteOpen(true)}
+      >
         Delete group
       </Button>
 
       <RemoveMemberDialog
         open={removeTarget !== null}
-        memberName={(removeTarget && memberNames[removeTarget.user_id]) || 'this member'}
+        memberName={
+          (removeTarget && memberNames[removeTarget.user_id]) || "this member"
+        }
         onClose={() => setRemoveTarget(null)}
         onConfirm={handleRemoveMember}
       />
@@ -202,7 +215,7 @@ export function GroupSettings({ groupId }: { groupId: string }) {
         autoHideDuration={3000}
         onClose={() => setJustSaved(false)}
         message="Group saved"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
     </Stack>
   );

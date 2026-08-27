@@ -1,9 +1,9 @@
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import { useColorScheme } from '@mui/material/styles';
-import { shadows } from '../../theme/theme';
-import { PhotoThumbnail } from '../../components/PhotoThumbnail';
-import type { LogEntry } from '../../types/log';
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { useColorScheme } from "@mui/material/styles";
+import { shadows } from "../../theme/theme";
+import { PhotoThumbnail } from "../../components/PhotoThumbnail";
+import type { LogEntry } from "../../types/log";
 
 // Card / list item pattern from design-system.md, applied to Log as
 // documented. Log entries have no photo of their own, so the thumbnail
@@ -11,57 +11,73 @@ import type { LogEntry } from '../../types/log';
 export function LogEntryCard({
   entry,
   subtitle,
-  loggerName,
+  loggedForName,
   onClick,
 }: {
   entry: LogEntry;
   subtitle: string;
-  // Group context only — who actually logged this entry (entry.logged_by),
+  // Group context only — who this entry counts against (entry.logged_for),
   // distinct from whose shared log it's on (entry.group_id). Undefined in
-  // personal context, where it'd just be naming the viewer to themselves.
-  // See docs/pending-deviations.md (Ticket 12 follow-up, "logged by" name).
-  loggerName?: string;
+  // personal context (just naming the viewer to themselves) or whenever
+  // it's the viewer. See docs/pending-deviations.md (Ticket 12 follow-up,
+  // "logged by" name, and the later "log for a group member" rework).
+  loggedForName?: string;
   onClick?: () => void;
 }) {
   const { mode, systemMode } = useColorScheme();
-  const resolvedMode = mode === 'system' ? systemMode : mode;
-  const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
-  const sourceLabel = entry.source_recipe_id ? 'Recipe' : 'Ingredient';
+  const resolvedMode = mode === "system" ? systemMode : mode;
+  const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
+  const sourceLabel = entry.source_recipe_id ? "Recipe" : "Ingredient";
 
   return (
     <Box
       onClick={onClick}
       sx={{
-        bgcolor: 'background.paper',
-        borderRadius: '14px',
+        bgcolor: "background.paper",
+        borderRadius: "14px",
         boxShadow: tokens.sh2,
         p: 1.5,
-        display: 'flex',
+        display: "flex",
         gap: 1.5,
-        alignItems: 'center',
-        cursor: onClick ? 'pointer' : undefined,
+        alignItems: "center",
+        cursor: onClick ? "pointer" : undefined,
       }}
     >
-      <PhotoThumbnail photoUrl={null} alt={entry.snapshot_name} />
+      <PhotoThumbnail photoUrl={null} alt={entry.name} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, minWidth: 0 }}>
-          <Typography fontSize={14} fontWeight={500} noWrap sx={{ minWidth: 0 }}>
-            {entry.snapshot_name}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 0.5,
+            minWidth: 0,
+          }}
+        >
+          <Typography
+            fontSize={14}
+            fontWeight={500}
+            noWrap
+            sx={{ minWidth: 0 }}
+          >
+            {entry.name}
           </Typography>
-          {entry.snapshot_quantity !== null && (
-            <Typography fontSize={12} color="text.secondary" noWrap sx={{ flexShrink: 0 }}>
-              {entry.snapshot_quantity} {entry.snapshot_unit}
-            </Typography>
-          )}
+          <Typography
+            fontSize={12}
+            color="text.secondary"
+            noWrap
+            sx={{ flexShrink: 0 }}
+          >
+            {entry.quantity} {entry.unit}
+          </Typography>
         </Box>
         <Typography fontSize={12} color="text.secondary" noWrap>
+          {loggedForName && `${loggedForName} · `}
           {subtitle}
-          {loggerName && ` · Logged by ${loggerName}`}
         </Typography>
       </Box>
-      <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+      <Box sx={{ textAlign: "right", flexShrink: 0 }}>
         <Typography fontSize={14} fontWeight={500} color="primary.main">
-          {entry.snapshot_kcal.toFixed(2)} kcal
+          {entry.kcal.toFixed(2)} kcal
         </Typography>
         <Typography fontSize={11} color="text.secondary">
           {sourceLabel}

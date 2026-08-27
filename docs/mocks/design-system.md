@@ -28,20 +28,20 @@ const theme = createTheme({
   colorSchemes: {
     light: {
       palette: {
-        background: { default: '#F3EAD3', paper: '#FDF6E3' },
-        primary: { main: '#8DA101' },
-        secondary: { main: '#DFA000' },
-        error: { main: '#F85552' },
-        text: { primary: '#4A555A', secondary: '#8A9691' },
+        background: { default: "#F3EAD3", paper: "#FDF6E3" },
+        primary: { main: "#8DA101" },
+        secondary: { main: "#DFA000" },
+        error: { main: "#F85552" },
+        text: { primary: "#4A555A", secondary: "#8A9691" },
       },
     },
     dark: {
       palette: {
-        background: { default: '#232A2E', paper: '#2D373C' },
-        primary: { main: '#A7C080' },
-        secondary: { main: '#DBBC7F' },
-        error: { main: '#E67E80' },
-        text: { primary: '#D3C6AA', secondary: '#889086' },
+        background: { default: "#232A2E", paper: "#2D373C" },
+        primary: { main: "#A7C080" },
+        secondary: { main: "#DBBC7F" },
+        error: { main: "#E67E80" },
+        text: { primary: "#D3C6AA", secondary: "#889086" },
       },
     },
   },
@@ -51,7 +51,7 @@ const theme = createTheme({
     MuiButtonBase: { defaultProps: { disableRipple: true } },
     MuiButton: {
       styleOverrides: {
-        root: { textTransform: 'none', fontWeight: 500 },
+        root: { textTransform: "none", fontWeight: 500 },
       },
     },
   },
@@ -60,20 +60,20 @@ const theme = createTheme({
 
 ```tsx
 const { mode, setMode } = useColorScheme();
-<IconButton onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')}>
-  {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
-</IconButton>
+<IconButton onClick={() => setMode(mode === "dark" ? "light" : "dark")}>
+  {mode === "dark" ? <LightModeIcon /> : <DarkModeIcon />}
+</IconButton>;
 ```
 
 ### Elevation — layered shadows, not flat
 
 Two-tier shadow system. Do not rely on MUI's default Paper elevation shadows (generic gray) — use tinted, soft shadows matching the palette instead.
 
-| Token | Light mode | Dark mode | Use |
-|---|---|---|---|
-| `sh1` (subtle) | `0 1px 2px rgba(92,106,82,.06)` | `0 1px 2px rgba(0,0,0,.3)` | Sticky headers, small chips, separating content from a background of the same general hue |
-| `sh2` (raised) | `0 6px 16px rgba(92,106,82,.12)` | `0 6px 16px rgba(0,0,0,.4)` | Cards, list items — the primary "this is a distinct surface" signal |
-| Floating elements (FAB, primary CTA button) | `0 6px 14px rgba(93,110,1,.35)` | `0 6px 14px rgba(0,0,0,.5)` | Strongest shadow — reserved for elements that are genuinely floating over content, not just separated from it |
+| Token                                       | Light mode                       | Dark mode                   | Use                                                                                                           |
+| ------------------------------------------- | -------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `sh1` (subtle)                              | `0 1px 2px rgba(92,106,82,.06)`  | `0 1px 2px rgba(0,0,0,.3)`  | Sticky headers, small chips, separating content from a background of the same general hue                     |
+| `sh2` (raised)                              | `0 6px 16px rgba(92,106,82,.12)` | `0 6px 16px rgba(0,0,0,.4)` | Cards, list items — the primary "this is a distinct surface" signal                                           |
+| Floating elements (FAB, primary CTA button) | `0 6px 14px rgba(93,110,1,.35)`  | `0 6px 14px rgba(0,0,0,.5)` | Strongest shadow — reserved for elements that are genuinely floating over content, not just separated from it |
 
 ```ts
 MuiPaper: {

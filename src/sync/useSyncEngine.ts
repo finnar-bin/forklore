@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
-import { useAppStore } from '../store/useAppStore';
-import { useSyncStore } from '../store/useSyncStore';
-import { fetchMyGroups } from '../features/groups/api';
-import { drainPendingOutbox } from './outbox';
-import { pullCommunityIngredients, pullScope, type PullScope } from './pull';
+import { useEffect } from "react";
+import { useAppStore } from "../store/useAppStore";
+import { useSyncStore } from "../store/useSyncStore";
+import { fetchMyGroups } from "../features/groups/api";
+import { drainPendingOutbox } from "./outbox";
+import { pullCommunityIngredients, pullScope, type PullScope } from "./pull";
 
 // Not specified by any doc — 60s balances catching another-device's changes
 // reasonably promptly against not hammering Supabase while the tab is just
@@ -36,7 +36,10 @@ export function useSyncEngine(): void {
       const groups = await fetchMyGroups(currentUserId).catch(() => []);
       const scopes: PullScope[] = [
         { userId: currentUserId, groupId: null },
-        ...groups.map((membership) => ({ userId: currentUserId, groupId: membership.group.id })),
+        ...groups.map((membership) => ({
+          userId: currentUserId,
+          groupId: membership.group.id,
+        })),
       ];
 
       // Community ingredients are global, not owned by a user or group, and
@@ -47,7 +50,7 @@ export function useSyncEngine(): void {
         ...scopes.map((scope) => pullScope(scope)),
         pullCommunityIngredients(),
       ]);
-      if (!cancelled && results.some((r) => r.status === 'fulfilled')) {
+      if (!cancelled && results.some((r) => r.status === "fulfilled")) {
         useSyncStore.getState().setLastSynced(new Date().toISOString());
       }
     }
@@ -64,12 +67,12 @@ export function useSyncEngine(): void {
 
     const intervalId = setInterval(() => void runPull(), PULL_INTERVAL_MS);
     const handleOnline = () => void runPull();
-    window.addEventListener('online', handleOnline);
+    window.addEventListener("online", handleOnline);
 
     return () => {
       cancelled = true;
       clearInterval(intervalId);
-      window.removeEventListener('online', handleOnline);
+      window.removeEventListener("online", handleOnline);
     };
   }, [userId]);
 }

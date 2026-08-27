@@ -1,6 +1,6 @@
-import { supabase } from '../../lib/supabase';
-import { pullScope } from '../../sync/pull';
-import type { IngredientUnit } from '../../types/ingredient';
+import { supabase } from "../../lib/supabase";
+import { pullScope } from "../../sync/pull";
+import type { IngredientUnit } from "../../types/ingredient";
 
 export interface IngredientMatch {
   id: string;
@@ -35,7 +35,7 @@ export async function copyIngredient(
   ingredientId: string,
   targetGroupId: string | null,
 ): Promise<string> {
-  const { data, error } = await supabase.rpc('copy_ingredient', {
+  const { data, error } = await supabase.rpc("copy_ingredient", {
     p_ingredient_id: ingredientId,
     p_target_group_id: targetGroupId,
   });
@@ -53,7 +53,7 @@ export async function findIngredientMatch(
   unit: IngredientUnit,
   targetGroupId: string | null,
 ): Promise<IngredientMatch | null> {
-  const { data, error } = await supabase.rpc('find_ingredient_match', {
+  const { data, error } = await supabase.rpc("find_ingredient_match", {
     p_name: name,
     p_unit: unit,
     p_target_group_id: targetGroupId,
@@ -75,7 +75,7 @@ export async function copyRecipe(
   targetGroupId: string | null,
   resolutions: IngredientResolution[],
 ): Promise<string> {
-  const { data, error } = await supabase.rpc('copy_recipe', {
+  const { data, error } = await supabase.rpc("copy_recipe", {
     p_recipe_id: recipeId,
     p_target_group_id: targetGroupId,
     p_ingredient_resolutions: resolutions,

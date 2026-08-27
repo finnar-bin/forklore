@@ -1,15 +1,24 @@
-import { MEAL_TYPES, type MealType } from '../../types/meal';
-import type { ActivityLevel, BiologicalSex, GoalPace, GoalType } from '../../types/profile';
+import { MEAL_TYPES, type MealType } from "../../types/meal";
+import type {
+  ActivityLevel,
+  BiologicalSex,
+  GoalPace,
+  GoalType,
+} from "../../types/profile";
 
 // A "lose" goal weight must actually be below current weight, a "gain" goal
 // weight must actually be above it — shared between GoalStep's inline error
 // and OnboardingStepper's step-validity gate so both agree on the same rule.
-export function isGoalWeightValid(goalType: GoalType | '', currentWeight: string, goalWeight: string): boolean {
-  if (goalType === '' || goalType === 'maintain') return true;
+export function isGoalWeightValid(
+  goalType: GoalType | "",
+  currentWeight: string,
+  goalWeight: string,
+): boolean {
+  if (goalType === "" || goalType === "maintain") return true;
   const current = Number(currentWeight);
   const goal = Number(goalWeight);
   if (!Number.isFinite(current) || !Number.isFinite(goal)) return false;
-  return goalType === 'lose' ? goal < current : goal > current;
+  return goalType === "lose" ? goal < current : goal > current;
 }
 
 // Mifflin-St Jeor BMR -> activity-scaled TDEE -> goal-adjusted target.
@@ -34,12 +43,16 @@ const MIN_SAFE_KCAL: Record<BiologicalSex, number> = {
 
 const KCAL_PER_KG_FAT = 7700;
 
-export function calculateAge(birthdate: string, today: Date = new Date()): number {
+export function calculateAge(
+  birthdate: string,
+  today: Date = new Date(),
+): number {
   const birth = new Date(birthdate);
   let age = today.getFullYear() - birth.getFullYear();
   const hasHadBirthdayThisYear =
     today.getMonth() > birth.getMonth() ||
-    (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
+    (today.getMonth() === birth.getMonth() &&
+      today.getDate() >= birth.getDate());
   if (!hasHadBirthdayThisYear) age -= 1;
   return age;
 }
@@ -51,17 +64,25 @@ export interface BmrInput {
   age: number;
 }
 
-export function calculateBmr({ sex, weightKg, heightCm, age }: BmrInput): number {
+export function calculateBmr({
+  sex,
+  weightKg,
+  heightCm,
+  age,
+}: BmrInput): number {
   const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
-  return sex === 'male' ? base + 5 : base - 161;
+  return sex === "male" ? base + 5 : base - 161;
 }
 
-export function calculateTdee(bmr: number, activityLevel: ActivityLevel): number {
+export function calculateTdee(
+  bmr: number,
+  activityLevel: ActivityLevel,
+): number {
   return bmr * ACTIVITY_MULTIPLIERS[activityLevel];
 }
 
 export interface CaloriePresetOption {
-  pace: 'steady' | 'aggressive';
+  pace: "steady" | "aggressive";
   kcal: number;
   weeklyRateKg: number; // negative for lose, positive for gain
   clamped: boolean;
@@ -72,21 +93,28 @@ export interface CalorieOptions {
   presets: CaloriePresetOption[]; // empty for 'maintain'
 }
 
-const PRESET_ADJUSTMENTS: Record<'lose' | 'gain', Record<'steady' | 'aggressive', number>> = {
+const PRESET_ADJUSTMENTS: Record<
+  "lose" | "gain",
+  Record<"steady" | "aggressive", number>
+> = {
   lose: { steady: 0.85, aggressive: 0.75 },
   gain: { steady: 1.15, aggressive: 1.25 },
 };
 
-export function calculateCalorieOptions(tdee: number, goalType: GoalType, sex: BiologicalSex): CalorieOptions {
+export function calculateCalorieOptions(
+  tdee: number,
+  goalType: GoalType,
+  sex: BiologicalSex,
+): CalorieOptions {
   const maintenanceKcal = Math.round(tdee);
-  if (goalType === 'maintain') return { maintenanceKcal, presets: [] };
+  if (goalType === "maintain") return { maintenanceKcal, presets: [] };
 
   const floor = MIN_SAFE_KCAL[sex];
   const adjustments = PRESET_ADJUSTMENTS[goalType];
 
-  const presets = (['steady', 'aggressive'] as const).map((pace) => {
+  const presets = (["steady", "aggressive"] as const).map((pace) => {
     const raw = tdee * adjustments[pace];
-    const clamped = goalType === 'lose' && raw < floor;
+    const clamped = goalType === "lose" && raw < floor;
     const kcal = Math.round(clamped ? floor : raw);
     const weeklyRateKg = ((kcal - tdee) * 7) / KCAL_PER_KG_FAT;
     return { pace, kcal, weeklyRateKg, clamped };
@@ -100,7 +128,7 @@ export function calculateCalorieOptions(tdee: number, goalType: GoalType, sex: B
 // null goal_pace. Shared by OnboardingStepper and Progress's
 // EditGoalDialog — both let a caller pick from the same CalorieTargetStep
 // options and must resolve that pick to the same two DB columns.
-export type CalorieSelection = 'steady' | 'aggressive' | 'maintain' | 'custom';
+export type CalorieSelection = "steady" | "aggressive" | "maintain" | "custom";
 
 export interface ResolvedCalorieTarget {
   goalPace: GoalPace | null;
@@ -112,9 +140,13 @@ export function resolveCalorieTarget(
   customKcal: string,
   calorieOptions: CalorieOptions,
 ): ResolvedCalorieTarget | null {
-  if (selection === 'custom') return { goalPace: 'custom', dailyKcalTarget: Number(customKcal) };
-  if (selection === 'maintain') return { goalPace: null, dailyKcalTarget: calorieOptions.maintenanceKcal };
-  const preset = calorieOptions.presets.find((option) => option.pace === selection);
+  if (selection === "custom")
+    return { goalPace: "custom", dailyKcalTarget: Number(customKcal) };
+  if (selection === "maintain")
+    return { goalPace: null, dailyKcalTarget: calorieOptions.maintenanceKcal };
+  const preset = calorieOptions.presets.find(
+    (option) => option.pace === selection,
+  );
   if (!preset) return null;
   return { goalPace: preset.pace, dailyKcalTarget: preset.kcal };
 }
@@ -133,14 +165,23 @@ const CUSTOM_KCAL_ABSOLUTE_MIN = 500;
 const CUSTOM_KCAL_ABSOLUTE_MAX = 10000;
 const CUSTOM_KCAL_UPPER_MULTIPLIER = 1.75;
 
-export function getCustomKcalBounds(maintenanceKcal: number): { min: number; max: number } {
+export function getCustomKcalBounds(maintenanceKcal: number): {
+  min: number;
+  max: number;
+} {
   return {
     min: CUSTOM_KCAL_ABSOLUTE_MIN,
-    max: Math.min(CUSTOM_KCAL_ABSOLUTE_MAX, Math.round(maintenanceKcal * CUSTOM_KCAL_UPPER_MULTIPLIER)),
+    max: Math.min(
+      CUSTOM_KCAL_ABSOLUTE_MAX,
+      Math.round(maintenanceKcal * CUSTOM_KCAL_UPPER_MULTIPLIER),
+    ),
   };
 }
 
-export function isCustomKcalValid(value: number, maintenanceKcal: number): boolean {
+export function isCustomKcalValid(
+  value: number,
+  maintenanceKcal: number,
+): boolean {
   const { min, max } = getCustomKcalBounds(maintenanceKcal);
   return Number.isFinite(value) && value >= min && value <= max;
 }
@@ -148,7 +189,10 @@ export function isCustomKcalValid(value: number, maintenanceKcal: number): boole
 // General unsupervised-diet guidance, not a hard limit — see the AskUserQuestion
 // decision in the plan for where these two numbers came from. Used only to
 // surface a non-blocking warning on a custom target, not to reject it.
-export function isBelowGeneralGuidance(value: number, sex: BiologicalSex): boolean {
+export function isBelowGeneralGuidance(
+  value: number,
+  sex: BiologicalSex,
+): boolean {
   return Number.isFinite(value) && value < MIN_SAFE_KCAL[sex];
 }
 
@@ -163,9 +207,18 @@ export function getGeneralGuidanceMinimum(sex: BiologicalSex): number {
 // preset's own value is used as the threshold: since that's already the
 // biggest surplus the app itself suggests, going past it is the natural
 // point to flag on a custom entry.
-export function isAboveDiminishingReturnsSurplus(value: number, calorieOptions: CalorieOptions): boolean {
-  const aggressive = calorieOptions.presets.find((preset) => preset.pace === 'aggressive');
-  return aggressive !== undefined && Number.isFinite(value) && value > aggressive.kcal;
+export function isAboveDiminishingReturnsSurplus(
+  value: number,
+  calorieOptions: CalorieOptions,
+): boolean {
+  const aggressive = calorieOptions.presets.find(
+    (preset) => preset.pace === "aggressive",
+  );
+  return (
+    aggressive !== undefined &&
+    Number.isFinite(value) &&
+    value > aggressive.kcal
+  );
 }
 
 // Whatever daily total the caller's current selection actually resolves to
@@ -175,13 +228,15 @@ export function isAboveDiminishingReturnsSurplus(value: number, calorieOptions: 
 // be shown at all) and its two callers (to gate step validity on the same
 // number).
 export function getResolvedDailyKcal(
-  selection: CalorieSelection | '',
+  selection: CalorieSelection | "",
   customKcal: string,
   calorieOptions: CalorieOptions | null,
 ): number | null {
-  if (selection === '' || !calorieOptions) return null;
-  if (selection === 'custom') {
-    return isCustomKcalValid(Number(customKcal), calorieOptions.maintenanceKcal) ? Number(customKcal) : null;
+  if (selection === "" || !calorieOptions) return null;
+  if (selection === "custom") {
+    return isCustomKcalValid(Number(customKcal), calorieOptions.maintenanceKcal)
+      ? Number(customKcal)
+      : null;
   }
   const resolved = resolveCalorieTarget(selection, customKcal, calorieOptions);
   return resolved ? resolved.dailyKcalTarget : null;
@@ -193,11 +248,14 @@ export function getResolvedDailyKcal(
 // string (mirrors customKcal above) so an empty field reads as "0
 // allocated" rather than forcing a value.
 export function emptyMealKcalTargets(): Record<MealType, string> {
-  return { breakfast: '', lunch: '', dinner: '', snack: '' };
+  return { breakfast: "", lunch: "", dinner: "", snack: "" };
 }
 
 export function sumMealKcalTargets(targets: Record<MealType, string>): number {
-  return MEAL_TYPES.reduce((sum, meal) => sum + (Number(targets[meal]) || 0), 0);
+  return MEAL_TYPES.reduce(
+    (sum, meal) => sum + (Number(targets[meal]) || 0),
+    0,
+  );
 }
 
 // Blank fields count as 0 toward the sum — "optional" per meal, but once the
@@ -211,7 +269,7 @@ export function isMealBreakdownValid(
   if (!enabled) return true;
   if (dailyTotal === null) return false;
   const allNonNegative = MEAL_TYPES.every((meal) => {
-    if (targets[meal].trim() === '') return true;
+    if (targets[meal].trim() === "") return true;
     const value = Number(targets[meal]);
     return Number.isFinite(value) && value >= 0;
   });
@@ -220,13 +278,18 @@ export function isMealBreakdownValid(
   // .toFixed(0)), but a typed/pasted non-integer value can still make the
   // sum land a fraction of a kcal off the daily total due to plain binary
   // floating-point rounding, even when the real-arithmetic sum is exact.
-  return allNonNegative && Math.round(sumMealKcalTargets(targets)) === Math.round(dailyTotal);
+  return (
+    allNonNegative &&
+    Math.round(sumMealKcalTargets(targets)) === Math.round(dailyTotal)
+  );
 }
 
 // Converts validated string form state to the numbers actually written to
 // Profile's breakfast/lunch/dinner/snack_kcal_target columns — only called
 // once isMealBreakdownValid confirms the fields are ready to save.
-export function mealKcalTargetsToNumbers(targets: Record<MealType, string>): Record<MealType, number> {
+export function mealKcalTargetsToNumbers(
+  targets: Record<MealType, string>,
+): Record<MealType, number> {
   return {
     breakfast: Number(targets.breakfast) || 0,
     lunch: Number(targets.lunch) || 0,

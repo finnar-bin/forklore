@@ -1,31 +1,31 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import IconButton from '@mui/material/IconButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Menu from '@mui/material/Menu';
-import Paper from '@mui/material/Paper';
-import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { useColorScheme } from '@mui/material/styles';
-import { shadows } from '../../theme/theme';
-import { DeferredPhotoUpload } from '../../components/DeferredPhotoUpload';
-import { ItemMetadata } from '../../components/ItemMetadata';
-import { formatKcalPerUnit, kcalPerUnit } from '../../lib/kcal';
-import { deletePhoto, uploadPhoto } from '../../lib/photoUpload';
-import { useAppStore } from '../../store/useAppStore';
-import { useProfileNames } from '../profiles/useProfileNames';
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useLiveQuery } from "dexie-react-hooks";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import Paper from "@mui/material/Paper";
+import MenuItem from "@mui/material/MenuItem";
+import Snackbar from "@mui/material/Snackbar";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import { useColorScheme } from "@mui/material/styles";
+import { shadows } from "../../theme/theme";
+import { DeferredPhotoUpload } from "../../components/DeferredPhotoUpload";
+import { ItemMetadata } from "../../components/ItemMetadata";
+import { formatKcalPerUnit, kcalPerUnit } from "../../lib/kcal";
+import { deletePhoto, uploadPhoto } from "../../lib/photoUpload";
+import { useAppStore } from "../../store/useAppStore";
+import { useProfileNames } from "../profiles/useProfileNames";
 import {
   addRecipeIngredient,
   deleteRecipe,
@@ -35,16 +35,20 @@ import {
   removeRecipeIngredient,
   updateRecipe,
   updateRecipeIngredientQuantity,
-} from './api';
-import { CopyRecipeDialog } from './CopyRecipeDialog';
-import { DeleteRecipeDialog } from './DeleteRecipeDialog';
-import { RecipeIngredientsList } from './RecipeIngredientsList';
-import type { Recipe, RecipeIngredientDetail, WeightUnit } from '../../types/recipe';
-import type { Ingredient } from '../../types/ingredient';
+} from "./api";
+import { CopyRecipeDialog } from "./CopyRecipeDialog";
+import { DeleteRecipeDialog } from "./DeleteRecipeDialog";
+import { RecipeIngredientsList } from "./RecipeIngredientsList";
+import type {
+  Recipe,
+  RecipeIngredientDetail,
+  WeightUnit,
+} from "../../types/recipe";
+import type { Ingredient } from "../../types/ingredient";
 
 // Distinguishes "still loading" from "query resolved, nothing found" — see
 // the same pattern in IngredientDetail.tsx.
-const LOADING = Symbol('loading');
+const LOADING = Symbol("loading");
 
 // Everything on this screen (recipe fields + ingredient lines) is staged
 // client-side in `name`/`weight`/`weightUnit`/`photoUrl`/`ingredients` and
@@ -57,13 +61,19 @@ const LOADING = Symbol('loading');
 // `savedRecipe`/`savedIngredients` hold the last persisted snapshot, used
 // both to diff what actually changed at save time and to know whether
 // there's anything to save at all.
-export function RecipeDetail({ groupId, backPath }: { groupId: string | null; backPath: string }) {
+export function RecipeDetail({
+  groupId,
+  backPath,
+}: {
+  groupId: string | null;
+  backPath: string;
+}) {
   const { recipeId } = useParams<{ recipeId: string }>();
   const navigate = useNavigate();
   const userId = useAppStore((state) => state.userId);
   const { mode, systemMode } = useColorScheme();
-  const resolvedMode = mode === 'system' ? systemMode : mode;
-  const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
+  const resolvedMode = mode === "system" ? systemMode : mode;
+  const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
 
   const recipeResult = useLiveQuery(
     () => (recipeId ? fetchRecipe(recipeId) : undefined),
@@ -74,15 +84,17 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   const recipe = recipeResult === LOADING ? undefined : recipeResult;
 
   const [savedRecipe, setSavedRecipe] = useState<Recipe | null>(null);
-  const [savedIngredients, setSavedIngredients] = useState<RecipeIngredientDetail[]>([]);
+  const [savedIngredients, setSavedIngredients] = useState<
+    RecipeIngredientDetail[]
+  >([]);
 
-  const [name, setName] = useState('');
+  const [name, setName] = useState("");
   // weight/weightUnit: entry-convenience state, not persisted directly —
   // weightUnit always resets to 'g' when a baseline (re)loads, since the
   // server only ever stores grams (see docs/pending-deviations.md, Ticket
   // 12 follow-up, "servings -> weight").
-  const [weight, setWeight] = useState('0');
-  const [weightUnit, setWeightUnit] = useState<WeightUnit>('g');
+  const [weight, setWeight] = useState("0");
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>("g");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
   const [ingredients, setIngredients] = useState<RecipeIngredientDetail[]>([]);
@@ -106,7 +118,9 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   // doesn't slip through.
   const profileIds =
     groupId && savedRecipe
-      ? [savedRecipe.created_by, savedRecipe.updated_by].filter((id) => id != null)
+      ? [savedRecipe.created_by, savedRecipe.updated_by].filter(
+          (id) => id != null,
+        )
       : [];
   const profileNames = useProfileNames(profileIds);
   const wasUpdated = savedRecipe?.updated_by != null;
@@ -115,7 +129,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
     setSavedRecipe(next);
     setName(next.name);
     setWeight(next.weight_g.toString());
-    setWeightUnit('g');
+    setWeightUnit("g");
     setPhotoUrl(next.photo_url);
   }
 
@@ -148,7 +162,9 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
       .catch((err) => {
         if (cancelled) return;
         setIngredientsError(
-          err instanceof Error ? err.message : "Couldn't load this recipe's ingredients.",
+          err instanceof Error
+            ? err.message
+            : "Couldn't load this recipe's ingredients.",
         );
       })
       .finally(() => {
@@ -168,14 +184,20 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
   // and displayed as-is, and would also make the dirty-check spuriously
   // true after a save (savedRecipe.weight_g comes back as the same rounded
   // integer the server actually stored).
-  const weightG = weightUnit === 'kg' ? Math.round(parsedWeight * 1000) : parsedWeight;
+  const weightG =
+    weightUnit === "kg" ? Math.round(parsedWeight * 1000) : parsedWeight;
 
   // Realtime — recomputed on every keystroke/add/remove from the draft
   // ingredient list, not read from the persisted recipe row. Uses the same
   // formula as the recalculate_recipe_kcal trigger (schema.md), so it
   // matches what the server will compute once saved.
   const totalKcal = useMemo(
-    () => ingredients.reduce((sum, item) => sum + kcalPerUnit(item.kcal, item.quantity) * item.quantity_used, 0),
+    () =>
+      ingredients.reduce(
+        (sum, item) =>
+          sum + kcalPerUnit(item.kcal, item.quantity) * item.quantity_used,
+        0,
+      ),
     [ingredients],
   );
 
@@ -190,12 +212,22 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
     if (pendingPhotoFile) return true;
     if (ingredients.length !== savedIngredients.length) return true;
     return ingredients.some((item) => {
-      const prev = savedIngredients.find((s) => s.ingredient_id === item.ingredient_id);
+      const prev = savedIngredients.find(
+        (s) => s.ingredient_id === item.ingredient_id,
+      );
       return !prev || prev.quantity_used !== item.quantity_used;
     });
-  }, [name, weightG, photoUrl, pendingPhotoFile, ingredients, savedRecipe, savedIngredients]);
+  }, [
+    name,
+    weightG,
+    photoUrl,
+    pendingPhotoFile,
+    ingredients,
+    savedRecipe,
+    savedIngredients,
+  ]);
 
-  const isValid = name.trim() !== '' && Number.isFinite(weightG) && weightG > 0;
+  const isValid = name.trim() !== "" && Number.isFinite(weightG) && weightG > 0;
 
   function handleAddIngredient(ingredient: Ingredient, quantityUsed: number) {
     setIngredients((prev) => [
@@ -215,12 +247,18 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
 
   function handleQuantityChange(ingredientId: string, quantityUsed: number) {
     setIngredients((prev) =>
-      prev.map((item) => (item.ingredient_id === ingredientId ? { ...item, quantity_used: quantityUsed } : item)),
+      prev.map((item) =>
+        item.ingredient_id === ingredientId
+          ? { ...item, quantity_used: quantityUsed }
+          : item,
+      ),
     );
   }
 
   function handleRemoveIngredient(ingredientId: string) {
-    setIngredients((prev) => prev.filter((item) => item.ingredient_id !== ingredientId));
+    setIngredients((prev) =>
+      prev.filter((item) => item.ingredient_id !== ingredientId),
+    );
   }
 
   async function handleDelete() {
@@ -235,13 +273,15 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
     setSaveError(null);
     try {
       const effectivePhotoUrl = pendingPhotoFile
-        ? await uploadPhoto(pendingPhotoFile, 'recipe', recipeId)
+        ? await uploadPhoto(pendingPhotoFile, "recipe", recipeId)
         : photoUrl;
 
       // Recipe-field-only changes go through Dexie + the outbox — this
       // succeeds offline, same as the Pantry/Log screens.
       const fieldsChanged =
-        name !== savedRecipe.name || weightG !== savedRecipe.weight_g || effectivePhotoUrl !== savedRecipe.photo_url;
+        name !== savedRecipe.name ||
+        weightG !== savedRecipe.weight_g ||
+        effectivePhotoUrl !== savedRecipe.photo_url;
       if (fieldsChanged) {
         const updated = await updateRecipe(recipeId, userId, {
           name,
@@ -259,7 +299,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         // feature (docs/pending-deviations.md, Ticket 15).
         if (savedRecipe.photo_url && !effectivePhotoUrl) {
           try {
-            await deletePhoto('recipe', recipeId);
+            await deletePhoto("recipe", recipeId);
           } catch {
             // Swallowed — see above.
           }
@@ -290,11 +330,25 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         }
       }
       for (const item of ingredients) {
-        const prev = savedIngredients.find((s) => s.ingredient_id === item.ingredient_id);
+        const prev = savedIngredients.find(
+          (s) => s.ingredient_id === item.ingredient_id,
+        );
         if (!prev) {
-          ops.push(() => addRecipeIngredient(recipeId, item.ingredient_id, item.quantity_used));
+          ops.push(() =>
+            addRecipeIngredient(
+              recipeId,
+              item.ingredient_id,
+              item.quantity_used,
+            ),
+          );
         } else if (prev.quantity_used !== item.quantity_used) {
-          ops.push(() => updateRecipeIngredientQuantity(recipeId, item.ingredient_id, item.quantity_used));
+          ops.push(() =>
+            updateRecipeIngredientQuantity(
+              recipeId,
+              item.ingredient_id,
+              item.quantity_used,
+            ),
+          );
         }
       }
 
@@ -327,14 +381,18 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
 
         if (failedCount > 0) {
           throw new Error(
-            `${failedCount} of ${ops.length} ingredient change${ops.length === 1 ? '' : 's'} failed to save — this usually means you're offline. Try again once you're back online.`,
+            `${failedCount} of ${ops.length} ingredient change${ops.length === 1 ? "" : "s"} failed to save — this usually means you're offline. Try again once you're back online.`,
           );
         }
       }
 
       setJustSaved(true);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save changes. Try again.');
+      setSaveError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save changes. Try again.",
+      );
     } finally {
       setSaving(false);
     }
@@ -342,7 +400,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
 
   if (recipeLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
         <CircularProgress />
       </Box>
     );
@@ -350,15 +408,17 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
 
   if (!savedRecipe) {
     return (
-      <Box sx={{ p: 2, maxWidth: 480, mx: 'auto' }}>
+      <Box sx={{ p: 2, maxWidth: 480, mx: "auto" }}>
         <Alert severity="error">Recipe not found.</Alert>
       </Box>
     );
   }
 
   return (
-    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 4 }}>
-      <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 4 }}>
+      <Box
+        sx={{ position: "relative", display: "flex", justifyContent: "center" }}
+      >
         <DeferredPhotoUpload
           photoUrl={photoUrl}
           onChange={setPhotoUrl}
@@ -369,7 +429,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         <IconButton
           aria-label="Recipe actions"
           onClick={(e) => setMenuAnchor(e.currentTarget)}
-          sx={{ position: 'absolute', top: 0, right: 0 }}
+          sx={{ position: "absolute", top: 0, right: 0 }}
         >
           <MoreVertIcon />
         </IconButton>
@@ -379,7 +439,11 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         <ItemMetadata
           creatorName={profileNames[savedRecipe.created_by]}
           createdAt={savedRecipe.created_at}
-          updaterName={savedRecipe.updated_by ? profileNames[savedRecipe.updated_by] : undefined}
+          updaterName={
+            savedRecipe.updated_by
+              ? profileNames[savedRecipe.updated_by]
+              : undefined
+          }
           updatedAt={savedRecipe.updated_at}
           wasUpdated={wasUpdated}
         />
@@ -392,7 +456,15 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
           read from savedRecipe.total_kcal, so it updates as the user edits,
           before anything is saved. */}
       <Stack direction="row" spacing={1.5}>
-        <Paper sx={{ flex: 1, p: 1.5, textAlign: 'center', borderRadius: '12px', boxShadow: tokens.sh1 }}>
+        <Paper
+          sx={{
+            flex: 1,
+            p: 1.5,
+            textAlign: "center",
+            borderRadius: "12px",
+            boxShadow: tokens.sh1,
+          }}
+        >
           <Typography fontSize={18} fontWeight={500} color="primary.main">
             {totalKcal.toFixed(2)}
           </Typography>
@@ -400,7 +472,15 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
             total kcal
           </Typography>
         </Paper>
-        <Paper sx={{ flex: 1, p: 1.5, textAlign: 'center', borderRadius: '12px', boxShadow: tokens.sh1 }}>
+        <Paper
+          sx={{
+            flex: 1,
+            p: 1.5,
+            textAlign: "center",
+            borderRadius: "12px",
+            boxShadow: tokens.sh1,
+          }}
+        >
           <Typography fontSize={18} fontWeight={500} color="primary.main">
             {formatKcalPerUnit(totalKcal, weightG)}
           </Typography>
@@ -410,7 +490,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         </Paper>
       </Stack>
 
-      <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
+      <Paper sx={{ p: 3, borderRadius: "14px", boxShadow: tokens.sh2 }}>
         <Stack spacing={2.5}>
           <TextField
             label="Name"
@@ -447,7 +527,11 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         </Stack>
       </Paper>
 
-      <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
+      <Menu
+        anchorEl={menuAnchor}
+        open={menuAnchor !== null}
+        onClose={() => setMenuAnchor(null)}
+      >
         {/* Disabled while dirty — copying always uses the last-persisted
             version (savedRecipe/savedIngredients), so an unsaved edit
             copying silently instead of what's on screen would be
@@ -460,7 +544,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
           }}
         >
           <ListItemIcon>
-            <ContentCopyIcon fontSize="small" sx={{ color: 'text.primary' }} />
+            <ContentCopyIcon fontSize="small" sx={{ color: "text.primary" }} />
           </ListItemIcon>
           <ListItemText>Copy</ListItemText>
         </MenuItem>
@@ -474,12 +558,12 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
           <ListItemIcon>
             <DeleteOutlineIcon fontSize="small" color="error" />
           </ListItemIcon>
-          <ListItemText sx={{ color: 'error.main' }}>Delete</ListItemText>
+          <ListItemText sx={{ color: "error.main" }}>Delete</ListItemText>
         </MenuItem>
       </Menu>
 
       {ingredientsLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
           <CircularProgress size={24} />
         </Box>
       ) : ingredientsError ? (
@@ -503,7 +587,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         onClick={handleSave}
         disabled={!isValid || !isDirty || saving}
       >
-        {saving ? 'Saving…' : 'Save changes'}
+        {saving ? "Saving…" : "Save changes"}
       </Button>
 
       <DeleteRecipeDialog
@@ -530,7 +614,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         autoHideDuration={3000}
         onClose={() => setJustSaved(false)}
         message="Recipe saved"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
 
       <Snackbar
@@ -538,7 +622,7 @@ export function RecipeDetail({ groupId, backPath }: { groupId: string | null; ba
         autoHideDuration={3000}
         onClose={() => setJustCopied(false)}
         message="Recipe copied"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
     </Stack>
   );

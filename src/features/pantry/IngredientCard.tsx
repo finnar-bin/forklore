@@ -1,10 +1,10 @@
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import { useColorScheme } from '@mui/material/styles';
-import { shadows } from '../../theme/theme';
-import { formatKcalPerUnit } from '../../lib/kcal';
-import { PhotoThumbnail } from '../../components/PhotoThumbnail';
-import type { Ingredient } from '../../types/ingredient';
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { useColorScheme } from "@mui/material/styles";
+import { shadows } from "../../theme/theme";
+import { formatKcalPerUnit } from "../../lib/kcal";
+import { PhotoThumbnail } from "../../components/PhotoThumbnail";
+import type { Ingredient } from "../../types/ingredient";
 
 // Card / list item pattern from design-system.md: thumbnail, title +
 // subtitle, primary/secondary metric on the right.
@@ -23,25 +23,25 @@ export function IngredientCard({
   onClick: () => void;
 }) {
   const { mode, systemMode } = useColorScheme();
-  const resolvedMode = mode === 'system' ? systemMode : mode;
-  const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
+  const resolvedMode = mode === "system" ? systemMode : mode;
+  const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
   const showIndicator = ingredient.is_community && showCommunityIndicator;
 
   return (
     <Box
       onClick={onClick}
       sx={{
-        position: 'relative',
-        bgcolor: 'background.paper',
-        borderRadius: '14px',
+        position: "relative",
+        bgcolor: "background.paper",
+        borderRadius: "14px",
         boxShadow: tokens.sh2,
-        border: showIndicator ? '2px solid' : 'none',
-        borderColor: showIndicator ? 'secondary.main' : undefined,
+        border: showIndicator ? "2px solid" : "none",
+        borderColor: showIndicator ? "secondary.main" : undefined,
         p: 1.5,
-        display: 'flex',
+        display: "flex",
         gap: 1.5,
-        alignItems: 'center',
-        cursor: 'pointer',
+        alignItems: "center",
+        cursor: "pointer",
       }}
     >
       {/* Small tab overlapping the card's own top-left corner, in the same
@@ -52,17 +52,17 @@ export function IngredientCard({
       {showIndicator && (
         <Box
           sx={{
-            position: 'absolute',
+            position: "absolute",
             top: -9,
             left: 10,
-            bgcolor: 'secondary.main',
-            color: 'secondary.contrastText',
+            bgcolor: "secondary.main",
+            color: "secondary.contrastText",
             fontSize: 10,
             fontWeight: 600,
             lineHeight: 1,
             px: 0.75,
             py: 0.375,
-            borderRadius: '4px',
+            borderRadius: "4px",
           }}
         >
           Community
@@ -78,12 +78,13 @@ export function IngredientCard({
           {ingredient.brand && ` · ${ingredient.brand}`}
         </Typography>
       </Box>
-      <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+      <Box sx={{ textAlign: "right", flexShrink: 0 }}>
         <Typography fontSize={14} fontWeight={500} color="primary.main">
           {ingredient.kcal.toFixed(2)} kcal
         </Typography>
         <Typography fontSize={11} color="text.secondary">
-          {formatKcalPerUnit(ingredient.kcal, ingredient.quantity)}/{ingredient.unit}
+          {formatKcalPerUnit(ingredient.kcal, ingredient.quantity)}/
+          {ingredient.unit}
         </Typography>
       </Box>
     </Box>

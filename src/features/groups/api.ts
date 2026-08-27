@@ -1,8 +1,13 @@
-import { db } from '../../lib/db';
-import { supabase } from '../../lib/supabase';
-import { invalidateMyGroups } from './useMyGroups';
-import { invalidateGroupMembers } from './useGroupMembers';
-import type { Group, GroupInvite, GroupMember, GroupMembership } from '../../types/group';
+import { db } from "../../lib/db";
+import { supabase } from "../../lib/supabase";
+import { invalidateMyGroups } from "./useMyGroups";
+import { invalidateGroupMembers } from "./useGroupMembers";
+import type {
+  Group,
+  GroupInvite,
+  GroupMember,
+  GroupMembership,
+} from "../../types/group";
 
 export interface GroupInput {
   name: string;
@@ -14,11 +19,13 @@ export interface GroupInput {
 // and "groups I belong to" isn't a single-table query pull.ts's generic scope
 // logic covers). This ticket reads/writes groups straight against Supabase —
 // see docs/pending-deviations.md (Ticket 11).
-export async function fetchMyGroups(userId: string): Promise<GroupMembership[]> {
+export async function fetchMyGroups(
+  userId: string,
+): Promise<GroupMembership[]> {
   const { data, error } = await supabase
-    .from('group_members')
-    .select('role, groups (*)')
-    .eq('user_id', userId);
+    .from("group_members")
+    .select("role, groups (*)")
+    .eq("user_id", userId);
   if (error) throw error;
 
   return (data ?? [])
@@ -34,7 +41,7 @@ export async function fetchMyGroups(userId: string): Promise<GroupMembership[]> 
 // no client-facing insert policy, so this can't be a plain client insert.
 // See the create_group RPC and docs/pending-deviations.md (Ticket 11).
 export async function createGroup(input: GroupInput): Promise<Group> {
-  const { data, error } = await supabase.rpc('create_group', {
+  const { data, error } = await supabase.rpc("create_group", {
     p_name: input.name,
     p_description: input.description,
   });
@@ -53,11 +60,14 @@ export async function createGroup(input: GroupInput): Promise<Group> {
 // Plain insert respecting the "owner creates group invites" RLS policy
 // (Ticket 2 migration) — no RPC needed, unlike accept_group_invite, since
 // there's nothing multi-table or racy about generating a code.
-export async function createGroupInvite(groupId: string, invitedBy: string): Promise<GroupInvite> {
+export async function createGroupInvite(
+  groupId: string,
+  invitedBy: string,
+): Promise<GroupInvite> {
   const { data, error } = await supabase
-    .from('group_invites')
+    .from("group_invites")
     .insert({ group_id: groupId, invited_by: invitedBy })
-    .select('*')
+    .select("*")
     .single();
   if (error) throw error;
   return data;
@@ -72,8 +82,10 @@ export interface InvitePreview {
 // preview_group_invite and docs/pending-deviations.md (Ticket 11 fix). Empty
 // result (not an exception) means invalid/expired/already-used; the caller
 // treats that the same as an accept_group_invite failure.
-export async function previewGroupInvite(inviteCode: string): Promise<InvitePreview | null> {
-  const { data, error } = await supabase.rpc('preview_group_invite', {
+export async function previewGroupInvite(
+  inviteCode: string,
+): Promise<InvitePreview | null> {
+  const { data, error } = await supabase.rpc("preview_group_invite", {
     p_invite_code: inviteCode,
   });
   if (error) throw error;
@@ -86,12 +98,15 @@ export async function previewGroupInvite(inviteCode: string): Promise<InvitePrev
 // straight client update, no RPC needed (rename/description aren't a
 // multi-table write). Mirrored into Dexie the same way createGroup already
 // does, for the same "at least reflect what this device has seen" reason.
-export async function updateGroup(groupId: string, input: GroupInput): Promise<Group> {
+export async function updateGroup(
+  groupId: string,
+  input: GroupInput,
+): Promise<Group> {
   const { data, error } = await supabase
-    .from('groups')
+    .from("groups")
     .update({ name: input.name, description: input.description })
-    .eq('id', groupId)
-    .select('*')
+    .eq("id", groupId)
+    .select("*")
     .single();
   if (error) throw error;
   const group = data as Group;
@@ -109,11 +124,14 @@ export async function updateGroup(groupId: string, input: GroupInput): Promise<G
 // screen to batch it with. RLS's "owner manages group" policy already
 // restricts this to the group's owner, same as updateGroup above. See
 // docs/pending-deviations.md ("Community pantry").
-export async function setGroupCommunityPantryEnabled(groupId: string, enabled: boolean): Promise<void> {
+export async function setGroupCommunityPantryEnabled(
+  groupId: string,
+  enabled: boolean,
+): Promise<void> {
   const { error } = await supabase
-    .from('groups')
+    .from("groups")
     .update({ community_pantry_enabled: enabled })
-    .eq('id', groupId);
+    .eq("id", groupId);
   if (error) throw error;
   invalidateMyGroups();
 }
@@ -122,7 +140,7 @@ export async function setGroupCommunityPantryEnabled(groupId: string, enabled: b
 // `on delete cascade` foreign keys already defined in schema.md — no RPC
 // needed, RLS's "owner deletes group" policy covers the row itself.
 export async function deleteGroup(groupId: string): Promise<void> {
-  const { error } = await supabase.from('groups').delete().eq('id', groupId);
+  const { error } = await supabase.from("groups").delete().eq("id", groupId);
   if (error) throw error;
   await db.groups.delete(groupId);
   // The caller no longer belongs to this group — see
@@ -133,12 +151,14 @@ export async function deleteGroup(groupId: string): Promise<void> {
 // group_members isn't mirrored in Dexie (same as fetchMyGroups above) — a
 // live Supabase read gated by the "members read group membership" RLS
 // policy (schema.md, via the is_group_member security-definer helper).
-export async function fetchGroupMembers(groupId: string): Promise<GroupMember[]> {
+export async function fetchGroupMembers(
+  groupId: string,
+): Promise<GroupMember[]> {
   const { data, error } = await supabase
-    .from('group_members')
-    .select('*')
-    .eq('group_id', groupId)
-    .order('joined_at', { ascending: true });
+    .from("group_members")
+    .select("*")
+    .eq("group_id", groupId)
+    .order("joined_at", { ascending: true });
   if (error) throw error;
   return data ?? [];
 }
@@ -146,12 +166,15 @@ export async function fetchGroupMembers(groupId: string): Promise<GroupMember[]>
 // RLS restricts group_members deletes to the group's owner (schema.md /
 // docs/pending-deviations.md, Ticket 2) — plain client delete, no RPC
 // needed since removing one membership row isn't a multi-table write.
-export async function removeGroupMember(groupId: string, userId: string): Promise<void> {
+export async function removeGroupMember(
+  groupId: string,
+  userId: string,
+): Promise<void> {
   const { error } = await supabase
-    .from('group_members')
+    .from("group_members")
     .delete()
-    .eq('group_id', groupId)
-    .eq('user_id', userId);
+    .eq("group_id", groupId)
+    .eq("user_id", userId);
   if (error) throw error;
   // The removed row is now stale in useGroupMembers' shared cache (GroupSettings
   // itself re-fetches directly via its own loadMembers, but a mounted
@@ -164,7 +187,7 @@ export async function removeGroupMember(groupId: string, userId: string): Promis
 // Ticket 12, see docs/pending-deviations.md (Ticket 11) for the redirect
 // this ticket uses instead.
 export async function acceptGroupInvite(inviteCode: string): Promise<string> {
-  const { data, error } = await supabase.rpc('accept_group_invite', {
+  const { data, error } = await supabase.rpc("accept_group_invite", {
     p_invite_code: inviteCode,
   });
   if (error) throw error;

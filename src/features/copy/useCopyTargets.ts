@@ -1,4 +1,4 @@
-import { useMyGroups } from '../groups/useMyGroups';
+import { useMyGroups } from "../groups/useMyGroups";
 
 export interface CopyTarget {
   groupId: string | null;
@@ -28,9 +28,11 @@ export function useCopyTargets(
   if (memberships === undefined) return null;
 
   const options: CopyTarget[] = [];
-  if (isCommunitySource || sourceGroupId !== null) options.push({ groupId: null, label: 'Personal' });
+  if (isCommunitySource || sourceGroupId !== null)
+    options.push({ groupId: null, label: "Personal" });
   for (const { group } of memberships) {
-    if (isCommunitySource || group.id !== sourceGroupId) options.push({ groupId: group.id, label: group.name });
+    if (isCommunitySource || group.id !== sourceGroupId)
+      options.push({ groupId: group.id, label: group.name });
   }
   return options;
 }

@@ -1,9 +1,9 @@
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import { SelectableCard } from '../../../components/SelectableCard';
-import { isGoalWeightValid } from '../calorieCalc';
-import { GOAL_TYPES } from '../onboardingOptions';
-import type { GoalType } from '../../../types/profile';
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import { SelectableCard } from "../../../components/SelectableCard";
+import { isGoalWeightValid } from "../calorieCalc";
+import { GOAL_TYPES } from "../onboardingOptions";
+import type { GoalType } from "../../../types/profile";
 
 export function GoalStep({
   goalType,
@@ -12,19 +12,21 @@ export function GoalStep({
   onGoalWeightChange,
   currentWeight,
 }: {
-  goalType: GoalType | '';
+  goalType: GoalType | "";
   onGoalTypeChange: (value: GoalType) => void;
   goalWeight: string;
   onGoalWeightChange: (value: string) => void;
   currentWeight: string;
 }) {
-  const needsGoalWeight = goalType === 'lose' || goalType === 'gain';
-  const goalWeightEntered = goalWeight.trim() !== '';
+  const needsGoalWeight = goalType === "lose" || goalType === "gain";
+  const goalWeightEntered = goalWeight.trim() !== "";
   const goalWeightError =
-    needsGoalWeight && goalWeightEntered && !isGoalWeightValid(goalType, currentWeight, goalWeight)
-      ? goalType === 'lose'
-        ? 'Goal weight should be lower than your current weight'
-        : 'Goal weight should be higher than your current weight'
+    needsGoalWeight &&
+    goalWeightEntered &&
+    !isGoalWeightValid(goalType, currentWeight, goalWeight)
+      ? goalType === "lose"
+        ? "Goal weight should be lower than your current weight"
+        : "Goal weight should be higher than your current weight"
       : null;
 
   return (

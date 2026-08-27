@@ -1,6 +1,6 @@
-import { db } from '../../lib/db';
-import { supabase } from '../../lib/supabase';
-import { useAppStore } from '../../store/useAppStore';
+import { db } from "../../lib/db";
+import { supabase } from "../../lib/supabase";
+import { useAppStore } from "../../store/useAppStore";
 
 export async function signInWithEmail(email: string, password: string) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -17,7 +17,7 @@ export async function signUpWithEmail(email: string, password: string) {
 
 export async function signInWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
+    provider: "google",
     options: { redirectTo: window.location.origin },
   });
   if (error) throw error;
@@ -32,7 +32,10 @@ export async function signOut() {
 // pending outbox items (that would trap an offline user who just wants to
 // log out) — instead the caller shows a count-specific warning and lets the
 // user confirm discarding them via performLogout.
-export async function attemptLogout(): Promise<{ needsConfirmation: boolean; pendingCount: number }> {
+export async function attemptLogout(): Promise<{
+  needsConfirmation: boolean;
+  pendingCount: number;
+}> {
   const pendingCount = await db.outbox.count();
   if (pendingCount > 0) return { needsConfirmation: true, pendingCount };
   await performLogout();

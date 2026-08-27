@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { create } from 'zustand';
-import { useMyGroups } from '../features/groups/useMyGroups';
-import { getStoredGroupId, setStoredGroupId } from '../lib/activeGroupStorage';
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { create } from "zustand";
+import { useMyGroups } from "../features/groups/useMyGroups";
+import { getStoredGroupId, setStoredGroupId } from "../lib/activeGroupStorage";
 
 // Session state — see frontend-architecture.md "Zustand stores".
 // `onboardingComplete` is a Ticket 5 addition beyond that doc's AppState shape —
@@ -22,7 +22,9 @@ export const useAppStore = create<AppState>((set) => ({
   // logout, or switching accounts on the same device) — a same-user
   // auth-state event (e.g. token refresh) must not re-trigger the check.
   setSession: (userId) =>
-    set((state) => (state.userId === userId ? state : { userId, onboardingComplete: null })),
+    set((state) =>
+      state.userId === userId ? state : { userId, onboardingComplete: null },
+    ),
   setOnboardingComplete: (onboardingComplete) => set({ onboardingComplete }),
 }));
 
@@ -55,7 +57,7 @@ export const useAppStore = create<AppState>((set) => ({
 // just want the plain `routeGroupId ?? null` derivation, no restore.
 export function useSyncedActiveGroupId(
   routeGroupId: string | undefined,
-  tab?: 'pantry' | 'recipes',
+  tab?: "pantry" | "recipes",
   userId?: string | null,
 ): string | null {
   const navigate = useNavigate();

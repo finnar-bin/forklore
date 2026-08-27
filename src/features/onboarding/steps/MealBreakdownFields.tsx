@@ -1,8 +1,12 @@
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import { sumMealKcalTargets } from '../calorieCalc';
-import { MEAL_TYPES, MEAL_TYPE_LABELS, type MealType } from '../../../types/meal';
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { sumMealKcalTargets } from "../calorieCalc";
+import {
+  MEAL_TYPES,
+  MEAL_TYPE_LABELS,
+  type MealType,
+} from "../../../types/meal";
 
 export function MealBreakdownFields({
   values,
@@ -33,7 +37,11 @@ export function MealBreakdownFields({
           slotProps={{ htmlInput: { min: 0, step: 1 } }}
         />
       ))}
-      <Typography fontSize={12} color={remaining === 0 ? 'text.secondary' : 'error.main'} textAlign="right">
+      <Typography
+        fontSize={12}
+        color={remaining === 0 ? "text.secondary" : "error.main"}
+        textAlign="right"
+      >
         {remaining === 0
           ? `${allocated.toFixed(2)} / ${dailyTotal.toFixed(2)} kcal allocated`
           : remaining > 0

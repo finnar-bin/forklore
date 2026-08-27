@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
+import { useState } from "react";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 
 // Deleting a group cascades to its members, ingredients, recipes, and log
 // entries (schema.md's `on delete cascade` foreign keys) — no usage check
@@ -37,7 +37,11 @@ export function DeleteGroupDialog({
     try {
       await onConfirm();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete this group. Try again.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to delete this group. Try again.",
+      );
       setDeleting(false);
     }
   }
@@ -52,16 +56,21 @@ export function DeleteGroupDialog({
           </Alert>
         )}
         <DialogContentText>
-          This can't be undone. Every member will lose access, and this group's pantry, recipes,
-          and log entries will be permanently deleted.
+          This can't be undone. Every member will lose access, and this group's
+          pantry, recipes, and log entries will be permanently deleted.
         </DialogContentText>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={deleting}>
           Cancel
         </Button>
-        <Button color="error" variant="contained" onClick={handleConfirm} disabled={deleting}>
-          {deleting ? 'Deleting…' : 'Delete group'}
+        <Button
+          color="error"
+          variant="contained"
+          onClick={handleConfirm}
+          disabled={deleting}
+        >
+          {deleting ? "Deleting…" : "Delete group"}
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,7 +1,7 @@
-import { db } from '../lib/db';
-import { supabase } from '../lib/supabase';
-import { useSyncStore } from '../store/useSyncStore';
-import type { OutboxItem } from '../types/sync';
+import { db } from "../lib/db";
+import { supabase } from "../lib/supabase";
+import { useSyncStore } from "../store/useSyncStore";
+import type { OutboxItem } from "../types/sync";
 
 // See frontend-architecture.md "Offline sync — outbox pattern".
 const MAX_RETRY_ATTEMPTS = 5;
@@ -13,12 +13,12 @@ const MAX_DELAY_MS = 30000;
 // Mapped to a user-facing explanation — surfaced on /sync-status, so these must
 // read as plain language, not a raw Postgres/PostgREST error string.
 const PERMANENT_ERROR_MESSAGES: Record<string, string> = {
-  '42501': "You don't have permission to make this change.", // insufficient_privilege (RLS denial)
-  '23502': 'Some required information is missing.', // not_null_violation
-  '23503': 'This refers to something that no longer exists.', // foreign_key_violation
-  '23505': 'This already exists.', // unique_violation
-  '23514': "This change doesn't meet the app's rules.", // check_violation
-  '22P02': 'This change contains invalid data.', // invalid_text_representation (e.g. malformed UUID)
+  "42501": "You don't have permission to make this change.", // insufficient_privilege (RLS denial)
+  "23502": "Some required information is missing.", // not_null_violation
+  "23503": "This refers to something that no longer exists.", // foreign_key_violation
+  "23505": "This already exists.", // unique_violation
+  "23514": "This change doesn't meet the app's rules.", // check_violation
+  "22P02": "This change contains invalid data.", // invalid_text_representation (e.g. malformed UUID)
 };
 
 function isPermanentError(err: unknown): boolean {
@@ -28,27 +28,34 @@ function isPermanentError(err: unknown): boolean {
 
 function describeError(err: unknown): string {
   const code = (err as { code?: string } | null)?.code;
-  if (code && code in PERMANENT_ERROR_MESSAGES) return PERMANENT_ERROR_MESSAGES[code];
+  if (code && code in PERMANENT_ERROR_MESSAGES)
+    return PERMANENT_ERROR_MESSAGES[code];
   return "Couldn't save this change. Check your connection and try again.";
 }
 
 async function syncItem(item: OutboxItem): Promise<void> {
   const { table, operation, payload } = item;
 
-  if (operation === 'insert') {
+  if (operation === "insert") {
     const { error } = await supabase.from(table).insert(payload);
     if (error) throw error;
     return;
   }
 
   const { id, ...rest } = payload;
-  if (operation === 'update') {
-    const { error } = await supabase.from(table).update(rest).eq('id', id as string);
+  if (operation === "update") {
+    const { error } = await supabase
+      .from(table)
+      .update(rest)
+      .eq("id", id as string);
     if (error) throw error;
     return;
   }
 
-  const { error } = await supabase.from(table).delete().eq('id', id as string);
+  const { error } = await supabase
+    .from(table)
+    .delete()
+    .eq("id", id as string);
   if (error) throw error;
 }
 
@@ -74,7 +81,10 @@ function runChained(item: OutboxItem, task: () => Promise<void>): void {
   const key = chainKey(item);
   const prior = recordChains.get(key) ?? Promise.resolve();
   const next = prior.then(task, task);
-  recordChains.set(key, next.catch(() => {}));
+  recordChains.set(
+    key,
+    next.catch(() => {}),
+  );
 }
 
 // Tracks mutations currently in a retry chain (including ones waiting out a
@@ -83,17 +93,20 @@ let activeAttempts = 0;
 
 function beginAttempt(): void {
   activeAttempts += 1;
-  useSyncStore.getState().setStatus('syncing');
+  useSyncStore.getState().setStatus("syncing");
 }
 
 async function endAttempt(): Promise<void> {
   activeAttempts -= 1;
   if (activeAttempts > 0) return;
-  const failedCount = await db.outbox.where('status').equals('failed').count();
-  useSyncStore.getState().setStatus(failedCount > 0 ? 'error' : 'idle');
+  const failedCount = await db.outbox.where("status").equals("failed").count();
+  useSyncStore.getState().setStatus(failedCount > 0 ? "error" : "idle");
 }
 
-async function drainOutboxWithRetry(item: OutboxItem, attempt = 0): Promise<void> {
+async function drainOutboxWithRetry(
+  item: OutboxItem,
+  attempt = 0,
+): Promise<void> {
   if (attempt === 0) {
     if (draining.has(item.id)) return;
     draining.add(item.id);
@@ -107,14 +120,17 @@ async function drainOutboxWithRetry(item: OutboxItem, attempt = 0): Promise<void
     await endAttempt();
   } catch (err) {
     if (isPermanentError(err)) {
-      await db.outbox.update(item.id, { status: 'failed', error: describeError(err) });
+      await db.outbox.update(item.id, {
+        status: "failed",
+        error: describeError(err),
+      });
       draining.delete(item.id);
       await endAttempt();
       return;
     }
 
     if (attempt >= MAX_RETRY_ATTEMPTS) {
-      await db.outbox.update(item.id, { status: 'waiting_for_connectivity' });
+      await db.outbox.update(item.id, { status: "waiting_for_connectivity" });
       draining.delete(item.id);
       await endAttempt();
       return;
@@ -129,7 +145,7 @@ async function drainOutboxWithRetry(item: OutboxItem, attempt = 0): Promise<void
 
 export async function enqueueMutation(
   table: string,
-  operation: OutboxItem['operation'],
+  operation: OutboxItem["operation"],
   payload: Record<string, unknown>,
 ): Promise<string> {
   const item: OutboxItem = {
@@ -137,7 +153,7 @@ export async function enqueueMutation(
     table,
     operation,
     payload,
-    status: 'pending',
+    status: "pending",
     created_at: new Date().toISOString(),
   };
   await db.outbox.add(item);
@@ -148,7 +164,10 @@ export async function enqueueMutation(
 // Re-attempts anything already sitting in the outbox as `pending` from a
 // previous session (e.g. the tab closed mid-backoff). Safe to call repeatedly.
 export async function drainPendingOutbox(): Promise<void> {
-  const items = await db.outbox.where('status').equals('pending').sortBy('created_at');
+  const items = await db.outbox
+    .where("status")
+    .equals("pending")
+    .sortBy("created_at");
   items.forEach((item) => runChained(item, () => drainOutboxWithRetry(item)));
 }
 
@@ -171,7 +190,10 @@ export async function retryFailedItem(itemId: string): Promise<void> {
       await syncItem(item);
       await db.outbox.delete(item.id);
     } catch (err) {
-      await db.outbox.update(item.id, { status: 'failed', error: describeError(err) });
+      await db.outbox.update(item.id, {
+        status: "failed",
+        error: describeError(err),
+      });
     } finally {
       draining.delete(itemId);
       await endAttempt();
@@ -193,15 +215,18 @@ export async function retryFailedItem(itemId: string): Promise<void> {
 export async function discardFailedItem(itemId: string): Promise<void> {
   const item = await db.outbox.get(itemId);
   await db.outbox.delete(itemId);
-  if (item?.operation === 'insert') {
+  if (item?.operation === "insert") {
     const id = item.payload.id as string | undefined;
     if (id) await db.table(item.table).delete(id);
   }
 }
 
 async function retryWaitingForConnectivity(): Promise<void> {
-  const items = await db.outbox.where('status').equals('waiting_for_connectivity').toArray();
+  const items = await db.outbox
+    .where("status")
+    .equals("waiting_for_connectivity")
+    .toArray();
   items.forEach((item) => runChained(item, () => drainOutboxWithRetry(item)));
 }
 
-window.addEventListener('online', () => void retryWaitingForConnectivity());
+window.addEventListener("online", () => void retryWaitingForConnectivity());

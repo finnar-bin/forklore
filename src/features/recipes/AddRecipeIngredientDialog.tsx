@@ -1,27 +1,31 @@
-import { useEffect, useMemo, useState } from 'react';
-import Alert from '@mui/material/Alert';
-import Autocomplete from '@mui/material/Autocomplete';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import InputAdornment from '@mui/material/InputAdornment';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import { useAppStore } from '../../store/useAppStore';
-import { kcalPerUnit } from '../../lib/kcal';
-import { useMyGroups } from '../groups/useMyGroups';
-import { useMyProfile } from '../profiles/useMyProfile';
-import { createIngredient, fetchIngredients, type IngredientInput } from '../pantry/api';
-import { IngredientAutocompleteOption } from '../pantry/IngredientAutocompleteOption';
-import { IngredientForm } from '../pantry/IngredientForm';
-import { IngredientKcalHeader } from '../pantry/IngredientKcalHeader';
-import type { Ingredient } from '../../types/ingredient';
+import { useEffect, useMemo, useState } from "react";
+import Alert from "@mui/material/Alert";
+import Autocomplete from "@mui/material/Autocomplete";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import InputAdornment from "@mui/material/InputAdornment";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import { useAppStore } from "../../store/useAppStore";
+import { kcalPerUnit } from "../../lib/kcal";
+import { useMyGroups } from "../groups/useMyGroups";
+import { useMyProfile } from "../profiles/useMyProfile";
+import {
+  createIngredient,
+  fetchIngredients,
+  type IngredientInput,
+} from "../pantry/api";
+import { IngredientAutocompleteOption } from "../pantry/IngredientAutocompleteOption";
+import { IngredientForm } from "../pantry/IngredientForm";
+import { IngredientKcalHeader } from "../pantry/IngredientKcalHeader";
+import type { Ingredient } from "../../types/ingredient";
 
 // Purely client-side — adding an *existing* ingredient to the recipe only
 // updates the in-memory draft; the parent commits it (along with every
@@ -72,7 +76,7 @@ function AddRecipeIngredientForm({
   onClose: () => void;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
 }) {
-  const [mode, setMode] = useState<'existing' | 'new'>('existing');
+  const [mode, setMode] = useState<"existing" | "new">("existing");
 
   return (
     <>
@@ -90,7 +94,7 @@ function AddRecipeIngredientForm({
       </Box>
 
       {/* Remounts (and so resets) on toggle — each mode owns its own state. */}
-      {mode === 'existing' ? (
+      {mode === "existing" ? (
         <ExistingIngredientForm
           groupId={groupId}
           excludeIngredientIds={excludeIngredientIds}
@@ -123,10 +127,12 @@ function ExistingIngredientForm({
   // ("Community pantry") and PantryList.tsx's identical derivation.
   const profile = useMyProfile(userId);
   const groups = useMyGroups(userId);
-  const membership = groupId ? (groups ?? []).find((m) => m.group.id === groupId) : undefined;
+  const membership = groupId
+    ? (groups ?? []).find((m) => m.group.id === groupId)
+    : undefined;
   const communityEnabled = groupId
-    ? membership?.group.community_pantry_enabled ?? false
-    : profile?.community_pantry_enabled ?? false;
+    ? (membership?.group.community_pantry_enabled ?? false)
+    : (profile?.community_pantry_enabled ?? false);
 
   // fetchIngredients only ever returns this recipe's own context (personal
   // or `groupId`) plus, when opted in, every community ingredient merged in
@@ -136,17 +142,19 @@ function ExistingIngredientForm({
   // this context's own name needs distinguishing, so a same-named community
   // ingredient and a context-owned one aren't indistinguishable in the list.
   function groupLabel(isCommunity: boolean): string {
-    if (isCommunity) return 'Community';
-    return groupId ? membership?.group.name ?? 'Group' : 'Personal';
+    if (isCommunity) return "Community";
+    return groupId ? (membership?.group.name ?? "Group") : "Personal";
   }
 
   const [options, setOptions] = useState<Ingredient[] | null>(null);
   const [selected, setSelected] = useState<Ingredient | null>(null);
-  const [quantity, setQuantity] = useState('');
+  const [quantity, setQuantity] = useState("");
 
   useEffect(() => {
     if (!userId) return;
-    fetchIngredients(userId, groupId, communityEnabled).then(setOptions).catch(() => setOptions([]));
+    fetchIngredients(userId, groupId, communityEnabled)
+      .then(setOptions)
+      .catch(() => setOptions([]));
   }, [userId, groupId, communityEnabled]);
 
   const availableOptions = useMemo(
@@ -155,7 +163,8 @@ function ExistingIngredientForm({
   );
 
   const parsedQuantity = Number(quantity);
-  const canAdd = selected !== null && Number.isFinite(parsedQuantity) && parsedQuantity > 0;
+  const canAdd =
+    selected !== null && Number.isFinite(parsedQuantity) && parsedQuantity > 0;
 
   function handleAdd() {
     if (!selected || !canAdd) return;
@@ -164,14 +173,14 @@ function ExistingIngredientForm({
 
   return (
     <>
-      <DialogContent sx={{ pt: '12px !important' }}>
+      <DialogContent sx={{ pt: "12px !important" }}>
         <Stack spacing={2.5}>
           {options === null ? (
             <CircularProgress size={24} />
           ) : options.length === 0 ? (
             <Alert severity="info">
-              {groupId ? "This group's pantry" : 'Your pantry'} is empty. Switch to "New ingredient" to
-              create one.
+              {groupId ? "This group's pantry" : "Your pantry"} is empty. Switch
+              to "New ingredient" to create one.
             </Alert>
           ) : (
             <>
@@ -179,7 +188,10 @@ function ExistingIngredientForm({
                 <IngredientKcalHeader
                   ingredient={selected}
                   groupLabel={groupLabel(selected.is_community)}
-                  kcal={kcalPerUnit(selected.kcal, selected.quantity) * parsedQuantity}
+                  kcal={
+                    kcalPerUnit(selected.kcal, selected.quantity) *
+                    parsedQuantity
+                  }
                 />
               )}
               <Autocomplete
@@ -198,7 +210,12 @@ function ExistingIngredientForm({
                   />
                 )}
                 renderInput={(params) => (
-                  <TextField {...params} label="Ingredient" required autoFocus />
+                  <TextField
+                    {...params}
+                    label="Ingredient"
+                    required
+                    autoFocus
+                  />
                 )}
               />
               <TextField
@@ -214,7 +231,9 @@ function ExistingIngredientForm({
                   input: selected
                     ? {
                         endAdornment: (
-                          <InputAdornment position="end">{selected.unit}</InputAdornment>
+                          <InputAdornment position="end">
+                            {selected.unit}
+                          </InputAdornment>
                         ),
                       }
                     : undefined,
@@ -260,19 +279,35 @@ function NewIngredientForm({
 
   async function handleCreate(input: IngredientInput) {
     if (!userId) return;
-    const ingredient = await createIngredient(pendingId, userId, groupId, input);
+    const ingredient = await createIngredient(
+      pendingId,
+      userId,
+      groupId,
+      input,
+    );
     setCreated(ingredient);
   }
 
   if (!created) {
     return (
-      <DialogContent sx={{ pt: '12px !important' }}>
-        <IngredientForm ingredientId={pendingId} submitLabel="Create ingredient" onSubmit={handleCreate} />
+      <DialogContent sx={{ pt: "12px !important" }}>
+        <IngredientForm
+          ingredientId={pendingId}
+          submitLabel="Create ingredient"
+          onSubmit={handleCreate}
+        />
       </DialogContent>
     );
   }
 
-  return <RecipeQuantityStep ingredient={created} groupId={groupId} onClose={onClose} onAdd={onAdd} />;
+  return (
+    <RecipeQuantityStep
+      ingredient={created}
+      groupId={groupId}
+      onClose={onClose}
+      onAdd={onAdd}
+    />
+  );
 }
 
 function RecipeQuantityStep({
@@ -286,16 +321,17 @@ function RecipeQuantityStep({
   onClose: () => void;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
 }) {
-  const [quantityUsed, setQuantityUsed] = useState('');
+  const [quantityUsed, setQuantityUsed] = useState("");
   const parsedQuantityUsed = Number(quantityUsed);
   const canAdd = Number.isFinite(parsedQuantityUsed) && parsedQuantityUsed > 0;
 
   return (
     <>
-      <DialogContent sx={{ pt: '12px !important' }}>
+      <DialogContent sx={{ pt: "12px !important" }}>
         <Stack spacing={2.5}>
           <Alert severity="success">
-            {ingredient.name} added to {groupId ? "this group's pantry" : 'your pantry'}.
+            {ingredient.name} added to{" "}
+            {groupId ? "this group's pantry" : "your pantry"}.
           </Alert>
           <TextField
             label="Quantity used in this recipe"
@@ -307,7 +343,13 @@ function RecipeQuantityStep({
             autoFocus
             slotProps={{
               htmlInput: { min: 0, step: 0.01 },
-              input: { endAdornment: <InputAdornment position="end">{ingredient.unit}</InputAdornment> },
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {ingredient.unit}
+                  </InputAdornment>
+                ),
+              },
             }}
           />
         </Stack>

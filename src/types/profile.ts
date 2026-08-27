@@ -1,12 +1,13 @@
-import type { MealType } from './meal';
+import type { MealType } from "./meal";
 
-export type BiologicalSex = 'male' | 'female';
+export type BiologicalSex = "male" | "female";
 
-export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'very_active' | 'extremely_active';
+export type ActivityLevel =
+  "sedentary" | "light" | "moderate" | "very_active" | "extremely_active";
 
-export type GoalType = 'lose' | 'gain' | 'maintain';
+export type GoalType = "lose" | "gain" | "maintain";
 
-export type GoalPace = 'steady' | 'aggressive' | 'custom';
+export type GoalPace = "steady" | "aggressive" | "custom";
 
 export interface Profile {
   id: string;
@@ -44,10 +45,15 @@ export interface Profile {
 // satisfy Profile's full shape just to reuse this mapping.
 type MealKcalTargetColumns = Pick<
   Profile,
-  'breakfast_kcal_target' | 'lunch_kcal_target' | 'dinner_kcal_target' | 'snack_kcal_target'
+  | "breakfast_kcal_target"
+  | "lunch_kcal_target"
+  | "dinner_kcal_target"
+  | "snack_kcal_target"
 >;
 
-export function getMealKcalTargets(profile: MealKcalTargetColumns): Record<MealType, number | null> {
+export function getMealKcalTargets(
+  profile: MealKcalTargetColumns,
+): Record<MealType, number | null> {
   return {
     breakfast: profile.breakfast_kcal_target,
     lunch: profile.lunch_kcal_target,

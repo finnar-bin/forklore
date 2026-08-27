@@ -1,9 +1,9 @@
-import { useState, type FormEvent } from 'react';
-import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import type { GroupInput } from './api';
+import { useState, type FormEvent } from "react";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import type { GroupInput } from "./api";
 
 export function GroupForm({
   initialValues,
@@ -14,8 +14,10 @@ export function GroupForm({
   submitLabel: string;
   onSubmit: (input: GroupInput) => Promise<void>;
 }) {
-  const [name, setName] = useState(initialValues?.name ?? '');
-  const [description, setDescription] = useState(initialValues?.description ?? '');
+  const [name, setName] = useState(initialValues?.name ?? "");
+  const [description, setDescription] = useState(
+    initialValues?.description ?? "",
+  );
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -26,10 +28,12 @@ export function GroupForm({
     try {
       await onSubmit({
         name,
-        description: description.trim() === '' ? null : description.trim(),
+        description: description.trim() === "" ? null : description.trim(),
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
+      setError(
+        err instanceof Error ? err.message : "Something went wrong. Try again.",
+      );
     } finally {
       // try/finally (not just the catch branch) — unlike CreateGroupDialog,
       // which unmounts this form on success, GroupSettings' inline edit
@@ -62,8 +66,13 @@ export function GroupForm({
         minRows={2}
       />
 
-      <Button type="submit" variant="contained" size="large" disabled={submitting || name.trim() === ''}>
-        {submitting ? 'Saving…' : submitLabel}
+      <Button
+        type="submit"
+        variant="contained"
+        size="large"
+        disabled={submitting || name.trim() === ""}
+      >
+        {submitting ? "Saving…" : submitLabel}
       </Button>
     </Stack>
   );

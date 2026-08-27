@@ -1,14 +1,14 @@
-import { useMemo, useState } from 'react';
-import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import { SelectableCard } from '../../components/SelectableCard';
+import { useMemo, useState } from "react";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { SelectableCard } from "../../components/SelectableCard";
 import {
   calculateAge,
   calculateBmr,
@@ -21,23 +21,30 @@ import {
   mealKcalTargetsToNumbers,
   resolveCalorieTarget,
   type CalorieSelection,
-} from '../onboarding/calorieCalc';
-import { GOAL_TYPES } from '../onboarding/onboardingOptions';
-import { CalorieTargetStep } from '../onboarding/steps/CalorieTargetStep';
-import { updateGoal } from './api';
-import { getMealKcalTargets, type GoalType, type Profile } from '../../types/profile';
-import type { MealType } from '../../types/meal';
+} from "../onboarding/calorieCalc";
+import { GOAL_TYPES } from "../onboarding/onboardingOptions";
+import { CalorieTargetStep } from "../onboarding/steps/CalorieTargetStep";
+import { updateGoal } from "./api";
+import {
+  getMealKcalTargets,
+  type GoalType,
+  type Profile,
+} from "../../types/profile";
+import type { MealType } from "../../types/meal";
 
-const STEP_LABELS = ['Goal', 'Calorie target'];
+const STEP_LABELS = ["Goal", "Calorie target"];
 
 // 'custom' is valid for any goal type; 'maintain' only pairs with a
 // 'maintain' goalType, 'steady'/'aggressive' only with lose/gain — see
 // effectiveSelection's own comment for why this matters.
-function isSelectionValidForGoalType(selection: CalorieSelection | '', goalType: GoalType): boolean {
-  if (selection === '') return false;
-  if (selection === 'custom') return true;
-  if (selection === 'maintain') return goalType === 'maintain';
-  return goalType !== 'maintain';
+function isSelectionValidForGoalType(
+  selection: CalorieSelection | "",
+  goalType: GoalType,
+): boolean {
+  if (selection === "") return false;
+  if (selection === "custom") return true;
+  if (selection === "maintain") return goalType === "maintain";
+  return goalType !== "maintain";
 }
 
 // Two steps mirroring onboarding's own Goal + Calorie target steps (per
@@ -70,7 +77,12 @@ export function EditGoalDialog({
       {/* Mounted only while open, same reasoning as LogWeightDialog — form
           state starts fresh (from the current profile) each time. */}
       {open && (
-        <EditGoalForm userId={userId} profile={profile} currentWeight={currentWeight} onSaved={onSaved} />
+        <EditGoalForm
+          userId={userId}
+          profile={profile}
+          currentWeight={currentWeight}
+          onSaved={onSaved}
+        />
       )}
     </Dialog>
   );
@@ -88,46 +100,60 @@ function EditGoalForm({
   onSaved: () => void;
 }) {
   const [step, setStep] = useState<0 | 1>(0);
-  const [goalType, setGoalType] = useState<GoalType>(profile.goal_type ?? 'maintain');
+  const [goalType, setGoalType] = useState<GoalType>(
+    profile.goal_type ?? "maintain",
+  );
   const [goalWeight, setGoalWeight] = useState(
-    profile.goal_weight_kg !== null ? String(profile.goal_weight_kg) : '',
+    profile.goal_weight_kg !== null ? String(profile.goal_weight_kg) : "",
   );
   // Pre-filled from the caller's existing goal_pace/daily_kcal_target
   // (rather than starting blank like onboarding does) — editing an
   // existing goal shouldn't force re-picking a calorie target that isn't
   // actually changing.
-  const [calorieSelection, setCalorieSelection] = useState<CalorieSelection | ''>(() => {
-    if (profile.goal_pace === 'custom') return 'custom';
-    if (profile.goal_pace === 'steady' || profile.goal_pace === 'aggressive') return profile.goal_pace;
-    if (profile.goal_type === 'maintain') return 'maintain';
-    return '';
+  const [calorieSelection, setCalorieSelection] = useState<
+    CalorieSelection | ""
+  >(() => {
+    if (profile.goal_pace === "custom") return "custom";
+    if (profile.goal_pace === "steady" || profile.goal_pace === "aggressive")
+      return profile.goal_pace;
+    if (profile.goal_type === "maintain") return "maintain";
+    return "";
   });
   const [customKcal, setCustomKcal] = useState(
-    profile.goal_pace === 'custom' && profile.daily_kcal_target !== null ? String(profile.daily_kcal_target) : '',
+    profile.goal_pace === "custom" && profile.daily_kcal_target !== null
+      ? String(profile.daily_kcal_target)
+      : "",
   );
-  const [mealBreakdownEnabled, setMealBreakdownEnabled] = useState(profile.meal_breakdown_enabled);
-  const [mealKcalTargets, setMealKcalTargets] = useState<Record<MealType, string>>(() => {
+  const [mealBreakdownEnabled, setMealBreakdownEnabled] = useState(
+    profile.meal_breakdown_enabled,
+  );
+  const [mealKcalTargets, setMealKcalTargets] = useState<
+    Record<MealType, string>
+  >(() => {
     const targets = getMealKcalTargets(profile);
     return {
-      breakfast: targets.breakfast !== null ? String(targets.breakfast) : '',
-      lunch: targets.lunch !== null ? String(targets.lunch) : '',
-      dinner: targets.dinner !== null ? String(targets.dinner) : '',
-      snack: targets.snack !== null ? String(targets.snack) : '',
+      breakfast: targets.breakfast !== null ? String(targets.breakfast) : "",
+      lunch: targets.lunch !== null ? String(targets.lunch) : "",
+      dinner: targets.dinner !== null ? String(targets.dinner) : "",
+      snack: targets.snack !== null ? String(targets.snack) : "",
     };
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const needsGoalWeight = goalType === 'lose' || goalType === 'gain';
-  const goalWeightEntered = goalWeight.trim() !== '';
+  const needsGoalWeight = goalType === "lose" || goalType === "gain";
+  const goalWeightEntered = goalWeight.trim() !== "";
   const goalWeightError =
-    needsGoalWeight && goalWeightEntered && currentWeight !== null
-      && !isGoalWeightValid(goalType, String(currentWeight), goalWeight)
-      ? goalType === 'lose'
-        ? 'Goal weight should be lower than your current weight'
-        : 'Goal weight should be higher than your current weight'
+    needsGoalWeight &&
+    goalWeightEntered &&
+    currentWeight !== null &&
+    !isGoalWeightValid(goalType, String(currentWeight), goalWeight)
+      ? goalType === "lose"
+        ? "Goal weight should be lower than your current weight"
+        : "Goal weight should be higher than your current weight"
       : null;
-  const step1Valid = !needsGoalWeight || (goalWeightEntered && goalWeightError === null);
+  const step1Valid =
+    !needsGoalWeight || (goalWeightEntered && goalWeightError === null);
 
   const age = profile.birthdate ? calculateAge(profile.birthdate) : null;
   // Same inputs onboarding's own BMR/TDEE calculation used — all already on
@@ -136,13 +162,34 @@ function EditGoalForm({
   // `sex` alongside `options` so CalorieTargetStep gets a properly narrowed
   // non-null value instead of a manual assertion.
   const calorieContext = useMemo(() => {
-    if (age === null || !profile.sex || !profile.activity_level || !profile.height_cm || currentWeight === null) {
+    if (
+      age === null ||
+      !profile.sex ||
+      !profile.activity_level ||
+      !profile.height_cm ||
+      currentWeight === null
+    ) {
       return null;
     }
-    const bmr = calculateBmr({ sex: profile.sex, weightKg: currentWeight, heightCm: profile.height_cm, age });
+    const bmr = calculateBmr({
+      sex: profile.sex,
+      weightKg: currentWeight,
+      heightCm: profile.height_cm,
+      age,
+    });
     const tdee = calculateTdee(bmr, profile.activity_level);
-    return { sex: profile.sex, options: calculateCalorieOptions(tdee, goalType, profile.sex) };
-  }, [age, profile.sex, profile.activity_level, profile.height_cm, currentWeight, goalType]);
+    return {
+      sex: profile.sex,
+      options: calculateCalorieOptions(tdee, goalType, profile.sex),
+    };
+  }, [
+    age,
+    profile.sex,
+    profile.activity_level,
+    profile.height_cm,
+    currentWeight,
+    goalType,
+  ]);
 
   // A selection carried over from before a goalType change can point at an
   // option that no longer exists — switching from lose/gain to maintain
@@ -155,20 +202,32 @@ function EditGoalForm({
   // matching preset), which handleSave already treats as "nothing changed"
   // — but step2Valid must agree, or "Save goal" stays enabled with no
   // visible selection and silently keeps the old target.
-  const effectiveSelection: CalorieSelection | '' = isSelectionValidForGoalType(calorieSelection, goalType)
+  const effectiveSelection: CalorieSelection | "" = isSelectionValidForGoalType(
+    calorieSelection,
+    goalType,
+  )
     ? calorieSelection
-    : '';
+    : "";
 
-  const dailyTotal = calorieContext ? getResolvedDailyKcal(effectiveSelection, customKcal, calorieContext.options) : null;
+  const dailyTotal = calorieContext
+    ? getResolvedDailyKcal(
+        effectiveSelection,
+        customKcal,
+        calorieContext.options,
+      )
+    : null;
 
   // No calorie suggestions to validate when calorieContext is null (missing
   // profile data) — handleSave below keeps the existing goal_pace/
   // daily_kcal_target unchanged in that case, so there's nothing to block.
   const step2Valid =
     calorieContext === null ||
-    (effectiveSelection !== '' &&
-      (effectiveSelection !== 'custom' ||
-        isCustomKcalValid(Number(customKcal), calorieContext.options.maintenanceKcal)) &&
+    (effectiveSelection !== "" &&
+      (effectiveSelection !== "custom" ||
+        isCustomKcalValid(
+          Number(customKcal),
+          calorieContext.options.maintenanceKcal,
+        )) &&
       isMealBreakdownValid(mealBreakdownEnabled, mealKcalTargets, dailyTotal));
 
   async function handleSave() {
@@ -177,8 +236,12 @@ function EditGoalForm({
     try {
       let goalPace = profile.goal_pace;
       let dailyKcalTarget = profile.daily_kcal_target;
-      if (calorieContext && effectiveSelection !== '') {
-        const resolved = resolveCalorieTarget(effectiveSelection, customKcal, calorieContext.options);
+      if (calorieContext && effectiveSelection !== "") {
+        const resolved = resolveCalorieTarget(
+          effectiveSelection,
+          customKcal,
+          calorieContext.options,
+        );
         if (resolved) {
           goalPace = resolved.goalPace;
           dailyKcalTarget = resolved.dailyKcalTarget;
@@ -190,19 +253,25 @@ function EditGoalForm({
         goalPace,
         dailyKcalTarget,
         mealBreakdownEnabled,
-        mealKcalTargets: mealBreakdownEnabled ? mealKcalTargetsToNumbers(mealKcalTargets) : null,
+        mealKcalTargets: mealBreakdownEnabled
+          ? mealKcalTargetsToNumbers(mealKcalTargets)
+          : null,
       });
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
+      setError(
+        err instanceof Error ? err.message : "Something went wrong. Try again.",
+      );
       setSubmitting(false);
     }
   }
 
   return (
     <>
-      <DialogTitle>{step === 0 ? 'Edit goal' : 'Daily calorie target'}</DialogTitle>
-      <DialogContent sx={{ pt: '12px !important' }}>
+      <DialogTitle>
+        {step === 0 ? "Edit goal" : "Daily calorie target"}
+      </DialogTitle>
+      <DialogContent sx={{ pt: "12px !important" }}>
         <Stack spacing={2.5}>
           {error && <Alert severity="error">{error}</Alert>}
 
@@ -259,8 +328,9 @@ function EditGoalForm({
               />
             ) : (
               <Alert severity="info">
-                We don't have enough profile info (height, activity level, or a logged weight) to suggest a calorie
-                target right now — your existing target will be kept as-is.
+                We don't have enough profile info (height, activity level, or a
+                logged weight) to suggest a calorie target right now — your
+                existing target will be kept as-is.
               </Alert>
             ))}
         </Stack>
@@ -272,12 +342,20 @@ function EditGoalForm({
           </Button>
         )}
         {step === 0 ? (
-          <Button variant="contained" onClick={() => setStep(1)} disabled={!step1Valid}>
+          <Button
+            variant="contained"
+            onClick={() => setStep(1)}
+            disabled={!step1Valid}
+          >
             Continue
           </Button>
         ) : (
-          <Button variant="contained" onClick={handleSave} disabled={!step2Valid || submitting}>
-            {submitting ? 'Saving…' : 'Save goal'}
+          <Button
+            variant="contained"
+            onClick={handleSave}
+            disabled={!step2Valid || submitting}
+          >
+            {submitting ? "Saving…" : "Save goal"}
           </Button>
         )}
       </DialogActions>

@@ -10,7 +10,7 @@ export interface Group {
   created_at: string;
 }
 
-export type GroupRole = 'owner' | 'member';
+export type GroupRole = "owner" | "member";
 
 export interface GroupMember {
   group_id: string;

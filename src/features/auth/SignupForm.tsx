@@ -1,17 +1,17 @@
-import { useState, type FormEvent } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
-import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import Link from '@mui/material/Link';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import { signUpWithEmail } from './api';
-import { friendlyAuthError } from './errors';
+import { useState, type FormEvent } from "react";
+import { Link as RouterLink } from "react-router-dom";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Link from "@mui/material/Link";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { signUpWithEmail } from "./api";
+import { friendlyAuthError } from "./errors";
 
 export function SignupForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [confirmEmailSent, setConfirmEmailSent] = useState(false);
@@ -37,7 +37,8 @@ export function SignupForm() {
           Check your email
         </Typography>
         <Alert severity="success">
-          We sent a confirmation link to {email}. Follow it to finish creating your account.
+          We sent a confirmation link to {email}. Follow it to finish creating
+          your account.
         </Alert>
       </Stack>
     );
@@ -71,12 +72,20 @@ export function SignupForm() {
         helperText="At least 6 characters"
       />
 
-      <Button type="submit" variant="contained" size="large" disabled={submitting}>
-        {submitting ? 'Creating account…' : 'Create account'}
+      <Button
+        type="submit"
+        variant="contained"
+        size="large"
+        disabled={submitting}
+      >
+        {submitting ? "Creating account…" : "Create account"}
       </Button>
 
       <Typography variant="body2" color="text.secondary" textAlign="center">
-        Already have an account? <Link component={RouterLink} to="/login">Log in</Link>
+        Already have an account?{" "}
+        <Link component={RouterLink} to="/login">
+          Log in
+        </Link>
       </Typography>
     </Stack>
   );

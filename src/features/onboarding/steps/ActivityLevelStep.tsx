@@ -1,13 +1,13 @@
-import Stack from '@mui/material/Stack';
-import { SelectableCard } from '../../../components/SelectableCard';
-import { ACTIVITY_LEVELS } from '../onboardingOptions';
-import type { ActivityLevel } from '../../../types/profile';
+import Stack from "@mui/material/Stack";
+import { SelectableCard } from "../../../components/SelectableCard";
+import { ACTIVITY_LEVELS } from "../onboardingOptions";
+import type { ActivityLevel } from "../../../types/profile";
 
 export function ActivityLevelStep({
   activityLevel,
   onChange,
 }: {
-  activityLevel: ActivityLevel | '';
+  activityLevel: ActivityLevel | "";
   onChange: (value: ActivityLevel) => void;
 }) {
   return (

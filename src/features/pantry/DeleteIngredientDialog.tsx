@@ -1,16 +1,20 @@
-import { useEffect, useState } from 'react';
-import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import { checkCommunityIngredientUsage, checkIngredientUsage, type IngredientUsage } from './api';
+import { useEffect, useState } from "react";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import {
+  checkCommunityIngredientUsage,
+  checkIngredientUsage,
+  type IngredientUsage,
+} from "./api";
 
 export function DeleteIngredientDialog({
   open,
@@ -33,7 +37,9 @@ export function DeleteIngredientDialog({
   onConfirm: () => Promise<void>;
 }) {
   const [usage, setUsage] = useState<IngredientUsage[] | null>(null);
-  const [communityUsageCount, setCommunityUsageCount] = useState<number | null>(null);
+  const [communityUsageCount, setCommunityUsageCount] = useState<number | null>(
+    null,
+  );
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,7 +47,9 @@ export function DeleteIngredientDialog({
     // Cached once fetched — the dialog is mounted for a single fixed
     // ingredient, so reopening it doesn't need to refetch.
     if (!open || usage !== null) return;
-    checkIngredientUsage(ingredientId).then(setUsage).catch(() => setUsage([]));
+    checkIngredientUsage(ingredientId)
+      .then(setUsage)
+      .catch(() => setUsage([]));
   }, [open, ingredientId, usage]);
 
   useEffect(() => {
@@ -70,7 +78,11 @@ export function DeleteIngredientDialog({
     try {
       await onConfirm();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete this ingredient. Try again.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to delete this ingredient. Try again.",
+      );
     } finally {
       setDeleting(false);
     }
@@ -96,8 +108,9 @@ export function DeleteIngredientDialog({
             {usage.length > 0 && (
               <>
                 <DialogContentText>
-                  This ingredient is used in {usage.length} recipe{usage.length > 1 ? 's' : ''}. It
-                  will also be removed from these:
+                  This ingredient is used in {usage.length} recipe
+                  {usage.length > 1 ? "s" : ""}. It will also be removed from
+                  these:
                 </DialogContentText>
                 <List dense>
                   {usage.map((u) => (
@@ -110,8 +123,9 @@ export function DeleteIngredientDialog({
             )}
             {unnamedUsageCount > 0 && (
               <DialogContentText sx={{ mt: usage.length > 0 ? 1.5 : 0 }}>
-                It's also used in {unnamedUsageCount} other recipe{unnamedUsageCount > 1 ? 's' : ''} you
-                don't have access to. Deleting it will affect those too.
+                It's also used in {unnamedUsageCount} other recipe
+                {unnamedUsageCount > 1 ? "s" : ""} you don't have access to.
+                Deleting it will affect those too.
               </DialogContentText>
             )}
           </>
@@ -125,9 +139,13 @@ export function DeleteIngredientDialog({
           color="error"
           variant="contained"
           onClick={handleConfirm}
-          disabled={usage === null || (isCommunity && communityUsageCount === null) || deleting}
+          disabled={
+            usage === null ||
+            (isCommunity && communityUsageCount === null) ||
+            deleting
+          }
         >
-          {deleting ? 'Deleting…' : 'Delete ingredient'}
+          {deleting ? "Deleting…" : "Delete ingredient"}
         </Button>
       </DialogActions>
     </Dialog>

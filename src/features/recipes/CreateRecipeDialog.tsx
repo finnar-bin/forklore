@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import { useAppStore } from '../../store/useAppStore';
-import { createRecipe } from './api';
-import { RecipeForm } from './RecipeForm';
-import type { Recipe, RecipeInput } from '../../types/recipe';
+import { useState } from "react";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import { useAppStore } from "../../store/useAppStore";
+import { createRecipe } from "./api";
+import { RecipeForm } from "./RecipeForm";
+import type { Recipe, RecipeInput } from "../../types/recipe";
 
 export function CreateRecipeDialog({
   open,
@@ -50,8 +50,12 @@ export function CreateRecipeDialog({
       <DialogTitle>Add recipe</DialogTitle>
       {/* Extra top padding — otherwise the first field's floating label
           clips against the dialog content's scroll edge once focused. */}
-      <DialogContent sx={{ pt: '12px !important' }}>
-        <RecipeForm recipeId={pendingId} submitLabel="Add recipe" onSubmit={handleSubmit} />
+      <DialogContent sx={{ pt: "12px !important" }}>
+        <RecipeForm
+          recipeId={pendingId}
+          submitLabel="Add recipe"
+          onSubmit={handleSubmit}
+        />
       </DialogContent>
     </Dialog>
   );

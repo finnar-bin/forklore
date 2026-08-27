@@ -1,59 +1,228 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<meta charset="utf-8">
-<style>
-  body { margin:0; padding:40px; background:#e8ddc0; font-family:-apple-system,Inter,sans-serif; display:flex; justify-content:center; }
-  .rfl{--bg:#F3EAD3;--card:#FDF6E3;--text:#4A555A;--muted:#8A9691;--green:#8DA101;--greend:#5C6E00;--sh1:0 1px 2px rgba(92,106,82,.06);--sh2:0 6px 16px rgba(92,106,82,.12)}
-  svg { display:block; }
-</style>
-</head>
-<body>
-<div class="rfl" style="width:340px;background:var(--bg);border-radius:20px;overflow:hidden">
-  <div style="height:150px;background:linear-gradient(135deg,#E4D1A0,#C9AF74);position:relative;display:flex;align-items:center;justify-content:center;color:rgba(92,106,82,.4)">
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.5-2h5L16 7"/></svg>
-    <div style="position:absolute;top:14px;left:14px;width:32px;height:32px;border-radius:16px;background:rgba(253,246,227,.85);display:flex;align-items:center;justify-content:center;box-shadow:var(--sh1);color:var(--text)">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
-    </div>
-  </div>
-  <div style="padding:16px;margin-top:-24px;position:relative">
-    <div style="background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh2)">
-      <div style="font-size:18px;font-weight:500;color:var(--text)">Chicken fried rice</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:2px">Family group &middot; 4 servings</div>
-      <div style="display:flex;gap:10px;margin-top:14px">
-        <div style="flex:1;background:var(--bg);border-radius:12px;padding:10px;text-align:center">
-          <div style="font-size:18px;font-weight:500;color:var(--greend)">1,240</div>
-          <div style="font-size:11px;color:var(--muted)">total kcal</div>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        margin: 0;
+        padding: 40px;
+        background: #e8ddc0;
+        font-family: -apple-system, Inter, sans-serif;
+        display: flex;
+        justify-content: center;
+      }
+      .rfl {
+        --bg: #f3ead3;
+        --card: #fdf6e3;
+        --text: #4a555a;
+        --muted: #8a9691;
+        --green: #8da101;
+        --greend: #5c6e00;
+        --sh1: 0 1px 2px rgba(92, 106, 82, 0.06);
+        --sh2: 0 6px 16px rgba(92, 106, 82, 0.12);
+      }
+      svg {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="rfl"
+      style="
+        width: 340px;
+        background: var(--bg);
+        border-radius: 20px;
+        overflow: hidden;
+      "
+    >
+      <div
+        style="
+          height: 150px;
+          background: linear-gradient(135deg, #e4d1a0, #c9af74);
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: rgba(92, 106, 82, 0.4);
+        "
+      >
+        <svg
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="3" y="7" width="18" height="13" rx="2" />
+          <circle cx="12" cy="13.5" r="3.5" />
+          <path d="M8 7l1.5-2h5L16 7" />
+        </svg>
+        <div
+          style="
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            width: 32px;
+            height: 32px;
+            border-radius: 16px;
+            background: rgba(253, 246, 227, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--sh1);
+            color: var(--text);
+          "
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M19 12H5M11 18l-6-6 6-6" />
+          </svg>
         </div>
-        <div style="flex:1;background:var(--bg);border-radius:12px;padding:10px;text-align:center">
-          <div style="font-size:18px;font-weight:500;color:var(--greend)">310</div>
-          <div style="font-size:11px;color:var(--muted)">per serving</div>
+      </div>
+      <div style="padding: 16px; margin-top: -24px; position: relative">
+        <div
+          style="
+            background: var(--card);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: var(--sh2);
+          "
+        >
+          <div style="font-size: 18px; font-weight: 500; color: var(--text)">
+            Chicken fried rice
+          </div>
+          <div style="font-size: 12px; color: var(--muted); margin-top: 2px">
+            Family group &middot; 4 servings
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 14px">
+            <div
+              style="
+                flex: 1;
+                background: var(--bg);
+                border-radius: 12px;
+                padding: 10px;
+                text-align: center;
+              "
+            >
+              <div
+                style="font-size: 18px; font-weight: 500; color: var(--greend)"
+              >
+                1,240
+              </div>
+              <div style="font-size: 11px; color: var(--muted)">total kcal</div>
+            </div>
+            <div
+              style="
+                flex: 1;
+                background: var(--bg);
+                border-radius: 12px;
+                padding: 10px;
+                text-align: center;
+              "
+            >
+              <div
+                style="font-size: 18px; font-weight: 500; color: var(--greend)"
+              >
+                310
+              </div>
+              <div style="font-size: 11px; color: var(--muted)">
+                per serving
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="padding: 0 16px 16px">
+        <div
+          style="
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--muted);
+            margin-bottom: 8px;
+          "
+        >
+          Ingredients
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <div
+            style="
+              background: var(--card);
+              border-radius: 12px;
+              padding: 10px 12px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              box-shadow: var(--sh1);
+            "
+          >
+            <span style="font-size: 13px; color: var(--text)"
+              >Chicken breast</span
+            >
+            <span style="font-size: 12px; color: var(--muted)"
+              >150 g &middot; 248 kcal</span
+            >
+          </div>
+          <div
+            style="
+              background: var(--card);
+              border-radius: 12px;
+              padding: 10px 12px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              box-shadow: var(--sh1);
+            "
+          >
+            <span style="font-size: 13px; color: var(--text)">Egg</span>
+            <span style="font-size: 12px; color: var(--muted)"
+              >2 pieces &middot; 140 kcal</span
+            >
+          </div>
+          <div
+            style="
+              background: var(--card);
+              border-radius: 12px;
+              padding: 10px 12px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              box-shadow: var(--sh1);
+            "
+          >
+            <span style="font-size: 13px; color: var(--text)">Cooked rice</span>
+            <span style="font-size: 12px; color: var(--muted)"
+              >400 g &middot; 520 kcal</span
+            >
+          </div>
+        </div>
+      </div>
+      <div style="padding: 0 16px 20px">
+        <div
+          style="
+            background: var(--green);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 6px 14px rgba(93, 110, 1, 0.3);
+          "
+        >
+          <span style="font-size: 14px; font-weight: 500; color: #fdf6e3"
+            >Log this recipe</span
+          >
         </div>
       </div>
     </div>
-  </div>
-  <div style="padding:0 16px 16px">
-    <div style="font-size:13px;font-weight:500;color:var(--muted);margin-bottom:8px">Ingredients</div>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <div style="background:var(--card);border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--sh1)">
-        <span style="font-size:13px;color:var(--text)">Chicken breast</span>
-        <span style="font-size:12px;color:var(--muted)">150 g &middot; 248 kcal</span>
-      </div>
-      <div style="background:var(--card);border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--sh1)">
-        <span style="font-size:13px;color:var(--text)">Egg</span>
-        <span style="font-size:12px;color:var(--muted)">2 pieces &middot; 140 kcal</span>
-      </div>
-      <div style="background:var(--card);border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--sh1)">
-        <span style="font-size:13px;color:var(--text)">Cooked rice</span>
-        <span style="font-size:12px;color:var(--muted)">400 g &middot; 520 kcal</span>
-      </div>
-    </div>
-  </div>
-  <div style="padding:0 16px 20px">
-    <div style="background:var(--green);border-radius:12px;padding:12px;text-align:center;box-shadow:0 6px 14px rgba(93,110,1,.3)">
-      <span style="font-size:14px;font-weight:500;color:#FDF6E3">Log this recipe</span>
-    </div>
-  </div>
-</div>
-</body>
+  </body>
 </html>
