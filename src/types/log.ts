@@ -1,5 +1,5 @@
-import type { IngredientUnit } from './ingredient';
-import type { MealType } from './meal';
+import type { IngredientUnit } from "./ingredient";
+import type { MealType } from "./meal";
 
 // Re-exported so existing `import type { MealType } from '../../types/log'`
 // call sites don't need to change — the type itself now lives in meal.ts

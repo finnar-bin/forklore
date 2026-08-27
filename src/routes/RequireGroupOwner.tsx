@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Navigate, Outlet, useParams } from 'react-router-dom';
-import { useAppStore } from '../store/useAppStore';
-import { fetchMyGroups } from '../features/groups/api';
+import { useEffect, useState } from "react";
+import { Navigate, Outlet, useParams } from "react-router-dom";
+import { useAppStore } from "../store/useAppStore";
+import { fetchMyGroups } from "../features/groups/api";
 
 // Guards /groups/:groupId/settings specifically — nested inside
 // RequireGroupMember, so membership is already confirmed by the time this
@@ -18,27 +18,30 @@ import { fetchMyGroups } from '../features/groups/api';
 export function RequireGroupOwner() {
   const { groupId } = useParams<{ groupId: string }>();
   const userId = useAppStore((state) => state.userId);
-  const [state, setState] = useState<'checking' | 'owner' | 'not-owner'>('checking');
+  const [state, setState] = useState<"checking" | "owner" | "not-owner">(
+    "checking",
+  );
 
   useEffect(() => {
     if (!userId || !groupId) return;
     let cancelled = false;
-    setState('checking');
+    setState("checking");
     fetchMyGroups(userId)
       .then((groups) => {
         if (cancelled) return;
         const membership = groups.find((m) => m.group.id === groupId);
-        setState(membership?.role === 'owner' ? 'owner' : 'not-owner');
+        setState(membership?.role === "owner" ? "owner" : "not-owner");
       })
       .catch(() => {
-        if (!cancelled) setState('owner');
+        if (!cancelled) setState("owner");
       });
     return () => {
       cancelled = true;
     };
   }, [userId, groupId]);
 
-  if (state === 'checking') return null;
-  if (state === 'not-owner') return <Navigate to={`/groups/${groupId}/pantry`} replace />;
+  if (state === "checking") return null;
+  if (state === "not-owner")
+    return <Navigate to={`/groups/${groupId}/pantry`} replace />;
   return <Outlet />;
 }

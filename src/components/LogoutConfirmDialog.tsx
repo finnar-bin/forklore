@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
+import { useState } from "react";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 
 // See frontend-architecture.md "Logout behavior" — shown only when the
 // outbox has pending items at logout time, naming the actual count rather
@@ -36,7 +36,9 @@ export function LogoutConfirmDialog({
     try {
       await onConfirm();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to log out. Try again.');
+      setError(
+        err instanceof Error ? err.message : "Failed to log out. Try again.",
+      );
     } finally {
       setLoggingOut(false);
     }
@@ -52,16 +54,21 @@ export function LogoutConfirmDialog({
           </Alert>
         )}
         <DialogContentText>
-          You have {pendingCount} unsynced change{pendingCount === 1 ? '' : 's'}. Logging out now
-          will discard {pendingCount === 1 ? 'it' : 'them'}.
+          You have {pendingCount} unsynced change{pendingCount === 1 ? "" : "s"}
+          . Logging out now will discard {pendingCount === 1 ? "it" : "them"}.
         </DialogContentText>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={loggingOut}>
           Cancel
         </Button>
-        <Button color="error" variant="contained" onClick={handleConfirm} disabled={loggingOut}>
-          {loggingOut ? 'Logging out…' : 'Log out'}
+        <Button
+          color="error"
+          variant="contained"
+          onClick={handleConfirm}
+          disabled={loggingOut}
+        >
+          {loggingOut ? "Logging out…" : "Log out"}
         </Button>
       </DialogActions>
     </Dialog>

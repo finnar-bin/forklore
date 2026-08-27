@@ -1,29 +1,29 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import InputAdornment from '@mui/material/InputAdornment';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import { kcalPerUnit } from '../../lib/kcal';
-import { IngredientKcalHeader } from '../pantry/IngredientKcalHeader';
-import { fetchIngredient } from '../pantry/api';
-import { useMemberKcalProfiles } from '../profiles/useMemberKcalProfiles';
-import { useProfileNames } from '../profiles/useProfileNames';
-import { RecipeKcalHeader } from '../recipes/RecipeKcalHeader';
-import { fetchRecipe } from '../recipes/api';
-import { deleteLogEntry, updateLogEntry } from './api';
-import { DeleteLogEntryDialog } from './DeleteLogEntryDialog';
-import { MealTypeSelector } from './MealTypeSelector';
-import type { Ingredient } from '../../types/ingredient';
-import type { LogEntry, MealType } from '../../types/log';
-import type { Recipe } from '../../types/recipe';
+import { useEffect, useState, type FormEvent } from "react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import InputAdornment from "@mui/material/InputAdornment";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { kcalPerUnit } from "../../lib/kcal";
+import { IngredientKcalHeader } from "../pantry/IngredientKcalHeader";
+import { fetchIngredient } from "../pantry/api";
+import { useMemberKcalProfiles } from "../profiles/useMemberKcalProfiles";
+import { useProfileNames } from "../profiles/useProfileNames";
+import { RecipeKcalHeader } from "../recipes/RecipeKcalHeader";
+import { fetchRecipe } from "../recipes/api";
+import { deleteLogEntry, updateLogEntry } from "./api";
+import { DeleteLogEntryDialog } from "./DeleteLogEntryDialog";
+import { MealTypeSelector } from "./MealTypeSelector";
+import type { Ingredient } from "../../types/ingredient";
+import type { LogEntry, MealType } from "../../types/log";
+import type { Recipe } from "../../types/recipe";
 
 // Fast-follow mentioned in Ticket 8: editing (or deleting) an already-logged
 // entry. Reworked (docs/pending-deviations.md) from freehand name/kcal
@@ -66,7 +66,12 @@ export function EditLogEntryDialog({
       {/* Mounted only while open, so its draft state starts fresh (matching
           the source entry) every time it's reopened for a different entry. */}
       {open && (
-        <EditLogEntryForm entry={entry} onClose={onClose} onSaved={onSaved} onDeleted={onDeleted} />
+        <EditLogEntryForm
+          entry={entry}
+          onClose={onClose}
+          onSaved={onSaved}
+          onDeleted={onDeleted}
+        />
       )}
     </Dialog>
   );
@@ -88,7 +93,9 @@ function EditLogEntryForm({
   const [ingredient, setIngredient] = useState<Ingredient | null | undefined>(
     entry.source_ingredient_id ? undefined : null,
   );
-  const [recipe, setRecipe] = useState<Recipe | null | undefined>(entry.source_recipe_id ? undefined : null);
+  const [recipe, setRecipe] = useState<Recipe | null | undefined>(
+    entry.source_recipe_id ? undefined : null,
+  );
   const [quantity, setQuantity] = useState(entry.quantity.toString());
   const [mealType, setMealType] = useState<MealType | null>(entry.meal_type);
   const [saving, setSaving] = useState(false);
@@ -131,7 +138,7 @@ function EditLogEntryForm({
   // groupLabel helper) — this dialog already knows exactly which entry it's
   // editing, so "Personal"/"Group" is enough context without pulling in
   // useMyGroups just for this header.
-  const groupLabel = entry.group_id === null ? 'Personal' : 'Group';
+  const groupLabel = entry.group_id === null ? "Personal" : "Group";
 
   // Who this entry counts against — always shown in group context (even
   // when it's the viewer's own entry, matching LogEntryCard's identical
@@ -146,7 +153,8 @@ function EditLogEntryForm({
   // should reflect whoever this entry actually counts against, which
   // (unlike name/kcal/unit) is fixed at creation and never edited here.
   const loggedForProfiles = useMemberKcalProfiles([entry.logged_for]);
-  const mealBreakdownEnabled = loggedForProfiles[entry.logged_for]?.meal_breakdown_enabled ?? false;
+  const mealBreakdownEnabled =
+    loggedForProfiles[entry.logged_for]?.meal_breakdown_enabled ?? false;
 
   const parsedQuantity = Number(quantity);
   // Only checked once the quantity has actually been changed from its
@@ -156,9 +164,12 @@ function EditLogEntryForm({
   // the new max) would block saving unrelated changes, like meal_type,
   // that don't touch quantity at all.
   const quantityChanged = quantity !== entry.quantity.toString();
-  const isNegative = quantityChanged && quantity !== '' && parsedQuantity < 0;
+  const isNegative = quantityChanged && quantity !== "" && parsedQuantity < 0;
   const exceedsWeight =
-    quantityChanged && recipe != null && quantity !== '' && parsedQuantity > recipe.weight_g;
+    quantityChanged &&
+    recipe != null &&
+    quantity !== "" &&
+    parsedQuantity > recipe.weight_g;
   const quantityValid =
     !canEditQuantity ||
     !quantityChanged ||
@@ -187,7 +198,9 @@ function EditLogEntryForm({
     setSaving(true);
     try {
       const updated = await updateLogEntry(entry.id, {
-        name: canEditQuantity ? (ingredient?.name ?? recipe?.name ?? entry.name) : entry.name,
+        name: canEditQuantity
+          ? (ingredient?.name ?? recipe?.name ?? entry.name)
+          : entry.name,
         kcal: canEditQuantity ? liveKcal : entry.kcal,
         quantity: canEditQuantity ? parsedQuantity : entry.quantity,
         unit: canEditQuantity ? (ingredient?.unit ?? entry.unit) : entry.unit,
@@ -195,7 +208,11 @@ function EditLogEntryForm({
       });
       onSaved(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save changes. Try again.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save changes. Try again.",
+      );
       setSaving(false);
     }
   }
@@ -207,18 +224,31 @@ function EditLogEntryForm({
 
   return (
     <>
-      <DialogContent sx={{ pt: '12px !important' }}>
-        <Stack spacing={2.5} component="form" id="edit-log-entry-form" onSubmit={handleSubmit}>
+      <DialogContent sx={{ pt: "12px !important" }}>
+        <Stack
+          spacing={2.5}
+          component="form"
+          id="edit-log-entry-form"
+          onSubmit={handleSubmit}
+        >
           {error && <Alert severity="error">{error}</Alert>}
 
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
               <CircularProgress size={24} />
             </Box>
           ) : ingredient ? (
-            <IngredientKcalHeader ingredient={ingredient} groupLabel={groupLabel} kcal={liveKcal} />
+            <IngredientKcalHeader
+              ingredient={ingredient}
+              groupLabel={groupLabel}
+              kcal={liveKcal}
+            />
           ) : recipe ? (
-            <RecipeKcalHeader recipe={recipe} groupLabel={groupLabel} kcal={liveKcal} />
+            <RecipeKcalHeader
+              recipe={recipe}
+              groupLabel={groupLabel}
+              kcal={liveKcal}
+            />
           ) : (
             // Detached — no real Ingredient/Recipe row to pass, so this
             // reuses IngredientKcalHeader with a synthetic object built
@@ -252,20 +282,24 @@ function EditLogEntryForm({
             error={isNegative || exceedsWeight}
             helperText={
               isNegative
-                ? 'Enter a positive amount.'
+                ? "Enter a positive amount."
                 : exceedsWeight && recipe
                   ? `Can't exceed this recipe's total weight (${recipe.weight_g}g).`
                   : undefined
             }
             slotProps={{
-              htmlInput: recipe ? { min: 0, max: recipe.weight_g, step: 1 } : { min: 0, step: 0.01 },
+              htmlInput: recipe
+                ? { min: 0, max: recipe.weight_g, step: 1 }
+                : { min: 0, step: 0.01 },
               input: {
                 endAdornment: (
                   // Always the entry's own frozen unit once locked — not
                   // the ingredient's current one, which is exactly what a
                   // unit mismatch means has drifted from it.
                   <InputAdornment position="end">
-                    {canEditQuantity ? (ingredient?.unit ?? entry.unit) : entry.unit}
+                    {canEditQuantity
+                      ? (ingredient?.unit ?? entry.unit)
+                      : entry.unit}
                   </InputAdornment>
                 ),
               },
@@ -273,7 +307,11 @@ function EditLogEntryForm({
           />
 
           {mealBreakdownEnabled && (
-            <MealTypeSelector value={mealType} onChange={setMealType} disabled={saving || locked} />
+            <MealTypeSelector
+              value={mealType}
+              onChange={setMealType}
+              disabled={saving || locked}
+            />
           )}
 
           {loggedForName && (
@@ -285,7 +323,7 @@ function EditLogEntryForm({
           {locked && (
             <Typography fontSize={13} fontWeight={700} color="error.main">
               {detached
-                ? 'Source deleted — this entry is locked at its last known values.'
+                ? "Source deleted — this entry is locked at its last known values."
                 : "This ingredient's unit has changed since logging — this entry is locked at its last known values."}
             </Typography>
           )}
@@ -293,8 +331,8 @@ function EditLogEntryForm({
       </DialogContent>
       <DialogActions
         sx={{
-          flexDirection: { xs: 'column-reverse', sm: 'row' },
-          justifyContent: { sm: 'space-between' },
+          flexDirection: { xs: "column-reverse", sm: "row" },
+          justifyContent: { sm: "space-between" },
           gap: 3,
           px: 3,
           pb: 2,
@@ -305,12 +343,20 @@ function EditLogEntryForm({
           variant="outlined"
           onClick={() => setDeleteOpen(true)}
           disabled={saving}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
         >
           Delete log entry
         </Button>
-        <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-          <Button onClick={onClose} disabled={saving} sx={{ flex: { xs: 1, sm: 'initial' } }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
+          <Button
+            onClick={onClose}
+            disabled={saving}
+            sx={{ flex: { xs: 1, sm: "initial" } }}
+          >
             Cancel
           </Button>
           <Button
@@ -318,9 +364,9 @@ function EditLogEntryForm({
             form="edit-log-entry-form"
             variant="contained"
             disabled={!isValid || saving || locked}
-            sx={{ flex: { xs: 1, sm: 'initial' } }}
+            sx={{ flex: { xs: 1, sm: "initial" } }}
           >
-            {saving ? 'Saving…' : 'Save changes'}
+            {saving ? "Saving…" : "Save changes"}
           </Button>
         </Stack>
       </DialogActions>

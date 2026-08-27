@@ -1,7 +1,7 @@
-import MenuItem from '@mui/material/MenuItem';
-import TextField from '@mui/material/TextField';
-import { useGroupMembers } from '../groups/useGroupMembers';
-import { useProfileNames } from '../profiles/useProfileNames';
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import { useGroupMembers } from "../groups/useGroupMembers";
+import { useProfileNames } from "../profiles/useProfileNames";
 
 // "Log for" picker — who a group-owned entry counts against, defaulting to
 // the caller themselves (see AddLogEntryDialog's own loggedFor state).
@@ -22,7 +22,9 @@ export function LoggedForSelector({
   disabled?: boolean;
 }) {
   const members = useGroupMembers(groupId);
-  const names = useProfileNames((members ?? []).map((member) => member.user_id));
+  const names = useProfileNames(
+    (members ?? []).map((member) => member.user_id),
+  );
 
   if (!members || members.length <= 1) return null;
 
@@ -37,7 +39,7 @@ export function LoggedForSelector({
     >
       {members.map((member) => (
         <MenuItem key={member.user_id} value={member.user_id}>
-          {names[member.user_id] ?? 'Loading…'}
+          {names[member.user_id] ?? "Loading…"}
         </MenuItem>
       ))}
     </TextField>

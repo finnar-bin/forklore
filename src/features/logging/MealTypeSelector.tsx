@@ -1,6 +1,6 @@
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import { MEAL_TYPES, MEAL_TYPE_LABELS, type MealType } from '../../types/meal';
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import { MEAL_TYPES, MEAL_TYPE_LABELS, type MealType } from "../../types/meal";
 
 // Optional, so exclusive selection is allowed to end up empty — MUI's
 // ToggleButtonGroup already reports `null` when the selected button is

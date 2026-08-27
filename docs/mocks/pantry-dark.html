@@ -1,88 +1,441 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<meta charset="utf-8">
-<style>
-  body { margin:0; padding:40px; background:#15191b; font-family:-apple-system,Inter,sans-serif; display:flex; justify-content:center; }
-  .efd{--bg:#232A2E;--card:#2D373C;--text:#D3C6AA;--muted:#889086;--green:#A7C080;--greenl:#B7D19A;--sh1:0 1px 2px rgba(0,0,0,.3);--sh2:0 6px 16px rgba(0,0,0,.4)}
-  svg { display:block; }
-</style>
-</head>
-<body>
-<div class="efd" style="width:340px;background:var(--bg);border-radius:20px;overflow:hidden;position:relative">
-  <div style="padding:16px 16px 10px;box-shadow:var(--sh1);background:var(--bg);position:relative;z-index:1">
-    <div style="display:flex;align-items:center;justify-content:space-between">
-      <div style="display:flex;align-items:center;gap:6px;background:var(--card);border-radius:20px;padding:6px 12px;font-size:13px;color:var(--text);box-shadow:var(--sh1)">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M2 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>
-        Family group
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        margin: 0;
+        padding: 40px;
+        background: #15191b;
+        font-family: -apple-system, Inter, sans-serif;
+        display: flex;
+        justify-content: center;
+      }
+      .efd {
+        --bg: #232a2e;
+        --card: #2d373c;
+        --text: #d3c6aa;
+        --muted: #889086;
+        --green: #a7c080;
+        --greenl: #b7d19a;
+        --sh1: 0 1px 2px rgba(0, 0, 0, 0.3);
+        --sh2: 0 6px 16px rgba(0, 0, 0, 0.4);
+      }
+      svg {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="efd"
+      style="
+        width: 340px;
+        background: var(--bg);
+        border-radius: 20px;
+        overflow: hidden;
+        position: relative;
+      "
+    >
+      <div
+        style="
+          padding: 16px 16px 10px;
+          box-shadow: var(--sh1);
+          background: var(--bg);
+          position: relative;
+          z-index: 1;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              background: var(--card);
+              border-radius: 20px;
+              padding: 6px 12px;
+              font-size: 13px;
+              color: var(--text);
+              box-shadow: var(--sh1);
+            "
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="9" cy="7" r="3" />
+              <path d="M2 20c0-3.3 3.1-6 7-6s7 2.7 7 6" />
+            </svg>
+            Family group
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </div>
+          <div
+            style="
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              background: var(--green);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #232a2e;
+              font-size: 13px;
+              font-weight: 500;
+            "
+          >
+            N
+          </div>
+        </div>
+        <div style="margin-top: 12px">
+          <span style="font-size: 20px; font-weight: 500; color: var(--text)"
+            >Pantry</span
+          >
+        </div>
       </div>
-      <div style="width:32px;height:32px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;color:#232A2E;font-size:13px;font-weight:500">N</div>
+      <div
+        style="
+          padding: 12px 16px 90px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        "
+      >
+        <div
+          style="
+            background: var(--card);
+            border-radius: 14px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            box-shadow: var(--sh2);
+          "
+        >
+          <div
+            style="
+              width: 52px;
+              height: 52px;
+              border-radius: 12px;
+              background: linear-gradient(135deg, #3d4a4d, #324043);
+              flex-shrink: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #889086;
+            "
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="7" width="18" height="13" rx="2" />
+              <circle cx="12" cy="13.5" r="3.5" />
+              <path d="M8 7l1.5-2h5L16 7" />
+            </svg>
+          </div>
+          <div style="flex: 1; min-width: 0">
+            <div style="font-size: 14px; font-weight: 500; color: var(--text)">
+              Chicken breast
+            </div>
+            <div style="font-size: 12px; color: var(--muted)">
+              500 g &middot; added by Nar
+            </div>
+          </div>
+          <div style="text-align: right">
+            <div
+              style="font-size: 14px; font-weight: 500; color: var(--greenl)"
+            >
+              825 kcal
+            </div>
+            <div style="font-size: 11px; color: var(--muted)">1.65/g</div>
+          </div>
+        </div>
+        <div
+          style="
+            background: var(--card);
+            border-radius: 14px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            box-shadow: var(--sh2);
+          "
+        >
+          <div
+            style="
+              width: 52px;
+              height: 52px;
+              border-radius: 12px;
+              background: linear-gradient(135deg, #41473a, #363c30);
+              flex-shrink: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #889086;
+            "
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="7" width="18" height="13" rx="2" />
+              <circle cx="12" cy="13.5" r="3.5" />
+              <path d="M8 7l1.5-2h5L16 7" />
+            </svg>
+          </div>
+          <div style="flex: 1; min-width: 0">
+            <div style="font-size: 14px; font-weight: 500; color: var(--text)">
+              Egg
+            </div>
+            <div style="font-size: 12px; color: var(--muted)">
+              1 piece &middot; added by Mika
+            </div>
+          </div>
+          <div style="text-align: right">
+            <div
+              style="font-size: 14px; font-weight: 500; color: var(--greenl)"
+            >
+              70 kcal
+            </div>
+            <div style="font-size: 11px; color: var(--muted)">70/piece</div>
+          </div>
+        </div>
+        <div
+          style="
+            background: var(--card);
+            border-radius: 14px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            box-shadow: var(--sh2);
+          "
+        >
+          <div
+            style="
+              width: 52px;
+              height: 52px;
+              border-radius: 12px;
+              background: linear-gradient(135deg, #3e4741, #333b35);
+              flex-shrink: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #889086;
+            "
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="7" width="18" height="13" rx="2" />
+              <circle cx="12" cy="13.5" r="3.5" />
+              <path d="M8 7l1.5-2h5L16 7" />
+            </svg>
+          </div>
+          <div style="flex: 1; min-width: 0">
+            <div style="font-size: 14px; font-weight: 500; color: var(--text)">
+              Coffee sachet
+            </div>
+            <div style="font-size: 12px; color: var(--muted)">
+              1 sachet &middot; added by Nar
+            </div>
+          </div>
+          <div style="text-align: right">
+            <div
+              style="font-size: 14px; font-weight: 500; color: var(--greenl)"
+            >
+              45 kcal
+            </div>
+            <div style="font-size: 11px; color: var(--muted)">45/sachet</div>
+          </div>
+        </div>
+      </div>
+      <div
+        style="
+          position: absolute;
+          right: 16px;
+          bottom: 78px;
+          width: 48px;
+          height: 48px;
+          border-radius: 24px;
+          background: var(--green);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
+          color: #232a2e;
+        "
+      >
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+        >
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      </div>
+      <div
+        style="
+          background: var(--card);
+          padding: 10px 20px 14px;
+          display: flex;
+          justify-content: space-between;
+          box-shadow: 0 -4px 12px rgba(92, 106, 82, 0.08);
+          position: relative;
+          z-index: 1;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            font-size: 11px;
+            color: var(--green);
+          "
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M12 8c-3 0-5.5 2.7-5.5 6.5S9 21 12 21s5.5-2.7 5.5-6.5S15 8 12 8z"
+            />
+            <path d="M12 8V5c1-1.2 2.5-1 3-.3" />
+          </svg>
+          Pantry
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            font-size: 11px;
+            color: var(--muted);
+          "
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M7 3v6a2 2 0 002 2v10M7 3v6M9 3v6" />
+            <path d="M17 3c-1.5 0-2.5 1.5-2.5 4s1 4 2.5 4v10" />
+          </svg>
+          Recipes
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            font-size: 11px;
+            color: var(--muted);
+          "
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="5" y="4" width="14" height="17" rx="2" />
+            <path d="M9 4h6v2H9z" />
+            <path d="M8 11h8M8 15h8" />
+          </svg>
+          Log
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            font-size: 11px;
+            color: var(--muted);
+          "
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M4 19V5M4 19h16" />
+            <path d="M7 15l4-4 3 3 5-6" />
+          </svg>
+          Progress
+        </div>
+      </div>
     </div>
-    <div style="margin-top:12px"><span style="font-size:20px;font-weight:500;color:var(--text)">Pantry</span></div>
-  </div>
-  <div style="padding:12px 16px 90px;display:flex;flex-direction:column;gap:12px">
-    <div style="background:var(--card);border-radius:14px;padding:12px;display:flex;gap:12px;align-items:center;box-shadow:var(--sh2)">
-      <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#3D4A4D,#324043);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#889086">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.5-2h5L16 7"/></svg>
-      </div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:14px;font-weight:500;color:var(--text)">Chicken breast</div>
-        <div style="font-size:12px;color:var(--muted)">500 g &middot; added by Nar</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:14px;font-weight:500;color:var(--greenl)">825 kcal</div>
-        <div style="font-size:11px;color:var(--muted)">1.65/g</div>
-      </div>
-    </div>
-    <div style="background:var(--card);border-radius:14px;padding:12px;display:flex;gap:12px;align-items:center;box-shadow:var(--sh2)">
-      <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#41473A,#363C30);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#889086">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.5-2h5L16 7"/></svg>
-      </div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:14px;font-weight:500;color:var(--text)">Egg</div>
-        <div style="font-size:12px;color:var(--muted)">1 piece &middot; added by Mika</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:14px;font-weight:500;color:var(--greenl)">70 kcal</div>
-        <div style="font-size:11px;color:var(--muted)">70/piece</div>
-      </div>
-    </div>
-    <div style="background:var(--card);border-radius:14px;padding:12px;display:flex;gap:12px;align-items:center;box-shadow:var(--sh2)">
-      <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#3E4741,#333B35);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#889086">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.5-2h5L16 7"/></svg>
-      </div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:14px;font-weight:500;color:var(--text)">Coffee sachet</div>
-        <div style="font-size:12px;color:var(--muted)">1 sachet &middot; added by Nar</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:14px;font-weight:500;color:var(--greenl)">45 kcal</div>
-        <div style="font-size:11px;color:var(--muted)">45/sachet</div>
-      </div>
-    </div>
-  </div>
-  <div style="position:absolute;right:16px;bottom:78px;width:48px;height:48px;border-radius:24px;background:var(--green);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(0,0,0,.5);color:#232A2E">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-  </div>
-  <div style="background:var(--card);padding:10px 20px 14px;display:flex;justify-content:space-between;box-shadow:0 -4px 12px rgba(92,106,82,.08);position:relative;z-index:1">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--green)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8c-3 0-5.5 2.7-5.5 6.5S9 21 12 21s5.5-2.7 5.5-6.5S15 8 12 8z"/><path d="M12 8V5c1-1.2 2.5-1 3-.3"/></svg>
-      Pantry
-    </div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--muted)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v6a2 2 0 002 2v10M7 3v6M9 3v6"/><path d="M17 3c-1.5 0-2.5 1.5-2.5 4s1 4 2.5 4v10"/></svg>
-      Recipes
-    </div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--muted)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v2H9z"/><path d="M8 11h8M8 15h8"/></svg>
-      Log
-    </div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--muted)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16"/><path d="M7 15l4-4 3 3 5-6"/></svg>
-      Progress
-    </div>
-  </div>
-</div>
-</body>
+  </body>
 </html>

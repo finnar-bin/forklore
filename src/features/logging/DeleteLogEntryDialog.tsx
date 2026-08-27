@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
+import { useState } from "react";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 
 // Unlike DeleteIngredientDialog, there's no downstream usage to warn about —
 // a log entry isn't referenced by anything else — so this is a plain confirm.
@@ -35,7 +35,11 @@ export function DeleteLogEntryDialog({
     try {
       await onConfirm();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete this entry. Try again.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to delete this entry. Try again.",
+      );
     } finally {
       setDeleting(false);
     }
@@ -58,8 +62,13 @@ export function DeleteLogEntryDialog({
         <Button onClick={handleClose} disabled={deleting}>
           Cancel
         </Button>
-        <Button color="error" variant="contained" onClick={handleConfirm} disabled={deleting}>
-          {deleting ? 'Deleting…' : 'Delete entry'}
+        <Button
+          color="error"
+          variant="contained"
+          onClick={handleConfirm}
+          disabled={deleting}
+        >
+          {deleting ? "Deleting…" : "Delete entry"}
         </Button>
       </DialogActions>
     </Dialog>

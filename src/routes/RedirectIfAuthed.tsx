@@ -1,5 +1,5 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAppStore } from '../store/useAppStore';
+import { Navigate, Outlet } from "react-router-dom";
+import { useAppStore } from "../store/useAppStore";
 
 // Keeps already-logged-in users off /login and /signup.
 export function RedirectIfAuthed() {

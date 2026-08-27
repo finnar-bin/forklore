@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import { useAppStore } from '../../store/useAppStore';
-import { copyIngredient } from '../copy/api';
-import { CopyTargetList } from '../copy/CopyTargetList';
-import { useCopyTargets } from '../copy/useCopyTargets';
+import { useState } from "react";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import { useAppStore } from "../../store/useAppStore";
+import { copyIngredient } from "../copy/api";
+import { CopyTargetList } from "../copy/CopyTargetList";
+import { useCopyTargets } from "../copy/useCopyTargets";
 
 // Ingredient copy is direction-agnostic and needs no confirmation beyond
 // picking a target — unlike recipe copy, there's no ingredient-matching step
@@ -58,7 +58,11 @@ export function CopyIngredientDialog({
       setSelectedIndex(null);
       onCopied();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to copy this ingredient. Try again.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to copy this ingredient. Try again.",
+      );
     } finally {
       setCopying(false);
     }
@@ -73,7 +77,11 @@ export function CopyIngredientDialog({
             {error}
           </Alert>
         )}
-        <CopyTargetList targets={targets} selectedIndex={selectedIndex} onSelect={setSelectedIndex} />
+        <CopyTargetList
+          targets={targets}
+          selectedIndex={selectedIndex}
+          onSelect={setSelectedIndex}
+        />
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={copying}>
@@ -84,7 +92,7 @@ export function CopyIngredientDialog({
           onClick={handleCopy}
           disabled={selectedIndex === null || copying}
         >
-          {copying ? 'Copying…' : 'Copy ingredient'}
+          {copying ? "Copying…" : "Copy ingredient"}
         </Button>
       </DialogActions>
     </Dialog>

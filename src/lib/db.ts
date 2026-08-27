@@ -1,42 +1,42 @@
-import Dexie, { type EntityTable } from 'dexie';
-import type { Profile } from '../types/profile';
-import type { Group } from '../types/group';
-import type { Ingredient } from '../types/ingredient';
-import type { Recipe } from '../types/recipe';
-import type { LogEntry } from '../types/log';
-import type { OutboxItem, SyncMetaEntry } from '../types/sync';
+import Dexie, { type EntityTable } from "dexie";
+import type { Profile } from "../types/profile";
+import type { Group } from "../types/group";
+import type { Ingredient } from "../types/ingredient";
+import type { Recipe } from "../types/recipe";
+import type { LogEntry } from "../types/log";
+import type { OutboxItem, SyncMetaEntry } from "../types/sync";
 
 // See frontend-architecture.md "Dexie schema" — source of truth when offline.
-const db = new Dexie('calorie-app') as Dexie & {
-  profiles: EntityTable<Profile, 'id'>;
-  groups: EntityTable<Group, 'id'>;
-  ingredients: EntityTable<Ingredient, 'id'>;
-  recipes: EntityTable<Recipe, 'id'>;
-  log_entries: EntityTable<LogEntry, 'id'>;
-  outbox: EntityTable<OutboxItem, 'id'>;
-  sync_meta: EntityTable<SyncMetaEntry, 'key'>;
+const db = new Dexie("calorie-app") as Dexie & {
+  profiles: EntityTable<Profile, "id">;
+  groups: EntityTable<Group, "id">;
+  ingredients: EntityTable<Ingredient, "id">;
+  recipes: EntityTable<Recipe, "id">;
+  log_entries: EntityTable<LogEntry, "id">;
+  outbox: EntityTable<OutboxItem, "id">;
+  sync_meta: EntityTable<SyncMetaEntry, "key">;
 };
 
 db.version(1).stores({
-  profiles: 'id',
-  groups: 'id, owner_id',
-  ingredients: 'id, group_id, created_by, updated_at',
-  recipes: 'id, group_id, created_by, updated_at',
-  log_entries: 'id, group_id, logged_by, logged_at',
-  outbox: 'id, created_at',
+  profiles: "id",
+  groups: "id, owner_id",
+  ingredients: "id, group_id, created_by, updated_at",
+  recipes: "id, group_id, created_by, updated_at",
+  log_entries: "id, group_id, logged_by, logged_at",
+  outbox: "id, created_at",
 });
 
 // outbox.ts queries by status (draining `pending`/`waiting_for_connectivity`
 // items, counting `failed` ones) — needs an index, not just id/created_at.
 db.version(2).stores({
-  outbox: 'id, created_at, status',
+  outbox: "id, created_at, status",
 });
 
 // sync/pull.ts's per-table "changes since last sync" cursor — not in
 // frontend-architecture.md's Dexie schema sample. See docs/pending-deviations.md
 // (Ticket 10).
 db.version(3).stores({
-  sync_meta: 'key',
+  sync_meta: "key",
 });
 
 // log_entries' logged_by -> logged_for rename plus its new created_by
@@ -57,14 +57,14 @@ db.version(3).stores({
 // the server migration's own backfill (`created_by = logged_for`) exactly.
 db.version(4)
   .stores({
-    log_entries: 'id, group_id, logged_for, created_by, logged_at',
+    log_entries: "id, group_id, logged_for, created_by, logged_at",
   })
   .upgrade(async (tx) => {
     await tx
-      .table('log_entries')
+      .table("log_entries")
       .toCollection()
       .modify((entry) => {
-        if ('logged_by' in entry) {
+        if ("logged_by" in entry) {
           entry.logged_for = entry.logged_by;
           delete entry.logged_by;
         }

@@ -1,11 +1,11 @@
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import List from '@mui/material/List';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemText from '@mui/material/ListItemText';
-import Radio from '@mui/material/Radio';
-import type { CopyTarget } from './useCopyTargets';
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import Radio from "@mui/material/Radio";
+import type { CopyTarget } from "./useCopyTargets";
 
 // Shared "pick a target context" step for CopyIngredientDialog and
 // CopyRecipeDialog — a plain radio-style list, matching the restrained list
@@ -22,7 +22,7 @@ export function CopyTargetList({
 }) {
   if (targets === null) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
         <CircularProgress size={24} />
       </Box>
     );
@@ -40,12 +40,16 @@ export function CopyTargetList({
     <List dense disablePadding>
       {targets.map((target, index) => (
         <ListItemButton
-          key={target.groupId ?? 'personal'}
+          key={target.groupId ?? "personal"}
           selected={selectedIndex === index}
           onClick={() => onSelect(index)}
-          sx={{ borderRadius: '10px' }}
+          sx={{ borderRadius: "10px" }}
         >
-          <Radio checked={selectedIndex === index} size="small" sx={{ mr: 1 }} />
+          <Radio
+            checked={selectedIndex === index}
+            size="small"
+            sx={{ mr: 1 }}
+          />
           <ListItemText primary={target.label} />
         </ListItemButton>
       ))}

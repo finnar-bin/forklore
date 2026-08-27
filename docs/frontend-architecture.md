@@ -8,17 +8,17 @@ Living document. Vite + React + TypeScript SPA — no server-side rendering, no 
 
 ### Stack
 
-| Concern | Choice | Notes |
-|---|---|---|
-| Build tool | Vite | Static SPA output, deployed to Cloudflare Pages |
-| Language | TypeScript | |
-| UI framework | MUI v6 | Themed to not look like default MUI — see design-system.md |
-| Routing | React Router | URL-based group context (see routes.md) |
-| App state | Zustand | Deliberately thin — session, active group, sync status only |
-| Local/offline data | Dexie (IndexedDB wrapper) | Source of truth when offline |
-| Backend | Supabase | Postgres, Auth, Edge Functions, RPC — see schema.md / rpcs.md |
-| Photo storage | Cloudflare R2 | Public bucket, not Supabase Storage — see schema.md |
-| Navigation animation | Framer Motion | See "Navigation animation" section below |
+| Concern              | Choice                    | Notes                                                         |
+| -------------------- | ------------------------- | ------------------------------------------------------------- |
+| Build tool           | Vite                      | Static SPA output, deployed to Cloudflare Pages               |
+| Language             | TypeScript                |                                                               |
+| UI framework         | MUI v6                    | Themed to not look like default MUI — see design-system.md    |
+| Routing              | React Router              | URL-based group context (see routes.md)                       |
+| App state            | Zustand                   | Deliberately thin — session, active group, sync status only   |
+| Local/offline data   | Dexie (IndexedDB wrapper) | Source of truth when offline                                  |
+| Backend              | Supabase                  | Postgres, Auth, Edge Functions, RPC — see schema.md / rpcs.md |
+| Photo storage        | Cloudflare R2             | Public bucket, not Supabase Storage — see schema.md           |
+| Navigation animation | Framer Motion             | See "Navigation animation" section below                      |
 
 **Why not Redux:** app-level state here is genuinely small (auth session, active group, sync status). Redux's strict action/reducer discipline pays off at a scale this app doesn't have. Zustand gives equivalent capability with far less boilerplate.
 
@@ -69,30 +69,30 @@ src/
 Mirrors the Postgres tables in schema.md. Indexes are chosen specifically to support the sync engine's query patterns (pulling changes since a timestamp, draining the outbox in order).
 
 ```ts
-import Dexie, { type EntityTable } from 'dexie';
-import type { Profile } from '../types/profile';
-import type { Group } from '../types/group';
-import type { Ingredient } from '../types/ingredient';
-import type { Recipe } from '../types/recipe';
-import type { LogEntry } from '../types/log';
-import type { OutboxItem } from '../types/sync';
+import Dexie, { type EntityTable } from "dexie";
+import type { Profile } from "../types/profile";
+import type { Group } from "../types/group";
+import type { Ingredient } from "../types/ingredient";
+import type { Recipe } from "../types/recipe";
+import type { LogEntry } from "../types/log";
+import type { OutboxItem } from "../types/sync";
 
-const db = new Dexie('calorie-app') as Dexie & {
-  profiles: EntityTable<Profile, 'id'>;
-  groups: EntityTable<Group, 'id'>;
-  ingredients: EntityTable<Ingredient, 'id'>;
-  recipes: EntityTable<Recipe, 'id'>;
-  log_entries: EntityTable<LogEntry, 'id'>;
-  outbox: EntityTable<OutboxItem, 'id'>;
+const db = new Dexie("calorie-app") as Dexie & {
+  profiles: EntityTable<Profile, "id">;
+  groups: EntityTable<Group, "id">;
+  ingredients: EntityTable<Ingredient, "id">;
+  recipes: EntityTable<Recipe, "id">;
+  log_entries: EntityTable<LogEntry, "id">;
+  outbox: EntityTable<OutboxItem, "id">;
 };
 
 db.version(1).stores({
-  profiles: 'id',
-  groups: 'id, owner_id',
-  ingredients: 'id, group_id, created_by, updated_at',
-  recipes: 'id, group_id, created_by, updated_at',
-  log_entries: 'id, group_id, logged_by, logged_at',
-  outbox: 'id, created_at',
+  profiles: "id",
+  groups: "id, owner_id",
+  ingredients: "id, group_id, created_by, updated_at",
+  recipes: "id, group_id, created_by, updated_at",
+  log_entries: "id, group_id, logged_by, logged_at",
+  outbox: "id, created_at",
 });
 
 export { db };
@@ -117,9 +117,9 @@ interface AppState {
 ```ts
 // useSyncStore.ts — sync status for UI feedback
 interface SyncState {
-  status: 'idle' | 'syncing' | 'error';
+  status: "idle" | "syncing" | "error";
   lastSyncedAt: string | null;
-  setStatus: (status: SyncState['status']) => void;
+  setStatus: (status: SyncState["status"]) => void;
   setLastSynced: (timestamp: string) => void;
 }
 ```
@@ -129,6 +129,7 @@ interface SyncState {
 Local-first, not a CRDT-based sync engine (unwarranted complexity for a few trusted household members sharing data).
 
 **Flow:**
+
 1. Every read comes from Dexie.
 2. Every write goes to Dexie immediately (optimistic UI) and is queued in the `outbox` table.
 3. When online, a sync worker drains the outbox to Supabase.
@@ -147,12 +148,12 @@ async function drainOutboxWithRetry(item: OutboxItem, attempt = 0) {
     await db.outbox.delete(item.id);
   } catch (err) {
     if (isPermanentError(err)) {
-      await db.outbox.update(item.id, { status: 'failed', error: err.message });
-      useSyncStore.getState().setStatus('error');
+      await db.outbox.update(item.id, { status: "failed", error: err.message });
+      useSyncStore.getState().setStatus("error");
       return;
     }
     if (attempt >= 5) {
-      await db.outbox.update(item.id, { status: 'waiting_for_connectivity' });
+      await db.outbox.update(item.id, { status: "waiting_for_connectivity" });
       return;
     }
     const delayMs = Math.min(1000 * 2 ** attempt, 30000);
@@ -160,8 +161,11 @@ async function drainOutboxWithRetry(item: OutboxItem, attempt = 0) {
   }
 }
 
-window.addEventListener('online', () => {
-  db.outbox.where('status').equals('waiting_for_connectivity').toArray()
+window.addEventListener("online", () => {
+  db.outbox
+    .where("status")
+    .equals("waiting_for_connectivity")
+    .toArray()
     .then((items) => items.forEach((item) => drainOutboxWithRetry(item, 0)));
 });
 ```
@@ -209,7 +213,7 @@ The push/pop vs. tab-switch classification is derived from comparing route depth
     initial={{ x: isPush ? 40 : 0, opacity: isPush ? 0 : 1 }}
     animate={{ x: 0, opacity: 1 }}
     exit={{ x: isPush ? -40 : 0, opacity: isPush ? 0 : 1 }}
-    transition={{ duration: 0.2, ease: 'easeOut' }}
+    transition={{ duration: 0.2, ease: "easeOut" }}
   >
     <Outlet />
   </motion.div>
@@ -221,13 +225,13 @@ The push/pop vs. tab-switch classification is derived from comparing route depth
 Compression and WebP conversion happen **client-side, before upload** — not server-side after. This keeps the direct-to-R2 presigned-upload flow intact (no server ever touches file bytes) and reduces data sent over the user's connection, relevant for a mobile-first app on potentially spotty data.
 
 ```ts
-import imageCompression from 'browser-image-compression';
+import imageCompression from "browser-image-compression";
 
 async function prepareImageForUpload(file: File): Promise<File> {
   return imageCompression(file, {
     maxSizeMB: 0.3,
     maxWidthOrHeight: 1024,
-    fileType: 'image/webp',
+    fileType: "image/webp",
     useWebWorker: true,
   });
 }

@@ -1,8 +1,8 @@
-import type { HTMLAttributes } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import { formatKcalPerUnit } from '../../lib/kcal';
-import type { Ingredient } from '../../types/ingredient';
+import type { HTMLAttributes } from "react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { formatKcalPerUnit } from "../../lib/kcal";
+import type { Ingredient } from "../../types/ingredient";
 
 // Shared `renderOption` row for every Autocomplete that lets the user pick
 // an existing ingredient (AddLogEntryDialog.tsx's cross-context picker,
@@ -26,13 +26,33 @@ export function IngredientAutocompleteOption({
   groupLabel: string;
 }) {
   return (
-    <Box component="li" {...liProps} sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+    <Box
+      component="li"
+      {...liProps}
+      sx={{ display: "flex", gap: 1.5, alignItems: "center" }}
+    >
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, minWidth: 0 }}>
-          <Typography fontSize={14} fontWeight={500} noWrap sx={{ minWidth: 0 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 0.5,
+            minWidth: 0,
+          }}
+        >
+          <Typography
+            fontSize={14}
+            fontWeight={500}
+            noWrap
+            sx={{ minWidth: 0 }}
+          >
             {ingredient.name}
           </Typography>
-          <Typography fontSize={14} color="text.secondary" sx={{ flexShrink: 0 }}>
+          <Typography
+            fontSize={14}
+            color="text.secondary"
+            sx={{ flexShrink: 0 }}
+          >
             {ingredient.quantity} {ingredient.unit}
           </Typography>
         </Box>
@@ -41,12 +61,13 @@ export function IngredientAutocompleteOption({
           {ingredient.brand && ` · ${ingredient.brand}`}
         </Typography>
       </Box>
-      <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+      <Box sx={{ textAlign: "right", flexShrink: 0 }}>
         <Typography fontSize={14} fontWeight={500} color="primary.main">
           {ingredient.kcal.toFixed(2)} kcal
         </Typography>
         <Typography fontSize={11} color="text.secondary">
-          {formatKcalPerUnit(ingredient.kcal, ingredient.quantity)}/{ingredient.unit}
+          {formatKcalPerUnit(ingredient.kcal, ingredient.quantity)}/
+          {ingredient.unit}
         </Typography>
       </Box>
     </Box>

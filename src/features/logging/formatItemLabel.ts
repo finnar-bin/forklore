@@ -1,5 +1,5 @@
-import type { Ingredient } from '../../types/ingredient';
-import type { Recipe } from '../../types/recipe';
+import type { Ingredient } from "../../types/ingredient";
+import type { Recipe } from "../../types/recipe";
 
 // "<quantity> <unit> <name>" — e.g. "1 sachet Milo". This is the
 // ingredient's own defined quantity/unit, not the amount being logged

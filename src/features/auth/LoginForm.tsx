@@ -1,19 +1,19 @@
-import { useState, type FormEvent } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
-import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
-import Link from '@mui/material/Link';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import { signInWithEmail, signInWithGoogle } from './api';
-import { friendlyAuthError } from './errors';
-import { GoogleIcon } from './GoogleIcon';
+import { useState, type FormEvent } from "react";
+import { Link as RouterLink } from "react-router-dom";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
+import Link from "@mui/material/Link";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { signInWithEmail, signInWithGoogle } from "./api";
+import { friendlyAuthError } from "./errors";
+import { GoogleIcon } from "./GoogleIcon";
 
 export function LoginForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
@@ -87,11 +87,14 @@ export function LoginForm() {
         size="large"
         disabled={submitting || googleSubmitting}
       >
-        {submitting ? 'Logging in…' : 'Log in'}
+        {submitting ? "Logging in…" : "Log in"}
       </Button>
 
       <Typography variant="body2" color="text.secondary" textAlign="center">
-        New here? <Link component={RouterLink} to="/signup">Create an account</Link>
+        New here?{" "}
+        <Link component={RouterLink} to="/signup">
+          Create an account
+        </Link>
       </Typography>
     </Stack>
   );

@@ -1,5 +1,5 @@
-import { createPortal } from 'react-dom';
-import type { ReactNode } from 'react';
+import { createPortal } from "react-dom";
+import type { ReactNode } from "react";
 
 // Renders children into #floating-root (declared in index.html), a sibling
 // of #root — not a descendant of it. A FAB using position: fixed still
@@ -12,7 +12,7 @@ import type { ReactNode } from 'react';
 // screen content. See design-system.md's FAB positioning note and
 // docs/pending-deviations.md (Ticket 16).
 export function FloatingPortal({ children }: { children: ReactNode }) {
-  const target = document.getElementById('floating-root');
+  const target = document.getElementById("floating-root");
   if (!target) return null;
   return createPortal(children, target);
 }

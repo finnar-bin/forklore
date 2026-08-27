@@ -1,43 +1,48 @@
-import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import IconButton from '@mui/material/IconButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import Paper from '@mui/material/Paper';
-import Snackbar from '@mui/material/Snackbar';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import GroupsIcon from '@mui/icons-material/Groups';
-import { useColorScheme } from '@mui/material/styles';
-import { shadows } from '../../theme/theme';
-import { DeferredPhotoUpload } from '../../components/DeferredPhotoUpload';
-import { ItemMetadata } from '../../components/ItemMetadata';
-import { formatKcalPerUnit } from '../../lib/kcal';
-import { deletePhoto, uploadPhoto } from '../../lib/photoUpload';
-import { useAppStore } from '../../store/useAppStore';
-import { PhotoThumbnail } from '../../components/PhotoThumbnail';
-import { useProfileNames } from '../profiles/useProfileNames';
-import { deleteIngredient, fetchIngredient, moveIngredientToCommunity, updateIngredient } from './api';
-import { INGREDIENT_UNITS } from './ingredientUnits';
-import { DeleteIngredientDialog } from './DeleteIngredientDialog';
-import { CopyIngredientDialog } from './CopyIngredientDialog';
-import { MoveIngredientToCommunityDialog } from './MoveIngredientToCommunityDialog';
-import type { Ingredient, IngredientUnit } from '../../types/ingredient';
+import { useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useLiveQuery } from "dexie-react-hooks";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Paper from "@mui/material/Paper";
+import Snackbar from "@mui/material/Snackbar";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import GroupsIcon from "@mui/icons-material/Groups";
+import { useColorScheme } from "@mui/material/styles";
+import { shadows } from "../../theme/theme";
+import { DeferredPhotoUpload } from "../../components/DeferredPhotoUpload";
+import { ItemMetadata } from "../../components/ItemMetadata";
+import { formatKcalPerUnit } from "../../lib/kcal";
+import { deletePhoto, uploadPhoto } from "../../lib/photoUpload";
+import { useAppStore } from "../../store/useAppStore";
+import { PhotoThumbnail } from "../../components/PhotoThumbnail";
+import { useProfileNames } from "../profiles/useProfileNames";
+import {
+  deleteIngredient,
+  fetchIngredient,
+  moveIngredientToCommunity,
+  updateIngredient,
+} from "./api";
+import { INGREDIENT_UNITS } from "./ingredientUnits";
+import { DeleteIngredientDialog } from "./DeleteIngredientDialog";
+import { CopyIngredientDialog } from "./CopyIngredientDialog";
+import { MoveIngredientToCommunityDialog } from "./MoveIngredientToCommunityDialog";
+import type { Ingredient, IngredientUnit } from "../../types/ingredient";
 
 // Distinguishes "still loading" from "query resolved, nothing found" — see
 // the same pattern in RecipeDetail.tsx.
-const LOADING = Symbol('loading');
+const LOADING = Symbol("loading");
 
 // Mirrors RecipeDetail.tsx's shape: fields are staged client-side in
 // name/quantity/unit/kcal/photoUrl and only written on Save, rather than
@@ -49,13 +54,19 @@ const LOADING = Symbol('loading');
 // `savedIngredient` holds the last persisted snapshot, used both to diff
 // what actually changed at save time and to know whether there's anything
 // to save at all.
-export function IngredientDetail({ groupId, backPath }: { groupId: string | null; backPath: string }) {
+export function IngredientDetail({
+  groupId,
+  backPath,
+}: {
+  groupId: string | null;
+  backPath: string;
+}) {
   const { ingredientId } = useParams<{ ingredientId: string }>();
   const navigate = useNavigate();
   const userId = useAppStore((state) => state.userId);
   const { mode, systemMode } = useColorScheme();
-  const resolvedMode = mode === 'system' ? systemMode : mode;
-  const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
+  const resolvedMode = mode === "system" ? systemMode : mode;
+  const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
 
   const result = useLiveQuery(
     () => (ingredientId ? fetchIngredient(ingredientId) : undefined),
@@ -65,12 +76,14 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
   const loading = result === LOADING;
   const ingredient = result === LOADING ? undefined : result;
 
-  const [savedIngredient, setSavedIngredient] = useState<Ingredient | null>(null);
-  const [name, setName] = useState('');
-  const [brand, setBrand] = useState('');
-  const [quantity, setQuantity] = useState('0');
-  const [unit, setUnit] = useState<IngredientUnit | ''>('');
-  const [kcal, setKcal] = useState('0');
+  const [savedIngredient, setSavedIngredient] = useState<Ingredient | null>(
+    null,
+  );
+  const [name, setName] = useState("");
+  const [brand, setBrand] = useState("");
+  const [quantity, setQuantity] = useState("0");
+  const [unit, setUnit] = useState<IngredientUnit | "">("");
+  const [kcal, setKcal] = useState("0");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
 
@@ -116,7 +129,9 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
   // not `null` — see useProfileNames) doesn't slip through.
   const profileIds =
     (groupId || isCommunity) && ingredient
-      ? [ingredient.created_by, ingredient.updated_by].filter((id) => id != null)
+      ? [ingredient.created_by, ingredient.updated_by].filter(
+          (id) => id != null,
+        )
       : [];
   const profileNames = useProfileNames(profileIds);
   const wasUpdated = ingredient?.updated_by != null;
@@ -124,7 +139,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
   function applyIngredientBaseline(next: Ingredient) {
     setSavedIngredient(next);
     setName(next.name);
-    setBrand(next.brand ?? '');
+    setBrand(next.brand ?? "");
     setQuantity(next.quantity.toString());
     setUnit(next.unit);
     setKcal(next.kcal.toString());
@@ -144,7 +159,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
   const parsedQuantity = Number(quantity);
   const parsedKcal = Number(kcal);
 
-  const trimmedBrand = brand.trim() === '' ? null : brand.trim();
+  const trimmedBrand = brand.trim() === "" ? null : brand.trim();
 
   const isDirty = useMemo(() => {
     if (!savedIngredient) return false;
@@ -159,11 +174,20 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
     // dirty check to enable the Save button.
     if (pendingPhotoFile) return true;
     return false;
-  }, [name, trimmedBrand, parsedQuantity, unit, parsedKcal, photoUrl, pendingPhotoFile, savedIngredient]);
+  }, [
+    name,
+    trimmedBrand,
+    parsedQuantity,
+    unit,
+    parsedKcal,
+    photoUrl,
+    pendingPhotoFile,
+    savedIngredient,
+  ]);
 
   const isValid =
-    name.trim() !== '' &&
-    unit !== '' &&
+    name.trim() !== "" &&
+    unit !== "" &&
     Number.isFinite(parsedQuantity) &&
     parsedQuantity > 0 &&
     Number.isFinite(parsedKcal) &&
@@ -175,7 +199,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
     setSaveError(null);
     try {
       const effectivePhotoUrl = pendingPhotoFile
-        ? await uploadPhoto(pendingPhotoFile, 'ingredient', ingredientId)
+        ? await uploadPhoto(pendingPhotoFile, "ingredient", ingredientId)
         : photoUrl;
       const updated = await updateIngredient(ingredientId, userId, {
         name,
@@ -193,7 +217,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
       // in RecipeDetail.tsx's handleSave.
       if (savedIngredient.photo_url && !effectivePhotoUrl) {
         try {
-          await deletePhoto('ingredient', ingredientId);
+          await deletePhoto("ingredient", ingredientId);
         } catch {
           // Swallowed — see above.
         }
@@ -201,7 +225,11 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
       setPendingPhotoFile(null);
       setJustSaved(true);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save changes. Try again.');
+      setSaveError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save changes. Try again.",
+      );
     } finally {
       setSaving(false);
     }
@@ -228,7 +256,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
         <CircularProgress />
       </Box>
     );
@@ -236,15 +264,17 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
 
   if (!ingredient || !savedIngredient) {
     return (
-      <Box sx={{ p: 2, maxWidth: 480, mx: 'auto' }}>
+      <Box sx={{ p: 2, maxWidth: 480, mx: "auto" }}>
         <Alert severity="error">Ingredient not found.</Alert>
       </Box>
     );
   }
 
   return (
-    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 4 }}>
-      <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 4 }}>
+      <Box
+        sx={{ position: "relative", display: "flex", justifyContent: "center" }}
+      >
         {canEdit ? (
           <DeferredPhotoUpload
             photoUrl={photoUrl}
@@ -254,12 +284,16 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
             size={200}
           />
         ) : (
-          <PhotoThumbnail photoUrl={ingredient.photo_url} alt={ingredient.name} size={200} />
+          <PhotoThumbnail
+            photoUrl={ingredient.photo_url}
+            alt={ingredient.name}
+            size={200}
+          />
         )}
         <IconButton
           aria-label="Ingredient actions"
           onClick={(e) => setMenuAnchor(e.currentTarget)}
-          sx={{ position: 'absolute', top: 0, right: 0 }}
+          sx={{ position: "absolute", top: 0, right: 0 }}
         >
           <MoreVertIcon />
         </IconButton>
@@ -269,7 +303,11 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
         <ItemMetadata
           creatorName={profileNames[ingredient.created_by]}
           createdAt={ingredient.created_at}
-          updaterName={ingredient.updated_by ? profileNames[ingredient.updated_by] : undefined}
+          updaterName={
+            ingredient.updated_by
+              ? profileNames[ingredient.updated_by]
+              : undefined
+          }
           updatedAt={ingredient.updated_at}
           wasUpdated={wasUpdated}
         />
@@ -280,7 +318,15 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
           fields rather than the last-saved row, so it updates as the user
           edits, before anything is saved. */}
       <Stack direction="row" spacing={1.5}>
-        <Paper sx={{ flex: 1, p: 1.5, textAlign: 'center', borderRadius: '12px', boxShadow: tokens.sh1 }}>
+        <Paper
+          sx={{
+            flex: 1,
+            p: 1.5,
+            textAlign: "center",
+            borderRadius: "12px",
+            boxShadow: tokens.sh1,
+          }}
+        >
           <Typography fontSize={18} fontWeight={500} color="primary.main">
             {parsedKcal.toFixed(2)}
           </Typography>
@@ -288,7 +334,15 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
             kcal
           </Typography>
         </Paper>
-        <Paper sx={{ flex: 1, p: 1.5, textAlign: 'center', borderRadius: '12px', boxShadow: tokens.sh1 }}>
+        <Paper
+          sx={{
+            flex: 1,
+            p: 1.5,
+            textAlign: "center",
+            borderRadius: "12px",
+            boxShadow: tokens.sh1,
+          }}
+        >
           <Typography fontSize={18} fontWeight={500} color="primary.main">
             {formatKcalPerUnit(parsedKcal, parsedQuantity)}
           </Typography>
@@ -299,7 +353,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
       </Stack>
 
       {canEdit ? (
-        <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
+        <Paper sx={{ p: 3, borderRadius: "14px", boxShadow: tokens.sh2 }}>
           <Stack spacing={2.5}>
             <TextField
               label="Name"
@@ -358,7 +412,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
       ) : (
         // Read-only — only the creator may edit/delete a community
         // ingredient (docs/pending-deviations.md, "Community pantry").
-        <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
+        <Paper sx={{ p: 3, borderRadius: "14px", boxShadow: tokens.sh2 }}>
           <Stack spacing={1} alignItems="center">
             <Typography fontSize={18} fontWeight={500}>
               {ingredient.name}
@@ -369,13 +423,18 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
               </Typography>
             )}
             <Typography color="text.secondary">
-              {ingredient.quantity} {ingredient.unit} · {ingredient.kcal.toFixed(2)} kcal
+              {ingredient.quantity} {ingredient.unit} ·{" "}
+              {ingredient.kcal.toFixed(2)} kcal
             </Typography>
           </Stack>
         </Paper>
       )}
 
-      <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
+      <Menu
+        anchorEl={menuAnchor}
+        open={menuAnchor !== null}
+        onClose={() => setMenuAnchor(null)}
+      >
         {/* "Copy" stays available regardless of canEdit — forking a
             community ingredient into your own, independently-editable
             personal or group pantry row is allowed for everyone, not just
@@ -388,7 +447,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
           }}
         >
           <ListItemIcon>
-            <ContentCopyIcon fontSize="small" sx={{ color: 'text.primary' }} />
+            <ContentCopyIcon fontSize="small" sx={{ color: "text.primary" }} />
           </ListItemIcon>
           <ListItemText>Copy</ListItemText>
         </MenuItem>
@@ -401,7 +460,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
             }}
           >
             <ListItemIcon>
-              <GroupsIcon fontSize="small" sx={{ color: 'text.primary' }} />
+              <GroupsIcon fontSize="small" sx={{ color: "text.primary" }} />
             </ListItemIcon>
             <ListItemText>Move to community</ListItemText>
           </MenuItem>
@@ -417,7 +476,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
             <ListItemIcon>
               <DeleteOutlineIcon fontSize="small" color="error" />
             </ListItemIcon>
-            <ListItemText sx={{ color: 'error.main' }}>Delete</ListItemText>
+            <ListItemText sx={{ color: "error.main" }}>Delete</ListItemText>
           </MenuItem>
         )}
       </Menu>
@@ -425,8 +484,13 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
       {saveError && <Alert severity="error">{saveError}</Alert>}
 
       {canEdit && (
-        <Button variant="contained" size="large" onClick={handleSave} disabled={!isValid || !isDirty || saving}>
-          {saving ? 'Saving…' : 'Save changes'}
+        <Button
+          variant="contained"
+          size="large"
+          onClick={handleSave}
+          disabled={!isValid || !isDirty || saving}
+        >
+          {saving ? "Saving…" : "Save changes"}
         </Button>
       )}
 
@@ -464,7 +528,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
         autoHideDuration={3000}
         onClose={() => setJustSaved(false)}
         message="Ingredient saved"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
 
       <Snackbar
@@ -472,7 +536,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
         autoHideDuration={3000}
         onClose={() => setJustCopied(false)}
         message="Ingredient copied"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
 
       <Snackbar
@@ -480,7 +544,7 @@ export function IngredientDetail({ groupId, backPath }: { groupId: string | null
         autoHideDuration={3000}
         onClose={() => setJustMovedToCommunity(false)}
         message="Ingredient moved to community"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
     </Stack>
   );

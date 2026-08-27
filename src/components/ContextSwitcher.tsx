@@ -1,19 +1,19 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import GroupIcon from '@mui/icons-material/Group';
-import PersonIcon from '@mui/icons-material/Person';
-import { useColorScheme } from '@mui/material/styles';
-import { shadows } from '../theme/theme';
-import { useAppStore } from '../store/useAppStore';
-import { useMyGroups } from '../features/groups/useMyGroups';
-import { setStoredGroupId } from '../lib/activeGroupStorage';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import GroupIcon from "@mui/icons-material/Group";
+import PersonIcon from "@mui/icons-material/Person";
+import { useColorScheme } from "@mui/material/styles";
+import { shadows } from "../theme/theme";
+import { useAppStore } from "../store/useAppStore";
+import { useMyGroups } from "../features/groups/useMyGroups";
+import { setStoredGroupId } from "../lib/activeGroupStorage";
 
 // design-system.md "Context switcher chip" — pill-shaped, sits below the
 // header on Pantry/Recipes screens (Progress ignores it — see routes.md; Log
@@ -36,14 +36,14 @@ export function ContextSwitcher({
   // No 'log' here — the Log screen replaced this switcher with the
   // GroupLogPicker flow. See docs/pending-deviations.md (Ticket 12
   // follow-up, "/log shows everything").
-  tab: 'pantry' | 'recipes';
+  tab: "pantry" | "recipes";
   activeGroupId: string | null;
 }) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
   const { mode, systemMode } = useColorScheme();
-  const resolvedMode = mode === 'system' ? systemMode : mode;
-  const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
+  const resolvedMode = mode === "system" ? systemMode : mode;
+  const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
 
   // undefined = not yet fetched. Distinguished from "fetched, zero groups"
   // so the chip doesn't flash-and-disappear for a user who does belong to
@@ -57,7 +57,9 @@ export function ContextSwitcher({
   const activeMembership = activeGroupId
     ? groups?.find((membership) => membership.group.id === activeGroupId)
     : null;
-  const label = activeGroupId ? (activeMembership?.group.name ?? 'Group') : 'Personal';
+  const label = activeGroupId
+    ? (activeMembership?.group.name ?? "Group")
+    : "Personal";
 
   function openMenu(event: { currentTarget: HTMLElement }) {
     setAnchorEl(event.currentTarget);
@@ -82,18 +84,31 @@ export function ContextSwitcher({
     <Box sx={{ px: 2, pt: 1.5 }}>
       <Chip
         label={label}
-        icon={activeGroupId ? <GroupIcon fontSize="small" /> : <PersonIcon fontSize="small" />}
+        icon={
+          activeGroupId ? (
+            <GroupIcon fontSize="small" />
+          ) : (
+            <PersonIcon fontSize="small" />
+          )
+        }
         deleteIcon={<ArrowDropDownIcon />}
         onDelete={openMenu}
         onClick={openMenu}
-        sx={{ borderRadius: '999px', boxShadow: tokens.sh1, bgcolor: 'background.paper' }}
+        sx={{
+          borderRadius: "999px",
+          boxShadow: tokens.sh1,
+          bgcolor: "background.paper",
+        }}
       />
       <Menu
         anchorEl={anchorEl}
         open={anchorEl !== null}
         onClose={() => setAnchorEl(null)}
       >
-        <MenuItem selected={activeGroupId === null} onClick={() => selectContext(null)}>
+        <MenuItem
+          selected={activeGroupId === null}
+          onClick={() => selectContext(null)}
+        >
           <ListItemIcon>
             <PersonIcon fontSize="small" />
           </ListItemIcon>

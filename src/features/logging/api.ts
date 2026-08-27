@@ -1,7 +1,7 @@
-import { db } from '../../lib/db';
-import { enqueueMutation } from '../../sync/outbox';
-import type { IngredientUnit } from '../../types/ingredient';
-import type { LogEntry, MealType } from '../../types/log';
+import { db } from "../../lib/db";
+import { enqueueMutation } from "../../sync/outbox";
+import type { IngredientUnit } from "../../types/ingredient";
+import type { LogEntry, MealType } from "../../types/log";
 
 export interface LogEntryInput {
   source_ingredient_id: string | null;
@@ -17,8 +17,8 @@ export interface LogEntryInput {
 // "today" should mean the user's wall-clock day, not the server's.
 export function todayLocalDate(): string {
   const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
@@ -43,13 +43,18 @@ export function todayLocalDate(): string {
 // letting the *viewer's own* personal/other-group entries (already
 // present locally) leak into every group's log unconditionally. See
 // docs/pending-deviations.md.
-export async function fetchTodayLogEntries(userId: string, groupId: string | null): Promise<LogEntry[]> {
+export async function fetchTodayLogEntries(
+  userId: string,
+  groupId: string | null,
+): Promise<LogEntry[]> {
   const today = todayLocalDate();
   const rows =
     groupId === null
-      ? await db.log_entries.where('logged_for').equals(userId).toArray()
-      : await db.log_entries.where('group_id').equals(groupId).toArray();
-  return rows.filter((e) => e.logged_at === today).sort((a, b) => b.created_at.localeCompare(a.created_at));
+      ? await db.log_entries.where("logged_for").equals(userId).toArray()
+      : await db.log_entries.where("group_id").equals(groupId).toArray();
+  return rows
+    .filter((e) => e.logged_at === today)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
 
 // /logs (all-time, cross-context): queries by logged_for only, no group_id
@@ -59,9 +64,14 @@ export async function fetchTodayLogEntries(userId: string, groupId: string | nul
 // correct only because no group entries existed yet (see
 // docs/pending-deviations.md, Ticket 12).
 export async function fetchAllLogEntries(userId: string): Promise<LogEntry[]> {
-  const rows = await db.log_entries.where('logged_for').equals(userId).toArray();
+  const rows = await db.log_entries
+    .where("logged_for")
+    .equals(userId)
+    .toArray();
   return rows.sort(
-    (a, b) => b.logged_at.localeCompare(a.logged_at) || b.created_at.localeCompare(a.created_at),
+    (a, b) =>
+      b.logged_at.localeCompare(a.logged_at) ||
+      b.created_at.localeCompare(a.created_at),
   );
 }
 
@@ -69,10 +79,14 @@ export async function fetchAllLogEntries(userId: string): Promise<LogEntry[]> {
 // "every entry logged into it by any member" shape as the group branch of
 // fetchTodayLogEntries above, just without the "today" filter. See
 // docs/pending-deviations.md (Ticket 12 follow-up, "group's all-time history").
-export async function fetchAllGroupLogEntries(groupId: string): Promise<LogEntry[]> {
-  const rows = await db.log_entries.where('group_id').equals(groupId).toArray();
+export async function fetchAllGroupLogEntries(
+  groupId: string,
+): Promise<LogEntry[]> {
+  const rows = await db.log_entries.where("group_id").equals(groupId).toArray();
   return rows.sort(
-    (a, b) => b.logged_at.localeCompare(a.logged_at) || b.created_at.localeCompare(a.created_at),
+    (a, b) =>
+      b.logged_at.localeCompare(a.logged_at) ||
+      b.created_at.localeCompare(a.created_at),
   );
 }
 
@@ -105,7 +119,7 @@ export async function createLogEntry(
     updated_at: now,
   };
   await db.log_entries.add(entry);
-  await enqueueMutation('log_entries', 'insert', { ...entry });
+  await enqueueMutation("log_entries", "insert", { ...entry });
   return entry;
 }
 
@@ -124,16 +138,19 @@ export interface LogEntryUpdateInput {
 // (EditLogEntryDialog) from the entry's current source before this is
 // called, when a source still exists — see docs/schema.md's
 // "live-referenced, not snapshotted" note.
-export async function updateLogEntry(id: string, input: LogEntryUpdateInput): Promise<LogEntry> {
+export async function updateLogEntry(
+  id: string,
+  input: LogEntryUpdateInput,
+): Promise<LogEntry> {
   const updated_at = new Date().toISOString();
   await db.log_entries.update(id, { ...input, updated_at });
   const entry = await db.log_entries.get(id);
-  if (!entry) throw new Error('Log entry not found.');
-  await enqueueMutation('log_entries', 'update', { id, ...input, updated_at });
+  if (!entry) throw new Error("Log entry not found.");
+  await enqueueMutation("log_entries", "update", { id, ...input, updated_at });
   return entry;
 }
 
 export async function deleteLogEntry(id: string): Promise<void> {
   await db.log_entries.delete(id);
-  await enqueueMutation('log_entries', 'delete', { id });
+  await enqueueMutation("log_entries", "delete", { id });
 }

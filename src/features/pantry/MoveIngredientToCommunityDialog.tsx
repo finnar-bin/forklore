@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
+import { useState } from "react";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 
 export function MoveIngredientToCommunityDialog({
   open,
@@ -33,7 +33,11 @@ export function MoveIngredientToCommunityDialog({
     try {
       await onConfirm();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to move this ingredient. Try again.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to move this ingredient. Try again.",
+      );
     } finally {
       setMoving(false);
     }
@@ -49,8 +53,8 @@ export function MoveIngredientToCommunityDialog({
           </Alert>
         )}
         <DialogContentText>
-          This ingredient will be moved to the community pantry, visible and usable by every user.
-          This can't be undone.
+          This ingredient will be moved to the community pantry, visible and
+          usable by every user. This can't be undone.
         </DialogContentText>
       </DialogContent>
       <DialogActions>
@@ -58,7 +62,7 @@ export function MoveIngredientToCommunityDialog({
           Cancel
         </Button>
         <Button variant="contained" onClick={handleConfirm} disabled={moving}>
-          {moving ? 'Moving…' : 'Move to community'}
+          {moving ? "Moving…" : "Move to community"}
         </Button>
       </DialogActions>
     </Dialog>

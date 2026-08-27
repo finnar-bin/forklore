@@ -1,7 +1,7 @@
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import { formatKcalPerUnit } from '../../lib/kcal';
-import type { Recipe } from '../../types/recipe';
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { formatKcalPerUnit } from "../../lib/kcal";
+import type { Recipe } from "../../types/recipe";
 
 // Recipe counterpart to pantry/IngredientKcalHeader.tsx — same layout,
 // shared by any screen that asks "how many grams of this recipe" and wants
@@ -21,13 +21,36 @@ export function RecipeKcalHeader({
   kcal: number;
 }) {
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 2,
+      }}
+    >
       <Box sx={{ minWidth: 0 }}>
-        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, minWidth: 0 }}>
-          <Typography fontSize={18} fontWeight={500} noWrap sx={{ minWidth: 0 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 0.5,
+            minWidth: 0,
+          }}
+        >
+          <Typography
+            fontSize={18}
+            fontWeight={500}
+            noWrap
+            sx={{ minWidth: 0 }}
+          >
             {recipe.name}
           </Typography>
-          <Typography fontSize={18} color="text.secondary" sx={{ flexShrink: 0 }}>
+          <Typography
+            fontSize={18}
+            color="text.secondary"
+            sx={{ flexShrink: 0 }}
+          >
             {recipe.weight_g} g
           </Typography>
         </Box>
@@ -35,11 +58,11 @@ export function RecipeKcalHeader({
           {groupLabel}
         </Typography>
       </Box>
-      <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+      <Box sx={{ textAlign: "right", flexShrink: 0 }}>
         <Typography fontSize={20} color="primary.main">
           <Box component="span" sx={{ fontWeight: 700 }}>
             {kcal.toFixed(2)}
-          </Box>{' '}
+          </Box>{" "}
           <Box component="span" sx={{ fontWeight: 400 }}>
             kcal
           </Box>

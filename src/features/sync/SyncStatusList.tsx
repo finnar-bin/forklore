@@ -1,25 +1,25 @@
-import { useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import { useColorScheme } from '@mui/material/styles';
-import { db } from '../../lib/db';
-import { discardFailedItem, retryFailedItem } from '../../sync/outbox';
-import { shadows } from '../../theme/theme';
-import type { OutboxItem } from '../../types/sync';
+import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import { useColorScheme } from "@mui/material/styles";
+import { db } from "../../lib/db";
+import { discardFailedItem, retryFailedItem } from "../../sync/outbox";
+import { shadows } from "../../theme/theme";
+import type { OutboxItem } from "../../types/sync";
 
-const OPERATION_LABEL: Record<OutboxItem['operation'], string> = {
-  insert: 'Add',
-  update: 'Update',
-  delete: 'Delete',
+const OPERATION_LABEL: Record<OutboxItem["operation"], string> = {
+  insert: "Add",
+  update: "Update",
+  delete: "Delete",
 };
 
 function describeItem(item: OutboxItem): string {
-  return `${OPERATION_LABEL[item.operation]} in ${item.table.replace(/_/g, ' ')}`;
+  return `${OPERATION_LABEL[item.operation]} in ${item.table.replace(/_/g, " ")}`;
 }
 
 // Card pattern from design-system.md (sh2 shadow, 14px radius) with a status
@@ -32,27 +32,32 @@ function SyncItemCard({
   action,
 }: {
   item: OutboxItem;
-  tone: 'warning' | 'error';
+  tone: "warning" | "error";
   detail: string;
   action?: ReactNode;
 }) {
   const { mode, systemMode } = useColorScheme();
-  const resolvedMode = mode === 'system' ? systemMode : mode;
-  const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
+  const resolvedMode = mode === "system" ? systemMode : mode;
+  const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
 
   return (
     <Box
       sx={{
-        bgcolor: 'background.paper',
-        borderRadius: '14px',
+        bgcolor: "background.paper",
+        borderRadius: "14px",
         boxShadow: tokens.sh2,
         p: 1.5,
         pl: 1.75,
-        borderLeft: '3px solid',
-        borderLeftColor: tone === 'error' ? 'error.main' : 'secondary.main',
+        borderLeft: "3px solid",
+        borderLeftColor: tone === "error" ? "error.main" : "secondary.main",
       }}
     >
-      <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1.5}>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        gap={1.5}
+      >
         <Box sx={{ minWidth: 0 }}>
           <Typography fontSize={14} fontWeight={500} noWrap>
             {describeItem(item)}
@@ -74,8 +79,8 @@ export function SyncStatusList() {
   const { waiting, failed } = useMemo(() => {
     const all = items ?? [];
     return {
-      waiting: all.filter((item) => item.status === 'waiting_for_connectivity'),
-      failed: all.filter((item) => item.status === 'failed'),
+      waiting: all.filter((item) => item.status === "waiting_for_connectivity"),
+      failed: all.filter((item) => item.status === "failed"),
     };
   }, [items]);
 
@@ -99,7 +104,7 @@ export function SyncStatusList() {
 
   if (items === undefined) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
         <CircularProgress />
       </Box>
     );
@@ -114,7 +119,7 @@ export function SyncStatusList() {
   }
 
   return (
-    <Stack spacing={3} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 4 }}>
+    <Stack spacing={3} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 4 }}>
       {failed.length > 0 && (
         <Stack spacing={1.5}>
           <Typography fontSize={13} fontWeight={500} color="text.secondary">

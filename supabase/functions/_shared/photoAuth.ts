@@ -1,39 +1,44 @@
-import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  createClient,
+  type SupabaseClient,
+} from "https://esm.sh/@supabase/supabase-js@2";
 
 // Shared between get-upload-url and delete-photo: CORS, the "is this a
 // real signed-in user" check, and the RLS-scoped/service-role queries both
 // functions need to authorize an id-keyed R2 object.
 
 export const PATH_PREFIXES = {
-  ingredient: 'ingredient-photos',
-  recipe: 'recipe-photos',
-  avatar: 'avatar-photos',
+  ingredient: "ingredient-photos",
+  recipe: "recipe-photos",
+  avatar: "avatar-photos",
 } as const;
 
 export type Entity = keyof typeof PATH_PREFIXES;
 
 export const OWNERSHIP_TABLES = {
-  ingredient: 'ingredients',
-  recipe: 'recipes',
+  ingredient: "ingredients",
+  recipe: "recipes",
 } as const;
 
-export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
+  "Access-Control-Allow-Origin": "*",
   // x-client-info and apikey aren't headers either function reads itself —
   // they're sent automatically by supabase-js's functions.invoke() on
   // every call, so the preflight has to allow them or the browser blocks
   // the real request before it's ever sent ("header disallowed by
   // preflight response").
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 export function errorResponse(message: string, status: number): Response {
   return new Response(JSON.stringify({ error: message }), {
     status,
-    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
   });
 }
 
@@ -56,27 +61,39 @@ interface AuthFailure {
 // missing/invalid token. The returned userClient forwards the caller's own
 // JWT on every request it makes, so subsequent table queries run
 // RLS-scoped as the caller, not as anon.
-export async function authenticateCaller(req: Request): Promise<AuthSuccess | AuthFailure> {
-  const authHeader = req.headers.get('Authorization');
-  const token = authHeader?.replace(/^Bearer\s+/i, '');
+export async function authenticateCaller(
+  req: Request,
+): Promise<AuthSuccess | AuthFailure> {
+  const authHeader = req.headers.get("Authorization");
+  const token = authHeader?.replace(/^Bearer\s+/i, "");
   if (!token) {
-    return { ok: false, response: errorResponse('Missing Authorization header.', 401) };
+    return {
+      ok: false,
+      response: errorResponse("Missing Authorization header.", 401),
+    };
   }
 
   // Auto-injected by the Supabase platform into every deployed Edge
   // Function — not something set via `supabase secrets set`.
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
   if (!supabaseUrl || !supabaseAnonKey) {
-    return { ok: false, response: errorResponse('Server misconfiguration: missing Supabase project env vars.', 500) };
+    return {
+      ok: false,
+      response: errorResponse(
+        "Server misconfiguration: missing Supabase project env vars.",
+        500,
+      ),
+    };
   }
 
   const userClient = createClient(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
-  const { data: userData, error: authError } = await userClient.auth.getUser(token);
+  const { data: userData, error: authError } =
+    await userClient.auth.getUser(token);
   if (authError || !userData.user) {
-    return { ok: false, response: errorResponse('Unauthorized.', 401) };
+    return { ok: false, response: errorResponse("Unauthorized.", 401) };
   }
 
   return { ok: true, userClient, userId: userData.user.id };
@@ -95,11 +112,18 @@ interface ServiceClientFailure {
 // SUPABASE_ANON_KEY — not a secret either function needs to set itself.
 // Bypasses RLS entirely; used only for narrow, boolean, id-only existence
 // checks below — never to return row contents to the client.
-export function createServiceClient(): ServiceClientSuccess | ServiceClientFailure {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+export function createServiceClient():
+  ServiceClientSuccess | ServiceClientFailure {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) {
-    return { ok: false, response: errorResponse('Server misconfiguration: missing service role env vars.', 500) };
+    return {
+      ok: false,
+      response: errorResponse(
+        "Server misconfiguration: missing service role env vars.",
+        500,
+      ),
+    };
   }
   return { ok: true, client: createClient(supabaseUrl, serviceRoleKey) };
 }
@@ -115,7 +139,11 @@ export async function existsAnywhere(
   id: string,
   logContext: string,
 ): Promise<boolean> {
-  const { data, error } = await serviceClient.from(table).select('id').eq('id', id).maybeSingle();
+  const { data, error } = await serviceClient
+    .from(table)
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
   if (error) {
     console.error(`${logContext}: existence check failed`, error);
     // Fail closed: if existence can't be determined, don't assume "safe,
@@ -138,7 +166,11 @@ export async function isVisibleToCaller(
   id: string,
   logContext: string,
 ): Promise<boolean> {
-  const { data, error } = await userClient.from(table).select('id').eq('id', id).maybeSingle();
+  const { data, error } = await userClient
+    .from(table)
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
   if (error) {
     // Logged server-side (not returned to the client, to avoid leaking
     // details) so a genuine backend problem here — bad table name,
@@ -168,9 +200,9 @@ export async function isPhotoStillReferenced(
 ): Promise<boolean> {
   const { data, error } = await serviceClient
     .from(table)
-    .select('id')
-    .neq('id', excludeId)
-    .like('photo_url', `%${key}%`)
+    .select("id")
+    .neq("id", excludeId)
+    .like("photo_url", `%${key}%`)
     .limit(1)
     .maybeSingle();
   if (error) {

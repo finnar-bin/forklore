@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 // Shared between UpdatePrompt.tsx (owns the single service worker
 // registration via useRegisterSW, mirrors its registration/needRefresh

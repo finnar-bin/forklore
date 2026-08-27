@@ -1,28 +1,35 @@
-import { useState } from 'react';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import Link from '@mui/material/Link';
-import Paper from '@mui/material/Paper';
-import Snackbar from '@mui/material/Snackbar';
-import Stack from '@mui/material/Stack';
-import Switch from '@mui/material/Switch';
-import Typography from '@mui/material/Typography';
-import LogoutIcon from '@mui/icons-material/Logout';
-import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
-import { useColorScheme } from '@mui/material/styles';
-import { Link as RouterLink } from 'react-router-dom';
-import { shadows } from '../../theme/theme';
-import { useAppStore } from '../../store/useAppStore';
-import { checkForPwaUpdate, usePwaUpdateStore } from '../../store/usePwaUpdateStore';
-import { LogoutConfirmDialog } from '../../components/LogoutConfirmDialog';
-import { attemptLogout, performLogout } from '../auth/api';
-import { updateMyProfile, type ProfileInput } from './api';
-import { useMyProfile, useMyProfileLoadError, invalidateMyProfile } from './useMyProfile';
-import { ProfileForm } from './ProfileForm';
+import { useState } from "react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Link from "@mui/material/Link";
+import Paper from "@mui/material/Paper";
+import Snackbar from "@mui/material/Snackbar";
+import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
+import Typography from "@mui/material/Typography";
+import LogoutIcon from "@mui/icons-material/Logout";
+import SystemUpdateAltIcon from "@mui/icons-material/SystemUpdateAlt";
+import { useColorScheme } from "@mui/material/styles";
+import { Link as RouterLink } from "react-router-dom";
+import { shadows } from "../../theme/theme";
+import { useAppStore } from "../../store/useAppStore";
+import {
+  checkForPwaUpdate,
+  usePwaUpdateStore,
+} from "../../store/usePwaUpdateStore";
+import { LogoutConfirmDialog } from "../../components/LogoutConfirmDialog";
+import { attemptLogout, performLogout } from "../auth/api";
+import { updateMyProfile, type ProfileInput } from "./api";
+import {
+  useMyProfile,
+  useMyProfileLoadError,
+  invalidateMyProfile,
+} from "./useMyProfile";
+import { ProfileForm } from "./ProfileForm";
 
-const REPO_URL = 'https://github.com/finnar-bin/forklore';
+const REPO_URL = "https://github.com/finnar-bin/forklore";
 
 // Account-level info (name/avatar/height/birthdate) plus logout, the theme
 // toggle, and a manual PWA update check — see design-system.md's
@@ -32,8 +39,8 @@ const REPO_URL = 'https://github.com/finnar-bin/forklore';
 export function Profile() {
   const userId = useAppStore((state) => state.userId);
   const { mode, systemMode, setMode } = useColorScheme();
-  const resolvedMode = mode === 'system' ? systemMode : mode;
-  const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
+  const resolvedMode = mode === "system" ? systemMode : mode;
+  const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
 
   const profile = useMyProfile(userId);
   const loadError = useMyProfileLoadError(userId);
@@ -84,11 +91,15 @@ export function Profile() {
 
   if (loadError) {
     return (
-      <Box sx={{ p: 2, maxWidth: 480, mx: 'auto' }}>
+      <Box sx={{ p: 2, maxWidth: 480, mx: "auto" }}>
         <Alert
           severity="error"
           action={
-            <Button color="inherit" size="small" onClick={() => invalidateMyProfile()}>
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => invalidateMyProfile()}
+            >
               Try again
             </Button>
           }
@@ -101,15 +112,15 @@ export function Profile() {
 
   if (!profile) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 8 }}>
-      <Paper sx={{ p: 3, borderRadius: '14px', boxShadow: tokens.sh2 }}>
+    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 8 }}>
+      <Paper sx={{ p: 3, borderRadius: "14px", boxShadow: tokens.sh2 }}>
         <ProfileForm
           initialValues={{
             name: profile.name,
@@ -125,18 +136,18 @@ export function Profile() {
       <Paper
         sx={{
           p: 2,
-          borderRadius: '14px',
+          borderRadius: "14px",
           boxShadow: tokens.sh2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
         <Typography fontSize={14}>Dark mode</Typography>
         <Switch
-          checked={resolvedMode === 'dark'}
-          onChange={() => setMode(resolvedMode === 'dark' ? 'light' : 'dark')}
-          inputProps={{ 'aria-label': 'Toggle dark mode' }}
+          checked={resolvedMode === "dark"}
+          onChange={() => setMode(resolvedMode === "dark" ? "light" : "dark")}
+          inputProps={{ "aria-label": "Toggle dark mode" }}
         />
       </Paper>
 
@@ -147,7 +158,7 @@ export function Profile() {
         onClick={handleCheckForUpdate}
         disabled={checkingForUpdate}
       >
-        {checkingForUpdate ? 'Checking for updates…' : 'Check for updates'}
+        {checkingForUpdate ? "Checking for updates…" : "Check for updates"}
       </Button>
 
       <Button
@@ -176,7 +187,7 @@ export function Profile() {
         autoHideDuration={3000}
         onClose={() => setJustSaved(false)}
         message="Profile saved"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
 
       <Snackbar
@@ -184,30 +195,39 @@ export function Profile() {
         autoHideDuration={3000}
         onClose={() => setUpToDate(false)}
         message="You're on the latest version"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
 
       <Box
         sx={{
-          position: 'fixed',
+          position: "fixed",
           left: 0,
           right: 0,
           bottom: 0,
           py: 1,
-          textAlign: 'center',
+          textAlign: "center",
         }}
       >
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block" }}
+        >
           <Link component={RouterLink} to="/terms" color="inherit">
             Terms
-          </Link>{' '}
-          ·{' '}
+          </Link>{" "}
+          ·{" "}
           <Link component={RouterLink} to="/privacy" color="inherit">
             Privacy
           </Link>
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          <Link href={REPO_URL} target="_blank" rel="noopener noreferrer" color="inherit">
+          <Link
+            href={REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            color="inherit"
+          >
             v{__APP_VERSION__} · {__GIT_HASH__}
           </Link>
         </Typography>

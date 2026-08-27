@@ -1,4 +1,4 @@
-import { AwsClient } from 'https://esm.sh/aws4fetch@1.0.20';
+import { AwsClient } from "https://esm.sh/aws4fetch@1.0.20";
 import {
   PATH_PREFIXES,
   OWNERSHIP_TABLES,
@@ -10,7 +10,7 @@ import {
   isVisibleToCaller,
   isPhotoStillReferenced,
   type Entity,
-} from '../_shared/photoAuth.ts';
+} from "../_shared/photoAuth.ts";
 
 // Deletes an ingredient/recipe's R2 photo when the row itself is deleted
 // (called from deleteIngredient/deleteRecipe), or an avatar's when it's
@@ -22,7 +22,7 @@ import {
 // still exist to verify the caller could see it; if it ran after the row
 // was gone, every legitimate deletion would incorrectly 403.
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: CORS_HEADERS });
   }
 
@@ -35,25 +35,28 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     if (!Object.hasOwn(PATH_PREFIXES, body?.entity)) {
-      throw new Error('invalid entity');
+      throw new Error("invalid entity");
     }
     entity = body.entity as Entity;
     // Avatars are always keyed by the caller's own id (resolved below) —
     // any id the client sends for entity: 'avatar' is meaningless and
     // discarded, so it's never even validated. Same convention as
     // get-upload-url.
-    if (entity !== 'avatar') {
-      if (typeof body.id !== 'string' || !UUID_RE.test(body.id)) {
-        throw new Error('invalid id');
+    if (entity !== "avatar") {
+      if (typeof body.id !== "string" || !UUID_RE.test(body.id)) {
+        throw new Error("invalid id");
       }
       requestedId = body.id;
     }
   } catch {
-    return errorResponse('entity must be one of ingredient, recipe, avatar; ingredient/recipe also require an id (UUID)', 400);
+    return errorResponse(
+      "entity must be one of ingredient, recipe, avatar; ingredient/recipe also require an id (UUID)",
+      400,
+    );
   }
 
   let id: string;
-  if (entity === 'avatar') {
+  if (entity === "avatar") {
     // No ownership check needed beyond authentication itself — a caller
     // can only ever delete their own avatar, since the id isn't
     // client-influenced. No reference check either: avatars are never
@@ -62,12 +65,17 @@ Deno.serve(async (req) => {
     id = userId;
   } else {
     if (!requestedId) {
-      return errorResponse('id is required for entity ingredient/recipe', 400);
+      return errorResponse("id is required for entity ingredient/recipe", 400);
     }
     const table = OWNERSHIP_TABLES[entity];
-    const visible = await isVisibleToCaller(userClient, table, requestedId, 'delete-photo');
+    const visible = await isVisibleToCaller(
+      userClient,
+      table,
+      requestedId,
+      "delete-photo",
+    );
     if (!visible) {
-      return errorResponse('Not found or not authorized.', 403);
+      return errorResponse("Not found or not authorized.", 403);
     }
     id = requestedId;
 
@@ -75,41 +83,56 @@ Deno.serve(async (req) => {
     const serviceClientResult = createServiceClient();
     if (!serviceClientResult.ok) return serviceClientResult.response;
 
-    const stillReferenced = await isPhotoStillReferenced(serviceClientResult.client, table, id, key, 'delete-photo');
+    const stillReferenced = await isPhotoStillReferenced(
+      serviceClientResult.client,
+      table,
+      id,
+      key,
+      "delete-photo",
+    );
     if (stillReferenced) {
       // Not an error — a copy (Ticket 14's copy_ingredient/copy_recipe,
       // which copies photo_url verbatim rather than giving a copy its own
       // independent photo) still needs this object. Nothing to delete.
       return new Response(JSON.stringify({ deleted: false }), {
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
       });
     }
   }
 
   const key = `${PATH_PREFIXES[entity]}/${id}.webp`;
 
-  const accountId = Deno.env.get('R2_ACCOUNT_ID');
-  const accessKeyId = Deno.env.get('R2_ACCESS_KEY_ID');
-  const secretAccessKey = Deno.env.get('R2_SECRET_ACCESS_KEY');
-  const bucket = Deno.env.get('R2_BUCKET');
+  const accountId = Deno.env.get("R2_ACCOUNT_ID");
+  const accessKeyId = Deno.env.get("R2_ACCESS_KEY_ID");
+  const secretAccessKey = Deno.env.get("R2_SECRET_ACCESS_KEY");
+  const bucket = Deno.env.get("R2_BUCKET");
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
-    return errorResponse('Server misconfiguration: missing R2 secrets.', 500);
+    return errorResponse("Server misconfiguration: missing R2 secrets.", 500);
   }
 
-  const client = new AwsClient({ accessKeyId, secretAccessKey, service: 's3', region: 'auto' });
+  const client = new AwsClient({
+    accessKeyId,
+    secretAccessKey,
+    service: "s3",
+    region: "auto",
+  });
   const objectUrl = `https://${accountId}.r2.cloudflarestorage.com/${bucket}/${key}`;
 
   // No presigning-then-handing-a-URL-to-the-client needed here, unlike
   // upload — a DELETE carries no body/bytes, so the server can just
   // perform it directly via aws4fetch's signing fetch wrapper.
-  const deleteResponse = await client.fetch(objectUrl, { method: 'DELETE' });
+  const deleteResponse = await client.fetch(objectUrl, { method: "DELETE" });
   // R2/S3 DELETE is idempotent — a 404 (nothing was ever uploaded for this
   // entity) is a normal outcome, not an error.
   if (!deleteResponse.ok && deleteResponse.status !== 404) {
-    console.error('delete-photo: R2 delete failed', deleteResponse.status, await deleteResponse.text());
+    console.error(
+      "delete-photo: R2 delete failed",
+      deleteResponse.status,
+      await deleteResponse.text(),
+    );
   }
 
   return new Response(JSON.stringify({ deleted: true }), {
-    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
   });
 });

@@ -1,5 +1,5 @@
-import { db } from '../lib/db';
-import { supabase } from '../lib/supabase';
+import { db } from "../lib/db";
+import { supabase } from "../lib/supabase";
 
 // Pull side of the outbox pattern — see frontend-architecture.md "Offline
 // sync — outbox pattern", step 4. Fetches rows changed since the last pull
@@ -15,13 +15,13 @@ export interface PullScope {
 }
 
 interface TableSyncConfig {
-  table: 'ingredients' | 'recipes' | 'log_entries';
+  table: "ingredients" | "recipes" | "log_entries";
   // Column compared against the last-synced cursor.
-  cursorColumn: 'updated_at' | 'created_at';
+  cursorColumn: "updated_at" | "created_at";
   // Column that identifies "this row is personal to the caller" when
   // `scope.groupId` is null. Group-scoped rows (Ticket 12) rely on RLS
   // membership instead, so this column isn't filtered on in that case.
-  ownerColumn: 'created_by' | 'logged_for';
+  ownerColumn: "created_by" | "logged_for";
 }
 
 async function getCursor(metaKey: string): Promise<string | null> {
@@ -34,7 +34,9 @@ async function setCursor(metaKey: string, value: string): Promise<void> {
 }
 
 function scopeKey(table: string, scope: PullScope): string {
-  return scope.groupId === null ? `${table}:personal:${scope.userId}` : `${table}:group:${scope.groupId}`;
+  return scope.groupId === null
+    ? `${table}:personal:${scope.userId}`
+    : `${table}:group:${scope.groupId}`;
 }
 
 // Ids with a not-yet-synced outbox item (any status — pending, retrying, or
@@ -48,7 +50,9 @@ function scopeKey(table: string, scope: PullScope): string {
 async function pendingOutboxIds(table: string): Promise<Set<string>> {
   const items = await db.outbox.toArray();
   return new Set(
-    items.filter((item) => item.table === table).map((item) => item.payload.id as string),
+    items
+      .filter((item) => item.table === table)
+      .map((item) => item.payload.id as string),
   );
 }
 
@@ -78,12 +82,15 @@ async function deleteStaleLocalRows(
 // that set (and isn't still mid-sync, per pendingOutboxIds above). Runs
 // every pull rather than being cursor-gated itself, since a delete doesn't
 // bump any row's `updated_at` for this query to key off.
-async function reconcileDeletes(config: TableSyncConfig, scope: PullScope): Promise<void> {
-  let idQuery = supabase.from(config.table).select('id');
+async function reconcileDeletes(
+  config: TableSyncConfig,
+  scope: PullScope,
+): Promise<void> {
+  let idQuery = supabase.from(config.table).select("id");
   idQuery =
     scope.groupId === null
-      ? idQuery.is('group_id', null).eq(config.ownerColumn, scope.userId)
-      : idQuery.eq('group_id', scope.groupId);
+      ? idQuery.is("group_id", null).eq(config.ownerColumn, scope.userId)
+      : idQuery.eq("group_id", scope.groupId);
 
   const { data, error } = await idQuery;
   if (error) throw error;
@@ -96,15 +103,18 @@ async function reconcileDeletes(config: TableSyncConfig, scope: PullScope): Prom
   // pulled into this scope, not how a screen chooses to display it.
   const localRows =
     scope.groupId === null
-      ? (await table.where(config.ownerColumn).equals(scope.userId).toArray()).filter(
-          (row) => row.group_id === null,
-        )
-      : await table.where('group_id').equals(scope.groupId).toArray();
+      ? (
+          await table.where(config.ownerColumn).equals(scope.userId).toArray()
+        ).filter((row) => row.group_id === null)
+      : await table.where("group_id").equals(scope.groupId).toArray();
 
   await deleteStaleLocalRows(config.table, serverIds, localRows);
 }
 
-async function pullTable(config: TableSyncConfig, scope: PullScope): Promise<void> {
+async function pullTable(
+  config: TableSyncConfig,
+  scope: PullScope,
+): Promise<void> {
   const metaKey = scopeKey(config.table, scope);
   const lastSyncedAt = await getCursor(metaKey);
   // Captured before the request goes out, not after it resolves — a write
@@ -113,11 +123,11 @@ async function pullTable(config: TableSyncConfig, scope: PullScope): Promise<voi
   // timestamp was recorded.
   const syncStartedAt = new Date().toISOString();
 
-  let query = supabase.from(config.table).select('*');
+  let query = supabase.from(config.table).select("*");
   query =
     scope.groupId === null
-      ? query.is('group_id', null).eq(config.ownerColumn, scope.userId)
-      : query.eq('group_id', scope.groupId);
+      ? query.is("group_id", null).eq(config.ownerColumn, scope.userId)
+      : query.eq("group_id", scope.groupId);
   if (lastSyncedAt) {
     query = query.gt(config.cursorColumn, lastSyncedAt);
   }
@@ -135,17 +145,29 @@ async function pullTable(config: TableSyncConfig, scope: PullScope): Promise<voi
 }
 
 const TABLE_CONFIGS: TableSyncConfig[] = [
-  { table: 'ingredients', cursorColumn: 'updated_at', ownerColumn: 'created_by' },
-  { table: 'recipes', cursorColumn: 'updated_at', ownerColumn: 'created_by' },
-  { table: 'log_entries', cursorColumn: 'updated_at', ownerColumn: 'logged_for' },
+  {
+    table: "ingredients",
+    cursorColumn: "updated_at",
+    ownerColumn: "created_by",
+  },
+  { table: "recipes", cursorColumn: "updated_at", ownerColumn: "created_by" },
+  {
+    table: "log_entries",
+    cursorColumn: "updated_at",
+    ownerColumn: "logged_for",
+  },
 ];
 
 // Pulls every table for one scope (personal, or — once Ticket 12 lands — a
 // specific group). Runs the three tables concurrently; one table's failure
 // (e.g. offline) doesn't block the others from progressing.
 export async function pullScope(scope: PullScope): Promise<void> {
-  const results = await Promise.allSettled(TABLE_CONFIGS.map((config) => pullTable(config, scope)));
-  const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
+  const results = await Promise.allSettled(
+    TABLE_CONFIGS.map((config) => pullTable(config, scope)),
+  );
+  const failed = results.find(
+    (r): r is PromiseRejectedResult => r.status === "rejected",
+  );
   if (failed) throw failed.reason;
 }
 
@@ -158,13 +180,13 @@ export async function pullScope(scope: PullScope): Promise<void> {
 // there's no owner column to filter on, and no scope key beyond a single
 // fixed one.
 export async function pullCommunityIngredients(): Promise<void> {
-  const metaKey = 'ingredients:community';
+  const metaKey = "ingredients:community";
   const lastSyncedAt = await getCursor(metaKey);
   const syncStartedAt = new Date().toISOString();
 
-  let query = supabase.from('ingredients').select('*').eq('is_community', true);
+  let query = supabase.from("ingredients").select("*").eq("is_community", true);
   if (lastSyncedAt) {
-    query = query.gt('updated_at', lastSyncedAt);
+    query = query.gt("updated_at", lastSyncedAt);
   }
 
   const { data, error } = await query;
@@ -178,14 +200,16 @@ export async function pullCommunityIngredients(): Promise<void> {
   // isn't an indexed Dexie field, so this filters in JS instead of via
   // .where(). This scope has no owner/group query to reuse.
   const { data: idData, error: idError } = await supabase
-    .from('ingredients')
-    .select('id')
-    .eq('is_community', true);
+    .from("ingredients")
+    .select("id")
+    .eq("is_community", true);
   if (idError) throw idError;
   const serverIds = new Set((idData ?? []).map((row) => row.id as string));
 
-  const localRows = await db.ingredients.filter((row) => row.is_community === true).toArray();
-  await deleteStaleLocalRows('ingredients', serverIds, localRows);
+  const localRows = await db.ingredients
+    .filter((row) => row.is_community === true)
+    .toArray();
+  await deleteStaleLocalRows("ingredients", serverIds, localRows);
 
   await setCursor(metaKey, syncStartedAt);
 }

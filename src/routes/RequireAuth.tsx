@@ -1,5 +1,5 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAppStore } from '../store/useAppStore';
+import { Navigate, Outlet } from "react-router-dom";
+import { useAppStore } from "../store/useAppStore";
 
 // Gates authenticated routes — see routes.md. Assumes the initial session check
 // (see useAuthSession) has already resolved by the time this renders.

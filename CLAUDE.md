@@ -15,9 +15,11 @@ npm run build             # tsc -b && vite build --mode prod
 npm run build:dev         # tsc -b && vite build --mode dev
 npm run preview           # preview a production build
 npm run lint               # oxlint
+npm run format              # prettier --write .
+npm run format:check        # prettier --check .
 ```
 
-There is no test suite/framework configured in this repo (no jest/vitest, no `test` script) — do not assume one exists. `tsc -b` (via the build scripts) and `oxlint` are the only automated verification available; treat a clean run of both as the bar before considering a change done.
+There is no test suite/framework configured in this repo (no jest/vitest, no `test` script) — do not assume one exists. `tsc -b` (via the build scripts), `oxlint`, and `prettier --check` are the only automated verification available; treat a clean run of all three as the bar before considering a change done.
 
 ### Supabase (**never run these — see below**)
 
@@ -27,6 +29,7 @@ npm run supabase:deploy-functions:dev|prod  # scripts/supabase-deploy-functions.
 ```
 
 **Org policy: must not connect to databases.** Concretely, this means:
+
 - Never run `supabase db push`, `supabase link`, or otherwise apply/execute migrations against dev or prod.
 - Author migrations as new timestamped files under `supabase/migrations/` (see naming convention there) and Edge Function code under `supabase/functions/`, but leave them unpushed.
 - Document every migration you add — and any manual verification it needs — as a new dated entry in `docs/pending-deviations.md`, following the existing entries' format (Deviation / Why / Not yet verified), and add the corresponding manual QA steps to `supabase/README.md`. This is the established pattern throughout this repo's history — every migration so far has been written, reviewed, and left for a human to push and verify against a live project.
@@ -34,6 +37,7 @@ npm run supabase:deploy-functions:dev|prod  # scripts/supabase-deploy-functions.
 ## Architecture
 
 The full living spec lives in `docs/` — read it before making non-trivial changes, since a lot of "why" here isn't derivable from the code alone:
+
 - `docs/frontend-architecture.md` — stack rationale, project structure, Dexie schema, Zustand stores, offline sync/outbox design, logout behavior, navigation animation rules, photo handling.
 - `docs/routes.md` — full route table and the reasoning behind personal-vs-group route duplication instead of a unified `:contextId` param.
 - `docs/schema.md` — Postgres schema, RLS policy patterns, triggers, delete/cascade behavior.
@@ -67,4 +71,4 @@ Compressed/converted to WebP client-side (`browser-image-compression`) before up
 - Any spec deviation you introduce should be recorded in `docs/pending-deviations.md` in the same Deviation/Why/Not yet verified format as existing entries, not left implicit in a commit message.
 - For an entity with both a create dialog and a full detail/edit page (ingredients, recipes), the create dialog's form component (`IngredientForm.tsx`, `RecipeForm.tsx`) is create-only — it owns its own `DeferredPhotoUpload` and submits directly. The detail page (`IngredientDetail.tsx`, `RecipeDetail.tsx`) does **not** reuse that form component for editing; it inlines its own fields and stages them in local state (`savedX` baseline + a dirty-check), with the photo lifted out to its own row above an explicit "Save changes" button. Don't reach for the *Form component when adding edit-path UI to a detail page — inline it there instead, matching this existing split.
 - Kcal-per-unit/per-gram rate math (`quantity > 0 ? kcal / quantity : 0`) has a shared helper, `src/lib/kcal.ts` (`kcalPerUnit` for the raw number, `formatKcalPerUnit` for the `.toFixed(2)`-formatted display string) — use it instead of re-deriving the calc inline. Every rendered kcal value in the app is formatted `.toFixed(2)`, by explicit request — keep new kcal displays consistent with that (excluding a form `TextField`'s own live-typed `value=`, which should never be forcibly reformatted).
-- This repo has no Prettier config, and its actual style is single quotes with wider (~100–110 col) lines — but some editor in this workflow occasionally auto-reformats a touched file to Prettier's own defaults (double quotes, 80-col rewrap) on save, independent of any real edit. This has silently 10x'd a diff's line count more than once. Before committing, skim `git diff --stat` for a file whose changed-line count looks disproportionate to the actual edit — if you find one, diff it against its last committed version to confirm, then hand-restore the pre-reformat style, reapplying only the genuine change on top, rather than letting the noise ride into the commit.
+- This repo now has a Prettier config (`.prettierrc.json`, deliberately empty — plain Prettier defaults: double quotes, 80-col lines, trailing commas, etc.), added specifically to resolve a recurring issue: some editor in this workflow was silently auto-reformatting a touched file to Prettier's defaults on save, and since the repo's committed style used to be single quotes/~100–110 col, that reformat looked like unrelated noise inflating a diff's line count 10x. That's no longer a bug to fight — an editor's default-Prettier auto-format now matches the repo's actual configured style, so let it happen rather than hand-reverting it. The bulk of the pre-existing codebase hasn't been mass-reformatted to match yet, though, so touching an old, not-yet-reformatted file can still produce a larger-than-expected diff on save — that's now expected reformatting-on-touch, not something to revert; run `npm run format` (or `npx prettier --write <file>`) if you want a touched file fully caught up rather than partially reformatted.

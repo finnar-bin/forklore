@@ -1,4 +1,4 @@
-import { AwsClient } from 'https://esm.sh/aws4fetch@1.0.20';
+import { AwsClient } from "https://esm.sh/aws4fetch@1.0.20";
 import {
   PATH_PREFIXES,
   OWNERSHIP_TABLES,
@@ -10,7 +10,7 @@ import {
   existsAnywhere,
   isVisibleToCaller,
   type Entity,
-} from '../_shared/photoAuth.ts';
+} from "../_shared/photoAuth.ts";
 
 // Presigns an R2 PUT upload URL for a client-compressed WebP photo. Never
 // touches file bytes — see docs/rpcs.md's get-upload-url contract.
@@ -26,7 +26,7 @@ import {
 // edit — so `id` is required for ingredient/recipe, not optional.
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: CORS_HEADERS });
   }
 
@@ -39,21 +39,21 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     if (!Object.hasOwn(PATH_PREFIXES, body?.entity)) {
-      throw new Error('invalid entity');
+      throw new Error("invalid entity");
     }
     entity = body.entity as Entity;
     // Avatars are always keyed by the caller's own id (resolved below) —
     // any id the client sends for entity: 'avatar' is meaningless and
     // discarded, so it's never even validated.
-    if (entity !== 'avatar') {
-      if (typeof body.id !== 'string' || !UUID_RE.test(body.id)) {
-        throw new Error('invalid id');
+    if (entity !== "avatar") {
+      if (typeof body.id !== "string" || !UUID_RE.test(body.id)) {
+        throw new Error("invalid id");
       }
       requestedId = body.id;
     }
   } catch {
     return errorResponse(
-      'entity must be one of ingredient, recipe, avatar; ingredient/recipe also require an id (UUID)',
+      "entity must be one of ingredient, recipe, avatar; ingredient/recipe also require an id (UUID)",
       400,
     );
   }
@@ -69,40 +69,57 @@ Deno.serve(async (req) => {
   //   via a service-role client first; only an *existing* row needs the
   //   caller-visibility check.
   let id: string;
-  if (entity === 'avatar') {
+  if (entity === "avatar") {
     id = userId;
   } else {
     if (!requestedId) {
-      return errorResponse('id is required for entity ingredient/recipe', 400);
+      return errorResponse("id is required for entity ingredient/recipe", 400);
     }
     const table = OWNERSHIP_TABLES[entity];
     const serviceClientResult = createServiceClient();
     if (!serviceClientResult.ok) return serviceClientResult.response;
 
-    const alreadyExists = await existsAnywhere(serviceClientResult.client, table, requestedId, 'get-upload-url');
+    const alreadyExists = await existsAnywhere(
+      serviceClientResult.client,
+      table,
+      requestedId,
+      "get-upload-url",
+    );
     if (alreadyExists) {
-      const visible = await isVisibleToCaller(userClient, table, requestedId, 'get-upload-url');
+      const visible = await isVisibleToCaller(
+        userClient,
+        table,
+        requestedId,
+        "get-upload-url",
+      );
       if (!visible) {
-        return errorResponse('Not found or not authorized.', 403);
+        return errorResponse("Not found or not authorized.", 403);
       }
     }
     id = requestedId;
   }
 
-  const accountId = Deno.env.get('R2_ACCOUNT_ID');
-  const accessKeyId = Deno.env.get('R2_ACCESS_KEY_ID');
-  const secretAccessKey = Deno.env.get('R2_SECRET_ACCESS_KEY');
-  const bucket = Deno.env.get('R2_BUCKET');
-  const publicUrl = Deno.env.get('R2_PUBLIC_URL');
+  const accountId = Deno.env.get("R2_ACCOUNT_ID");
+  const accessKeyId = Deno.env.get("R2_ACCESS_KEY_ID");
+  const secretAccessKey = Deno.env.get("R2_SECRET_ACCESS_KEY");
+  const bucket = Deno.env.get("R2_BUCKET");
+  const publicUrl = Deno.env.get("R2_PUBLIC_URL");
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket || !publicUrl) {
-    return errorResponse('Server misconfiguration: missing R2 secrets.', 500);
+    return errorResponse("Server misconfiguration: missing R2 secrets.", 500);
   }
 
   const key = `${PATH_PREFIXES[entity]}/${id}.webp`;
 
-  const client = new AwsClient({ accessKeyId, secretAccessKey, service: 's3', region: 'auto' });
-  const objectUrl = new URL(`https://${accountId}.r2.cloudflarestorage.com/${bucket}/${key}`);
-  objectUrl.searchParams.set('X-Amz-Expires', '300');
+  const client = new AwsClient({
+    accessKeyId,
+    secretAccessKey,
+    service: "s3",
+    region: "auto",
+  });
+  const objectUrl = new URL(
+    `https://${accountId}.r2.cloudflarestorage.com/${bucket}/${key}`,
+  );
+  objectUrl.searchParams.set("X-Amz-Expires", "300");
 
   // Content-Type is deliberately signed here (unlike a fully header-free
   // presign) — the client always sends exactly this value (src/lib/photoUpload.ts),
@@ -111,8 +128,8 @@ Deno.serve(async (req) => {
   // window. This doesn't validate body bytes or enforce a size limit — see
   // docs/pending-deviations.md (Ticket 15) for that residual gap.
   const signed = await client.sign(objectUrl.toString(), {
-    method: 'PUT',
-    headers: { 'content-type': 'image/webp' },
+    method: "PUT",
+    headers: { "content-type": "image/webp" },
     aws: { signQuery: true },
   });
 
@@ -125,7 +142,13 @@ Deno.serve(async (req) => {
   // even though the same key is repeatedly overwritten in storage.
   const publicUrlWithCacheBust = `${publicUrl}/${key}?v=${Date.now()}`;
 
-  return new Response(JSON.stringify({ uploadUrl: signed.url, publicUrl: publicUrlWithCacheBust }), {
-    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-  });
+  return new Response(
+    JSON.stringify({
+      uploadUrl: signed.url,
+      publicUrl: publicUrlWithCacheBust,
+    }),
+    {
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    },
+  );
 });

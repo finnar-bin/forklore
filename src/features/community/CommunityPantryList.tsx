@@ -1,16 +1,16 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Fab from '@mui/material/Fab';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import AddIcon from '@mui/icons-material/Add';
-import { FloatingPortal } from '../../components/FloatingPortal';
-import { fetchCommunityIngredients } from '../pantry/api';
-import { CreateIngredientDialog } from '../pantry/CreateIngredientDialog';
-import { IngredientCard } from '../pantry/IngredientCard';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useLiveQuery } from "dexie-react-hooks";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Fab from "@mui/material/Fab";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import AddIcon from "@mui/icons-material/Add";
+import { FloatingPortal } from "../../components/FloatingPortal";
+import { fetchCommunityIngredients } from "../pantry/api";
+import { CreateIngredientDialog } from "../pantry/CreateIngredientDialog";
+import { IngredientCard } from "../pantry/IngredientCard";
 
 // Every community ingredient, browsable by any signed-in user regardless of
 // their own or any group's opt-in switch — see docs/pending-deviations.md
@@ -26,10 +26,10 @@ export function CommunityPantryList() {
   const loading = ingredients === undefined;
 
   return (
-    <Box sx={{ position: 'relative', minHeight: 'calc(100vh - 64px)' }}>
-      <Stack spacing={1.75} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 10 }}>
+    <Box sx={{ position: "relative", minHeight: "calc(100vh - 64px)" }}>
+      <Stack spacing={1.75} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 10 }}>
         {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress />
           </Box>
         )}
@@ -56,13 +56,13 @@ export function CommunityPantryList() {
           aria-label="Add to community pantry"
           onClick={() => setCreateOpen(true)}
           sx={{
-            position: 'fixed',
+            position: "fixed",
             right: 16,
             bottom: 24,
             boxShadow: (theme) =>
-              theme.palette.mode === 'dark'
-                ? '0 6px 14px rgba(0,0,0,.5)'
-                : '0 6px 14px rgba(93,110,1,.35)',
+              theme.palette.mode === "dark"
+                ? "0 6px 14px rgba(0,0,0,.5)"
+                : "0 6px 14px rgba(93,110,1,.35)",
           }}
         >
           <AddIcon />

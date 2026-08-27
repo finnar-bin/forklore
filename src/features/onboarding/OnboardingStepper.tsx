@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import MobileStepper from '@mui/material/MobileStepper';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import { useAppStore } from '../../store/useAppStore';
-import { fetchMyProfile, updateMyProfile } from '../profiles/api';
-import { deletePhoto } from '../../lib/photoUpload';
-import { completeOnboarding } from './api';
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import MobileStepper from "@mui/material/MobileStepper";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import { useAppStore } from "../../store/useAppStore";
+import { fetchMyProfile, updateMyProfile } from "../profiles/api";
+import { deletePhoto } from "../../lib/photoUpload";
+import { completeOnboarding } from "./api";
 import {
   calculateAge,
   calculateBmr,
@@ -21,53 +21,80 @@ import {
   isMealBreakdownValid,
   mealKcalTargetsToNumbers,
   resolveCalorieTarget,
-} from './calorieCalc';
-import { AboutYouStep } from './steps/AboutYouStep';
-import { BodyMetricsStep } from './steps/BodyMetricsStep';
-import { ActivityLevelStep } from './steps/ActivityLevelStep';
-import { GoalStep } from './steps/GoalStep';
-import { CalorieTargetStep, type CalorieSelection } from './steps/CalorieTargetStep';
-import type { ActivityLevel, BiologicalSex, GoalType } from '../../types/profile';
-import type { MealType } from '../../types/meal';
+} from "./calorieCalc";
+import { AboutYouStep } from "./steps/AboutYouStep";
+import { BodyMetricsStep } from "./steps/BodyMetricsStep";
+import { ActivityLevelStep } from "./steps/ActivityLevelStep";
+import { GoalStep } from "./steps/GoalStep";
+import {
+  CalorieTargetStep,
+  type CalorieSelection,
+} from "./steps/CalorieTargetStep";
+import type {
+  ActivityLevel,
+  BiologicalSex,
+  GoalType,
+} from "../../types/profile";
+import type { MealType } from "../../types/meal";
 
-const STEP_LABELS = ['About you', 'Body metrics', 'Activity level', 'Goal', 'Calorie target'];
+const STEP_LABELS = [
+  "About you",
+  "Body metrics",
+  "Activity level",
+  "Goal",
+  "Calorie target",
+];
 
-function isValidNumberInRange(value: string, min: number, max: number): boolean {
+function isValidNumberInRange(
+  value: string,
+  min: number,
+  max: number,
+): boolean {
   const num = Number(value);
-  return value.trim() !== '' && Number.isFinite(num) && num >= min && num <= max;
+  return (
+    value.trim() !== "" && Number.isFinite(num) && num >= min && num <= max
+  );
 }
 
 export function OnboardingStepper() {
   const userId = useAppStore((state) => state.userId);
-  const setOnboardingComplete = useAppStore((state) => state.setOnboardingComplete);
+  const setOnboardingComplete = useAppStore(
+    (state) => state.setOnboardingComplete,
+  );
   const navigate = useNavigate();
 
   const [activeStep, setActiveStep] = useState(0);
 
-  const [name, setName] = useState('');
-  const [birthdate, setBirthdate] = useState('');
-  const [sex, setSex] = useState<BiologicalSex | ''>('');
+  const [name, setName] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [sex, setSex] = useState<BiologicalSex | "">("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   // The profile's avatar_url as originally fetched, kept separate from the
   // live-editable `avatarUrl` above so handleFinish can tell "the user
   // explicitly removed a pre-filled avatar" (originalAvatarUrl set,
   // avatarUrl null) apart from "never had one" or "unchanged" — only the
   // former needs both a field update AND an R2 cleanup call.
-  const [originalAvatarUrl, setOriginalAvatarUrl] = useState<string | null>(null);
+  const [originalAvatarUrl, setOriginalAvatarUrl] = useState<string | null>(
+    null,
+  );
   const [avatarUploading, setAvatarUploading] = useState(false);
 
-  const [height, setHeight] = useState('');
-  const [weight, setWeight] = useState('');
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
 
-  const [activityLevel, setActivityLevel] = useState<ActivityLevel | ''>('');
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel | "">("");
 
-  const [goalType, setGoalType] = useState<GoalType | ''>('');
-  const [goalWeight, setGoalWeight] = useState('');
+  const [goalType, setGoalType] = useState<GoalType | "">("");
+  const [goalWeight, setGoalWeight] = useState("");
 
-  const [calorieSelection, setCalorieSelection] = useState<CalorieSelection | ''>('');
-  const [customKcal, setCustomKcal] = useState('');
+  const [calorieSelection, setCalorieSelection] = useState<
+    CalorieSelection | ""
+  >("");
+  const [customKcal, setCustomKcal] = useState("");
   const [mealBreakdownEnabled, setMealBreakdownEnabled] = useState(false);
-  const [mealKcalTargets, setMealKcalTargets] = useState<Record<MealType, string>>(emptyMealKcalTargets());
+  const [mealKcalTargets, setMealKcalTargets] = useState<
+    Record<MealType, string>
+  >(emptyMealKcalTargets());
 
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -87,25 +114,52 @@ export function OnboardingStepper() {
       .catch(() => {});
   }, [userId]);
 
-  const age = useMemo(() => (birthdate ? calculateAge(birthdate) : null), [birthdate]);
+  const age = useMemo(
+    () => (birthdate ? calculateAge(birthdate) : null),
+    [birthdate],
+  );
 
   const calorieOptions = useMemo(() => {
-    if (age === null || !sex || !height || !weight || !activityLevel || !goalType) return null;
-    const bmr = calculateBmr({ sex, weightKg: Number(weight), heightCm: Number(height), age });
+    if (
+      age === null ||
+      !sex ||
+      !height ||
+      !weight ||
+      !activityLevel ||
+      !goalType
+    )
+      return null;
+    const bmr = calculateBmr({
+      sex,
+      weightKg: Number(weight),
+      heightCm: Number(height),
+      age,
+    });
     const tdee = calculateTdee(bmr, activityLevel);
     return calculateCalorieOptions(tdee, goalType, sex);
   }, [age, sex, height, weight, activityLevel, goalType]);
 
   const stepValid = [
-    name.trim() !== '' && birthdate !== '' && age !== null && age >= 13 && age <= 120 && sex !== '',
-    isValidNumberInRange(height, 50, 300) && isValidNumberInRange(weight, 20, 400),
-    activityLevel !== '',
-    goalType !== '' &&
-      (goalType === 'maintain' ||
-        (isValidNumberInRange(goalWeight, 20, 400) && isGoalWeightValid(goalType, weight, goalWeight))),
-    calorieSelection !== '' &&
-      (calorieSelection !== 'custom' ||
-        (calorieOptions !== null && isCustomKcalValid(Number(customKcal), calorieOptions.maintenanceKcal))) &&
+    name.trim() !== "" &&
+      birthdate !== "" &&
+      age !== null &&
+      age >= 13 &&
+      age <= 120 &&
+      sex !== "",
+    isValidNumberInRange(height, 50, 300) &&
+      isValidNumberInRange(weight, 20, 400),
+    activityLevel !== "",
+    goalType !== "" &&
+      (goalType === "maintain" ||
+        (isValidNumberInRange(goalWeight, 20, 400) &&
+          isGoalWeightValid(goalType, weight, goalWeight))),
+    calorieSelection !== "" &&
+      (calorieSelection !== "custom" ||
+        (calorieOptions !== null &&
+          isCustomKcalValid(
+            Number(customKcal),
+            calorieOptions.maintenanceKcal,
+          ))) &&
       isMealBreakdownValid(
         mealBreakdownEnabled,
         mealKcalTargets,
@@ -126,12 +180,25 @@ export function OnboardingStepper() {
   }
 
   async function handleFinish() {
-    if (!calorieOptions || !sex || !activityLevel || !goalType || calorieSelection === '') return;
+    if (
+      !calorieOptions ||
+      !sex ||
+      !activityLevel ||
+      !goalType ||
+      calorieSelection === ""
+    )
+      return;
 
-    const resolved = resolveCalorieTarget(calorieSelection, customKcal, calorieOptions);
+    const resolved = resolveCalorieTarget(
+      calorieSelection,
+      customKcal,
+      calorieOptions,
+    );
     if (!resolved) return;
     const { goalPace, dailyKcalTarget } = resolved;
-    const mealTargets = mealBreakdownEnabled ? mealKcalTargetsToNumbers(mealKcalTargets) : null;
+    const mealTargets = mealBreakdownEnabled
+      ? mealKcalTargetsToNumbers(mealKcalTargets)
+      : null;
 
     setError(null);
     setSubmitting(true);
@@ -144,7 +211,8 @@ export function OnboardingStepper() {
         weightKg: Number(weight),
         activityLevel,
         goalType,
-        goalWeightKg: goalType === 'maintain' ? Number(weight) : Number(goalWeight),
+        goalWeightKg:
+          goalType === "maintain" ? Number(weight) : Number(goalWeight),
         goalPace,
         dailyKcalTarget,
         mealBreakdownEnabled,
@@ -166,7 +234,7 @@ export function OnboardingStepper() {
           // then having that update fail would leave the row still
           // pointing at a now-deleted object.
           if (originalAvatarUrl && !avatarUrl) {
-            await deletePhoto('avatar');
+            await deletePhoto("avatar");
           }
         } catch {
           // Onboarding itself succeeded; a failed avatar save/cleanup
@@ -176,9 +244,11 @@ export function OnboardingStepper() {
       }
 
       setOnboardingComplete(true);
-      navigate('/', { replace: true });
+      navigate("/", { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
+      setError(
+        err instanceof Error ? err.message : "Something went wrong. Try again.",
+      );
       setSubmitting(false);
     }
   }
@@ -191,13 +261,15 @@ export function OnboardingStepper() {
         Tell us about yourself
       </Typography>
       <Typography variant="body2" color="text.secondary">
-        This sets your starting point so we can calculate your daily calorie target.
+        This sets your starting point so we can calculate your daily calorie
+        target.
       </Typography>
 
       {error && <Alert severity="error">{error}</Alert>}
 
       <Typography fontSize={13} color="text.secondary">
-        Step {activeStep + 1} of {STEP_LABELS.length} · {STEP_LABELS[activeStep]}
+        Step {activeStep + 1} of {STEP_LABELS.length} ·{" "}
+        {STEP_LABELS[activeStep]}
       </Typography>
 
       {activeStep === 0 && (
@@ -214,9 +286,19 @@ export function OnboardingStepper() {
         />
       )}
       {activeStep === 1 && (
-        <BodyMetricsStep height={height} onHeightChange={setHeight} weight={weight} onWeightChange={setWeight} />
+        <BodyMetricsStep
+          height={height}
+          onHeightChange={setHeight}
+          weight={weight}
+          onWeightChange={setWeight}
+        />
       )}
-      {activeStep === 2 && <ActivityLevelStep activityLevel={activityLevel} onChange={setActivityLevel} />}
+      {activeStep === 2 && (
+        <ActivityLevelStep
+          activityLevel={activityLevel}
+          onChange={setActivityLevel}
+        />
+      )}
       {activeStep === 3 && (
         <GoalStep
           goalType={goalType}
@@ -247,7 +329,11 @@ export function OnboardingStepper() {
         steps={STEP_LABELS.length}
         position="static"
         activeStep={activeStep}
-        sx={{ bgcolor: 'transparent', p: 0, '& .MuiLinearProgress-root': { flex: 1, mx: 1.5 } }}
+        sx={{
+          bgcolor: "transparent",
+          p: 0,
+          "& .MuiLinearProgress-root": { flex: 1, mx: 1.5 },
+        }}
         nextButton={
           isLastStep ? (
             <Button
@@ -256,21 +342,27 @@ export function OnboardingStepper() {
               onClick={handleFinish}
               disabled={!stepValid[activeStep] || submitting || avatarUploading}
             >
-              {submitting ? 'Saving…' : 'Get started'}
+              {submitting ? "Saving…" : "Get started"}
             </Button>
           ) : (
             <Button
               size="small"
               variant="contained"
               onClick={handleNext}
-              disabled={!stepValid[activeStep] || (activeStep === 0 && avatarUploading)}
+              disabled={
+                !stepValid[activeStep] || (activeStep === 0 && avatarUploading)
+              }
             >
               Continue
             </Button>
           )
         }
         backButton={
-          <Button size="small" onClick={handleBack} disabled={activeStep === 0 || submitting}>
+          <Button
+            size="small"
+            onClick={handleBack}
+            disabled={activeStep === 0 || submitting}
+          >
             Back
           </Button>
         }

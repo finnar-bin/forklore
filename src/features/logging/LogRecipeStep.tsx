@@ -1,18 +1,18 @@
-import { useState } from 'react';
-import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import InputAdornment from '@mui/material/InputAdornment';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import { kcalPerUnit } from '../../lib/kcal';
-import { RecipeKcalHeader } from '../recipes/RecipeKcalHeader';
-import type { Recipe } from '../../types/recipe';
-import type { MealType } from '../../types/log';
-import type { LogEntryInput } from './api';
-import { LoggedForSelector } from './LoggedForSelector';
-import { MealTypeSelector } from './MealTypeSelector';
+import { useState } from "react";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import InputAdornment from "@mui/material/InputAdornment";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import { kcalPerUnit } from "../../lib/kcal";
+import { RecipeKcalHeader } from "../recipes/RecipeKcalHeader";
+import type { Recipe } from "../../types/recipe";
+import type { MealType } from "../../types/log";
+import type { LogEntryInput } from "./api";
+import { LoggedForSelector } from "./LoggedForSelector";
+import { MealTypeSelector } from "./MealTypeSelector";
 
 // Asks how many grams of this recipe were eaten, then computes kcal scaled
 // from that — mirrors the quantity-scaling pattern already established for
@@ -52,7 +52,7 @@ export function LogRecipeStep({
   onLog: (input: LogEntryInput) => Promise<void>;
   onCancel: () => void;
 }) {
-  const [gramsEaten, setGramsEaten] = useState('');
+  const [gramsEaten, setGramsEaten] = useState("");
   const [mealType, setMealType] = useState<MealType | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,10 +61,14 @@ export function LogRecipeStep({
   // Only flagged once something's actually been typed — an empty field
   // isn't "negative" or "over the limit," it's just not filled in yet
   // (canLog below already keeps the button disabled either way).
-  const isNegative = gramsEaten !== '' && parsedGramsEaten < 0;
-  const exceedsWeight = gramsEaten !== '' && parsedGramsEaten > recipe.weight_g;
-  const canLog = Number.isFinite(parsedGramsEaten) && parsedGramsEaten > 0 && parsedGramsEaten <= recipe.weight_g;
-  const kcal = kcalPerUnit(recipe.total_kcal, recipe.weight_g) * parsedGramsEaten;
+  const isNegative = gramsEaten !== "" && parsedGramsEaten < 0;
+  const exceedsWeight = gramsEaten !== "" && parsedGramsEaten > recipe.weight_g;
+  const canLog =
+    Number.isFinite(parsedGramsEaten) &&
+    parsedGramsEaten > 0 &&
+    parsedGramsEaten <= recipe.weight_g;
+  const kcal =
+    kcalPerUnit(recipe.total_kcal, recipe.weight_g) * parsedGramsEaten;
 
   async function handleLog() {
     if (!canLog) return;
@@ -79,11 +83,13 @@ export function LogRecipeStep({
         quantity: parsedGramsEaten,
         // Recipes are always logged in grams — see Ticket 12's
         // servings -> weight change (docs/pending-deviations.md).
-        unit: 'g',
+        unit: "g",
         meal_type: mealType,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to log this recipe.');
+      setError(
+        err instanceof Error ? err.message : "Failed to log this recipe.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -91,9 +97,13 @@ export function LogRecipeStep({
 
   return (
     <>
-      <DialogContent sx={{ pt: '12px !important' }}>
+      <DialogContent sx={{ pt: "12px !important" }}>
         <Stack spacing={2.5}>
-          <RecipeKcalHeader recipe={recipe} groupLabel={groupLabel} kcal={kcal} />
+          <RecipeKcalHeader
+            recipe={recipe}
+            groupLabel={groupLabel}
+            kcal={kcal}
+          />
           <TextField
             label="Amount eaten"
             type="number"
@@ -106,14 +116,16 @@ export function LogRecipeStep({
             error={isNegative || exceedsWeight}
             helperText={
               isNegative
-                ? 'Enter a positive amount.'
+                ? "Enter a positive amount."
                 : exceedsWeight
                   ? `Can't exceed this recipe's total weight (${recipe.weight_g}g).`
                   : undefined
             }
             slotProps={{
               htmlInput: { min: 0, max: recipe.weight_g, step: 1 },
-              input: { endAdornment: <InputAdornment position="end">g</InputAdornment> },
+              input: {
+                endAdornment: <InputAdornment position="end">g</InputAdornment>,
+              },
             }}
           />
           {loggedForGroupId && (
@@ -125,7 +137,11 @@ export function LogRecipeStep({
             />
           )}
           {mealBreakdownEnabled && (
-            <MealTypeSelector value={mealType} onChange={setMealType} disabled={submitting} />
+            <MealTypeSelector
+              value={mealType}
+              onChange={setMealType}
+              disabled={submitting}
+            />
           )}
           {error && <Alert severity="error">{error}</Alert>}
         </Stack>
@@ -134,8 +150,12 @@ export function LogRecipeStep({
         <Button onClick={onCancel} disabled={submitting}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={handleLog} disabled={!canLog || submitting}>
-          {submitting ? 'Logging…' : 'Log this recipe'}
+        <Button
+          variant="contained"
+          onClick={handleLog}
+          disabled={!canLog || submitting}
+        >
+          {submitting ? "Logging…" : "Log this recipe"}
         </Button>
       </DialogActions>
     </>

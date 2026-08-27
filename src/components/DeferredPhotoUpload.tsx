@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { PhotoThumbnail } from './PhotoThumbnail';
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import { PhotoThumbnail } from "./PhotoThumbnail";
 
 // Stages a picked file locally (preview via a blob URL) instead of
 // uploading it immediately, the way PhotoUpload does — the parent form is
@@ -56,11 +56,11 @@ export function DeferredPhotoUpload({
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    event.target.value = '';
+    event.target.value = "";
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setError('Please choose an image file.');
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file.");
       return;
     }
     setError(null);
@@ -86,22 +86,28 @@ export function DeferredPhotoUpload({
 
   return (
     <Box>
-      <Box sx={{ position: 'relative', width: size, height: size }}>
+      <Box sx={{ position: "relative", width: size, height: size }}>
         <PhotoThumbnail photoUrl={displayUrl} alt={alt} size={size} />
 
-        <input ref={inputRef} type="file" accept="image/*" hidden onChange={handleFileChange} />
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={handleFileChange}
+        />
 
         <IconButton
           aria-label={displayUrl ? `Change ${alt} photo` : `Add ${alt} photo`}
           onClick={() => inputRef.current?.click()}
           sx={{
-            position: 'absolute',
+            position: "absolute",
             inset: 0,
-            borderRadius: '12px',
-            bgcolor: 'rgba(0, 0, 0, 0.15)',
-            color: 'common.white',
+            borderRadius: "12px",
+            bgcolor: "rgba(0, 0, 0, 0.15)",
+            color: "common.white",
             opacity: 0,
-            '&:hover, &:focus-visible': { opacity: 1 },
+            "&:hover, &:focus-visible": { opacity: 1 },
           }}
         >
           <PhotoCameraOutlinedIcon fontSize="small" />
@@ -111,19 +117,19 @@ export function DeferredPhotoUpload({
             comment for why (no hover state on touch devices). */}
         <Box
           sx={{
-            position: 'absolute',
+            position: "absolute",
             bottom: -4,
             right: -4,
             width: 22,
             height: 22,
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: 'primary.main',
-            color: 'primary.contrastText',
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: "primary.main",
+            color: "primary.contrastText",
             boxShadow: 1,
-            pointerEvents: 'none',
+            pointerEvents: "none",
           }}
         >
           <PhotoCameraOutlinedIcon sx={{ fontSize: 13 }} />
@@ -135,12 +141,12 @@ export function DeferredPhotoUpload({
             size="small"
             onClick={handleRemove}
             sx={{
-              position: 'absolute',
+              position: "absolute",
               top: -8,
               right: -8,
-              bgcolor: 'background.paper',
+              bgcolor: "background.paper",
               boxShadow: 1,
-              '&:hover': { bgcolor: 'background.paper' },
+              "&:hover": { bgcolor: "background.paper" },
             }}
           >
             <DeleteOutlineIcon fontSize="small" />

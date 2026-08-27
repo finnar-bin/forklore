@@ -1,22 +1,27 @@
-import { useRef, useState } from 'react';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import { useAppStore } from '../../store/useAppStore';
-import { formatKcalPerUnit, kcalPerUnit } from '../../lib/kcal';
-import { copyRecipe, findIngredientMatch, type IngredientMatch, type IngredientResolution } from '../copy/api';
-import { CopyTargetList } from '../copy/CopyTargetList';
-import { useCopyTargets } from '../copy/useCopyTargets';
-import { fetchRecipeIngredients } from './api';
-import type { RecipeIngredientDetail } from '../../types/recipe';
+import { useRef, useState } from "react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import { useAppStore } from "../../store/useAppStore";
+import { formatKcalPerUnit, kcalPerUnit } from "../../lib/kcal";
+import {
+  copyRecipe,
+  findIngredientMatch,
+  type IngredientMatch,
+  type IngredientResolution,
+} from "../copy/api";
+import { CopyTargetList } from "../copy/CopyTargetList";
+import { useCopyTargets } from "../copy/useCopyTargets";
+import { fetchRecipeIngredients } from "./api";
+import type { RecipeIngredientDetail } from "../../types/recipe";
 
 interface Conflict {
   source: RecipeIngredientDetail;
@@ -29,7 +34,7 @@ interface Conflict {
 // server-side until the very last step, so cancelling or hitting an error at
 // any point earlier leaves no partial state to clean up. See
 // docs/pending-deviations.md (Ticket 14).
-type Phase = 'target' | 'checking' | 'conflict' | 'copying';
+type Phase = "target" | "checking" | "conflict" | "copying";
 
 export function CopyRecipeDialog({
   open,
@@ -50,7 +55,7 @@ export function CopyRecipeDialog({
   const targets = useCopyTargets(open ? userId : null, groupId);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [phase, setPhase] = useState<Phase>('target');
+  const [phase, setPhase] = useState<Phase>("target");
   const [error, setError] = useState<string | null>(null);
 
   // Resolutions accumulate as: every non-matching ingredient up front (null
@@ -72,7 +77,7 @@ export function CopyRecipeDialog({
 
   function reset() {
     setSelectedIndex(null);
-    setPhase('target');
+    setPhase("target");
     setError(null);
     setResolutions([]);
     setConflicts([]);
@@ -82,28 +87,40 @@ export function CopyRecipeDialog({
   }
 
   function handleClose() {
-    if (phase === 'checking' || phase === 'copying') return;
+    if (phase === "checking" || phase === "copying") return;
     reset();
     onClose();
   }
 
-  async function finishCopy(targetGroupId: string | null, allResolutions: IngredientResolution[]) {
+  async function finishCopy(
+    targetGroupId: string | null,
+    allResolutions: IngredientResolution[],
+  ) {
     if (!userId) return;
-    setPhase('copying');
+    setPhase("copying");
     setError(null);
     try {
-      const newRecipeId = await copyRecipe(userId, recipeId, targetGroupId, allResolutions);
+      const newRecipeId = await copyRecipe(
+        userId,
+        recipeId,
+        targetGroupId,
+        allResolutions,
+      );
       void newRecipeId;
       reset();
       onCopied();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to copy this recipe. Try again.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to copy this recipe. Try again.",
+      );
       // Nothing was written server-side (copy_recipe is one transaction), so
       // it's safe to send the user all the way back to target selection
       // rather than inventing a way to resume mid-conflict. Release the
       // double-submit guard explicitly here — reset() (which also releases
       // it) only runs on the success path above.
-      setPhase('target');
+      setPhase("target");
       answeringRef.current = false;
       setAnswering(false);
     }
@@ -113,13 +130,17 @@ export function CopyRecipeDialog({
     if (!userId || selectedIndex === null || !targets) return;
     const target = targets[selectedIndex];
     setError(null);
-    setPhase('checking');
+    setPhase("checking");
     try {
       const sourceIngredients = await fetchRecipeIngredients(recipeId);
       const checked = await Promise.all(
         sourceIngredients.map(async (source) => ({
           source,
-          match: await findIngredientMatch(source.name, source.unit, target.groupId),
+          match: await findIngredientMatch(
+            source.name,
+            source.unit,
+            target.groupId,
+          ),
         })),
       );
 
@@ -129,7 +150,10 @@ export function CopyRecipeDialog({
         if (match) {
           foundConflicts.push({ source, match });
         } else {
-          autoResolutions.push({ source_ingredient_id: source.ingredient_id, use_existing_id: null });
+          autoResolutions.push({
+            source_ingredient_id: source.ingredient_id,
+            use_existing_id: null,
+          });
         }
       }
 
@@ -140,11 +164,15 @@ export function CopyRecipeDialog({
       if (foundConflicts.length === 0) {
         await finishCopy(target.groupId, autoResolutions);
       } else {
-        setPhase('conflict');
+        setPhase("conflict");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't check for matching ingredients. Try again.");
-      setPhase('target');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Couldn't check for matching ingredients. Try again.",
+      );
+      setPhase("target");
     }
   }
 
@@ -179,7 +207,7 @@ export function CopyRecipeDialog({
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
-      {phase === 'conflict' ? (
+      {phase === "conflict" ? (
         <ConflictStep
           conflict={conflicts[conflictIndex]}
           index={conflictIndex}
@@ -197,25 +225,38 @@ export function CopyRecipeDialog({
                 {error}
               </Alert>
             )}
-            {phase === 'checking' || phase === 'copying' ? (
+            {phase === "checking" || phase === "copying" ? (
               <Stack alignItems="center" spacing={1.5} sx={{ py: 2 }}>
                 <CircularProgress size={24} />
                 <Typography fontSize={13} color="text.secondary">
-                  {phase === 'checking' ? 'Checking ingredients…' : 'Copying recipe…'}
+                  {phase === "checking"
+                    ? "Checking ingredients…"
+                    : "Copying recipe…"}
                 </Typography>
               </Stack>
             ) : (
-              <CopyTargetList targets={targets} selectedIndex={selectedIndex} onSelect={setSelectedIndex} />
+              <CopyTargetList
+                targets={targets}
+                selectedIndex={selectedIndex}
+                onSelect={setSelectedIndex}
+              />
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleClose} disabled={phase === 'checking' || phase === 'copying'}>
+            <Button
+              onClick={handleClose}
+              disabled={phase === "checking" || phase === "copying"}
+            >
               Cancel
             </Button>
             <Button
               variant="contained"
               onClick={handleContinue}
-              disabled={selectedIndex === null || phase === 'checking' || phase === 'copying'}
+              disabled={
+                selectedIndex === null ||
+                phase === "checking" ||
+                phase === "copying"
+              }
             >
               Continue
             </Button>
@@ -258,7 +299,8 @@ function ConflictStep({
       </DialogTitle>
       <DialogContent>
         <DialogContentText sx={{ mb: 2 }}>
-          "{match.name}" already exists in the target context with the same name and unit.
+          "{match.name}" already exists in the target context with the same name
+          and unit.
         </DialogContentText>
         <Stack direction="row" spacing={1.5}>
           <Box sx={{ flex: 1 }}>
@@ -266,22 +308,28 @@ function ConflictStep({
               This recipe's copy
             </Typography>
             <Typography fontSize={14} fontWeight={500}>
-              {formatKcalPerUnit(source.kcal, source.quantity)} kcal/{source.unit}
+              {formatKcalPerUnit(source.kcal, source.quantity)} kcal/
+              {source.unit}
             </Typography>
           </Box>
           <Box sx={{ flex: 1 }}>
             <Typography fontSize={11} color="text.secondary">
               Existing ingredient
             </Typography>
-            <Typography fontSize={14} fontWeight={500} color={kcalDiffers ? 'error.main' : undefined}>
+            <Typography
+              fontSize={14}
+              fontWeight={500}
+              color={kcalDiffers ? "error.main" : undefined}
+            >
               {match.kcal_per_unit.toFixed(2)} kcal/{match.unit}
             </Typography>
           </Box>
         </Stack>
         {kcalDiffers && (
           <Alert severity="warning" sx={{ mt: 2 }}>
-            These values differ. Using the existing ingredient keeps its own values; adding as new
-            keeps this recipe's own values as a separate ingredient.
+            These values differ. Using the existing ingredient keeps its own
+            values; adding as new keeps this recipe's own values as a separate
+            ingredient.
           </Alert>
         )}
       </DialogContent>

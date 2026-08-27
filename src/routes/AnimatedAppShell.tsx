@@ -1,9 +1,13 @@
-import { useState, type ReactNode } from 'react';
-import { Box } from '@mui/material';
-import { useLocation, useOutlet } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { BottomNav } from '../components/BottomNav';
-import { classifyTransition, getBottomTab, type TransitionVariant } from './navigationTransition';
+import { useState, type ReactNode } from "react";
+import { Box } from "@mui/material";
+import { useLocation, useOutlet } from "react-router-dom";
+import { motion } from "framer-motion";
+import { BottomNav } from "../components/BottomNav";
+import {
+  classifyTransition,
+  getBottomTab,
+  type TransitionVariant,
+} from "./navigationTransition";
 
 // Layout for every screen behind the bottom-tab structure (Pantry, Recipes,
 // Log, Progress, and everything reachable from them — detail screens,
@@ -28,14 +32,14 @@ import { classifyTransition, getBottomTab, type TransitionVariant } from './navi
 const TRANSITION = { duration: 0.28, ease: [0.32, 0.72, 0, 1] as const };
 
 function enterFrom(direction: TransitionVariant) {
-  if (direction === 'push') return { x: '100%', opacity: 1 };
-  if (direction === 'pop') return { x: '-100%', opacity: 1 };
+  if (direction === "push") return { x: "100%", opacity: 1 };
+  if (direction === "pop") return { x: "-100%", opacity: 1 };
   return { x: 0, opacity: 0 }; // tab-switch: crossfade only, no slide
 }
 
 function exitTo(direction: TransitionVariant) {
-  if (direction === 'push') return { x: '-100%', opacity: 1 };
-  if (direction === 'pop') return { x: '100%', opacity: 1 };
+  if (direction === "push") return { x: "-100%", opacity: 1 };
+  if (direction === "pop") return { x: "100%", opacity: 1 };
   return { x: 0, opacity: 0 }; // tab-switch: crossfade only, no slide
 }
 
@@ -56,7 +60,7 @@ export function AnimatedAppShell() {
   const [current, setCurrent] = useState<Screen>({
     pathname: location.pathname,
     node: outlet,
-    direction: 'tab',
+    direction: "tab",
   });
   const [outgoing, setOutgoing] = useState<Screen | null>(null);
 
@@ -82,7 +86,9 @@ export function AnimatedAppShell() {
           positioned children below during the brief overlap window (they'd
           otherwise collapse it to zero height, since neither contributes to
           a parent's auto height). */}
-      <Box sx={{ position: 'relative', overflowX: 'hidden', minHeight: '100vh' }}>
+      <Box
+        sx={{ position: "relative", overflowX: "hidden", minHeight: "100vh" }}
+      >
         {outgoing && (
           <motion.div
             key={outgoing.pathname}
@@ -90,9 +96,11 @@ export function AnimatedAppShell() {
             animate={exitTo(outgoing.direction)}
             transition={TRANSITION}
             onAnimationComplete={() =>
-              setOutgoing((current) => (current?.pathname === outgoing.pathname ? null : current))
+              setOutgoing((current) =>
+                current?.pathname === outgoing.pathname ? null : current,
+              )
             }
-            style={{ position: 'absolute', inset: 0 }}
+            style={{ position: "absolute", inset: 0 }}
           >
             {outgoing.node}
           </motion.div>
@@ -102,7 +110,7 @@ export function AnimatedAppShell() {
           initial={enterFrom(current.direction)}
           animate={{ x: 0, opacity: 1 }}
           transition={TRANSITION}
-          style={overlapping ? { position: 'absolute', inset: 0 } : undefined}
+          style={overlapping ? { position: "absolute", inset: 0 } : undefined}
         >
           {current.node}
         </motion.div>

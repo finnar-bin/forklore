@@ -1,35 +1,35 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import Fab from '@mui/material/Fab';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Paper from '@mui/material/Paper';
-import Stack from '@mui/material/Stack';
-import Switch from '@mui/material/Switch';
-import Typography from '@mui/material/Typography';
-import AddIcon from '@mui/icons-material/Add';
-import { useColorScheme } from '@mui/material/styles';
-import { shadows } from '../../theme/theme';
-import { useAppStore } from '../../store/useAppStore';
-import { FloatingPortal } from '../../components/FloatingPortal';
-import { setGroupCommunityPantryEnabled } from '../groups/api';
-import { useMyGroups } from '../groups/useMyGroups';
-import { setCommunityPantryEnabled } from '../profiles/api';
-import { useMyProfile } from '../profiles/useMyProfile';
-import { fetchIngredients } from './api';
-import { IngredientCard } from './IngredientCard';
-import { CreateIngredientDialog } from './CreateIngredientDialog';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useLiveQuery } from "dexie-react-hooks";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Fab from "@mui/material/Fab";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
+import Typography from "@mui/material/Typography";
+import AddIcon from "@mui/icons-material/Add";
+import { useColorScheme } from "@mui/material/styles";
+import { shadows } from "../../theme/theme";
+import { useAppStore } from "../../store/useAppStore";
+import { FloatingPortal } from "../../components/FloatingPortal";
+import { setGroupCommunityPantryEnabled } from "../groups/api";
+import { useMyGroups } from "../groups/useMyGroups";
+import { setCommunityPantryEnabled } from "../profiles/api";
+import { useMyProfile } from "../profiles/useMyProfile";
+import { fetchIngredients } from "./api";
+import { IngredientCard } from "./IngredientCard";
+import { CreateIngredientDialog } from "./CreateIngredientDialog";
 
 export function PantryList({ groupId }: { groupId: string | null }) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
   const { mode, systemMode } = useColorScheme();
-  const resolvedMode = mode === 'system' ? systemMode : mode;
-  const tokens = resolvedMode === 'dark' ? shadows.dark : shadows.light;
+  const resolvedMode = mode === "system" ? systemMode : mode;
+  const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
 
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -42,18 +42,24 @@ export function PantryList({ groupId }: { groupId: string | null }) {
   // gear icon to group settings is owner-only elsewhere.
   const profile = useMyProfile(userId);
   const groups = useMyGroups(userId);
-  const membership = groupId ? (groups ?? []).find((m) => m.group.id === groupId) : undefined;
-  const isGroupOwner = membership?.role === 'owner';
+  const membership = groupId
+    ? (groups ?? []).find((m) => m.group.id === groupId)
+    : undefined;
+  const isGroupOwner = membership?.role === "owner";
   const communityEnabled = groupId
-    ? membership?.group.community_pantry_enabled ?? false
-    : profile?.community_pantry_enabled ?? false;
+    ? (membership?.group.community_pantry_enabled ?? false)
+    : (profile?.community_pantry_enabled ?? false);
 
   // Optimistic override while a toggle request is in flight — communityEnabled
   // above only updates once the profile/groups cache re-fetches after
   // invalidation, which would otherwise make the switch briefly look like it
   // snapped back before catching up.
-  const [pendingCommunityEnabled, setPendingCommunityEnabled] = useState<boolean | null>(null);
-  const [communityToggleError, setCommunityToggleError] = useState<string | null>(null);
+  const [pendingCommunityEnabled, setPendingCommunityEnabled] = useState<
+    boolean | null
+  >(null);
+  const [communityToggleError, setCommunityToggleError] = useState<
+    string | null
+  >(null);
   const displayedCommunityEnabled = pendingCommunityEnabled ?? communityEnabled;
 
   async function handleCommunityToggle(checked: boolean) {
@@ -67,7 +73,9 @@ export function PantryList({ groupId }: { groupId: string | null }) {
       }
     } catch (err) {
       setCommunityToggleError(
-        err instanceof Error ? err.message : "Couldn't update this setting. Try again.",
+        err instanceof Error
+          ? err.message
+          : "Couldn't update this setting. Try again.",
       );
     } finally {
       setPendingCommunityEnabled(null);
@@ -82,7 +90,7 @@ export function PantryList({ groupId }: { groupId: string | null }) {
     [userId, groupId, communityEnabled],
   );
   const loading = ingredients === undefined;
-  const detailPath = groupId ? `/groups/${groupId}/pantry` : '/pantry';
+  const detailPath = groupId ? `/groups/${groupId}/pantry` : "/pantry";
 
   return (
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
@@ -91,21 +99,23 @@ export function PantryList({ groupId }: { groupId: string | null }) {
     // list, pushing the FAB off-screen once the list got long. It's also
     // wrapped in FloatingPortal (Ticket 16) so AnimatedAppShell's animated
     // transform doesn't hijack its fixed positioning.
-    <Box sx={{ position: 'relative', minHeight: 'calc(100vh - 64px)' }}>
+    <Box sx={{ position: "relative", minHeight: "calc(100vh - 64px)" }}>
       {/* pb clears both the FAB (bottom: 80) and BottomNav below it — see
           docs/pending-deviations.md (Ticket 16). */}
-      <Stack spacing={1.75} sx={{ p: 2, maxWidth: 480, mx: 'auto', pb: 18 }}>
-        <Button onClick={() => navigate('/community-pantry')}>Browse community pantry</Button>
+      <Stack spacing={1.75} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 18 }}>
+        <Button onClick={() => navigate("/community-pantry")}>
+          Browse community pantry
+        </Button>
 
         {(!groupId || isGroupOwner) && (
           <Paper
             sx={{
               p: 1,
-              borderRadius: '14px',
+              borderRadius: "14px",
               boxShadow: tokens.sh2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
             <FormControlLabel
@@ -125,16 +135,20 @@ export function PantryList({ groupId }: { groupId: string | null }) {
               }
               label={
                 <Typography fontSize={13}>
-                  {groupId ? 'Use community pantry ingredients in this group' : 'Use community pantry ingredients'}
+                  {groupId
+                    ? "Use community pantry ingredients in this group"
+                    : "Use community pantry ingredients"}
                 </Typography>
               }
             />
           </Paper>
         )}
-        {communityToggleError && <Alert severity="error">{communityToggleError}</Alert>}
+        {communityToggleError && (
+          <Alert severity="error">{communityToggleError}</Alert>
+        )}
 
         {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress />
           </Box>
         )}
@@ -143,7 +157,7 @@ export function PantryList({ groupId }: { groupId: string | null }) {
           <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
             {groupId
               ? "This group's pantry is empty. Add the first ingredient to get started."
-              : 'Your pantry is empty. Add your first ingredient to get started.'}
+              : "Your pantry is empty. Add your first ingredient to get started."}
           </Typography>
         )}
 
@@ -162,15 +176,15 @@ export function PantryList({ groupId }: { groupId: string | null }) {
           aria-label="Add ingredient"
           onClick={() => setCreateOpen(true)}
           sx={{
-            position: 'fixed',
+            position: "fixed",
             // Pantry is a bottom-tab root, so it clears BottomNav — see
             // docs/pending-deviations.md (Ticket 16).
             right: 16,
             bottom: 80,
             boxShadow: (theme) =>
-              theme.palette.mode === 'dark'
-                ? '0 6px 14px rgba(0,0,0,.5)'
-                : '0 6px 14px rgba(93,110,1,.35)',
+              theme.palette.mode === "dark"
+                ? "0 6px 14px rgba(0,0,0,.5)"
+                : "0 6px 14px rgba(93,110,1,.35)",
           }}
         >
           <AddIcon />

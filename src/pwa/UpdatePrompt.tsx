@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import Snackbar from '@mui/material/Snackbar';
-import CloseIcon from '@mui/icons-material/Close';
-import { useRegisterSW } from 'virtual:pwa-register/react';
-import { usePwaUpdateStore } from '../store/usePwaUpdateStore';
+import { useEffect } from "react";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Snackbar from "@mui/material/Snackbar";
+import CloseIcon from "@mui/icons-material/Close";
+import { useRegisterSW } from "virtual:pwa-register/react";
+import { usePwaUpdateStore } from "../store/usePwaUpdateStore";
 
 // An installed PWA can sit open in a single tab/window for days without
 // navigating, so the browser's own "check the SW for updates on navigation"
@@ -41,13 +41,22 @@ export function UpdatePrompt() {
     <Snackbar
       open={needRefresh}
       message="A new version of Forklore is available"
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       action={
         <>
-          <Button color="primary" size="small" onClick={() => updateServiceWorker(true)}>
+          <Button
+            color="primary"
+            size="small"
+            onClick={() => updateServiceWorker(true)}
+          >
             Reload
           </Button>
-          <IconButton size="small" aria-label="Dismiss" color="inherit" onClick={() => setNeedRefresh(false)}>
+          <IconButton
+            size="small"
+            aria-label="Dismiss"
+            color="inherit"
+            onClick={() => setNeedRefresh(false)}
+          >
             <CloseIcon fontSize="small" />
           </IconButton>
         </>

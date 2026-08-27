@@ -1,7 +1,7 @@
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import { formatKcalPerUnit } from '../../lib/kcal';
-import type { Ingredient } from '../../types/ingredient';
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { formatKcalPerUnit } from "../../lib/kcal";
+import type { Ingredient } from "../../types/ingredient";
 
 // Shared header for any screen that asks "how much of this ingredient" and
 // wants a live kcal preview above the quantity input — LogIngredientStep.tsx
@@ -23,7 +23,7 @@ export function IngredientKcalHeader({
   groupLabel,
   kcal,
 }: {
-  ingredient: Pick<Ingredient, 'name' | 'quantity' | 'unit' | 'brand' | 'kcal'>;
+  ingredient: Pick<Ingredient, "name" | "quantity" | "unit" | "brand" | "kcal">;
   // "Personal"/the owning group's name/"Community" — resolved by the caller
   // (each screen already has its own reason to know this).
   groupLabel: string;
@@ -32,13 +32,36 @@ export function IngredientKcalHeader({
   kcal: number;
 }) {
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 2,
+      }}
+    >
       <Box sx={{ minWidth: 0 }}>
-        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, minWidth: 0 }}>
-          <Typography fontSize={18} fontWeight={500} noWrap sx={{ minWidth: 0 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 0.5,
+            minWidth: 0,
+          }}
+        >
+          <Typography
+            fontSize={18}
+            fontWeight={500}
+            noWrap
+            sx={{ minWidth: 0 }}
+          >
             {ingredient.name}
           </Typography>
-          <Typography fontSize={18} color="text.secondary" sx={{ flexShrink: 0 }}>
+          <Typography
+            fontSize={18}
+            color="text.secondary"
+            sx={{ flexShrink: 0 }}
+          >
             {ingredient.quantity} {ingredient.unit}
           </Typography>
         </Box>
@@ -47,17 +70,18 @@ export function IngredientKcalHeader({
           {ingredient.brand && ` · ${ingredient.brand}`}
         </Typography>
       </Box>
-      <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+      <Box sx={{ textAlign: "right", flexShrink: 0 }}>
         <Typography fontSize={20} color="primary.main">
           <Box component="span" sx={{ fontWeight: 700 }}>
             {kcal.toFixed(2)}
-          </Box>{' '}
+          </Box>{" "}
           <Box component="span" sx={{ fontWeight: 400 }}>
             kcal
           </Box>
         </Typography>
         <Typography fontSize={13} color="text.secondary">
-          {formatKcalPerUnit(ingredient.kcal, ingredient.quantity)} kcal per {ingredient.unit}
+          {formatKcalPerUnit(ingredient.kcal, ingredient.quantity)} kcal per{" "}
+          {ingredient.unit}
         </Typography>
       </Box>
     </Box>

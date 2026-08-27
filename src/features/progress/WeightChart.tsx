@@ -1,14 +1,14 @@
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import { LineChart } from '@mui/x-charts/LineChart';
-import type { WeightLog } from '../../types/weight';
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { LineChart } from "@mui/x-charts/LineChart";
+import type { WeightLog } from "../../types/weight";
 
 export function WeightChart({
   logs,
   color,
   rangeStart,
   rangeEnd,
-  emptyMessage = 'Log your weight to start your trend.',
+  emptyMessage = "Log your weight to start your trend.",
 }: {
   logs: WeightLog[];
   // A plain CSS color string (e.g. theme/theme.ts's primaryAccent, resolved
@@ -37,7 +37,14 @@ export function WeightChart({
   // when the second entry arrives.
   if (logs.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 220 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: 220,
+        }}
+      >
         <Typography color="text.secondary" fontSize={13} textAlign="center">
           {emptyMessage}
         </Typography>
@@ -47,22 +54,29 @@ export function WeightChart({
 
   return (
     <LineChart
-      dataset={logs.map((log) => ({ date: parseLocalDate(log.logged_at), weight: log.weight_kg }))}
+      dataset={logs.map((log) => ({
+        date: parseLocalDate(log.logged_at),
+        weight: log.weight_kg,
+      }))}
       xAxis={[
         {
-          dataKey: 'date',
+          dataKey: "date",
           // 'time' (real elapsed distance, explicit min/max), not 'point'
           // (one evenly-spaced slot per data point regardless of actual
           // date gaps) — a point scale can only ever span exactly as far as
           // the entries it's given, which is what made the range dropdown
           // look like it wasn't doing anything for a sparse dataset.
-          scaleType: 'time',
+          scaleType: "time",
           min: parseLocalDate(rangeStart),
           max: parseLocalDate(rangeEnd),
-          valueFormatter: (value) => value.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+          valueFormatter: (value) =>
+            value.toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+            }),
         },
       ]}
-      series={[{ dataKey: 'weight', showMark: true, color }]}
+      series={[{ dataKey: "weight", showMark: true, color }]}
       height={220}
       margin={{ left: 40, right: 16, top: 16, bottom: 30 }}
       grid={{ horizontal: true }}
@@ -76,6 +90,6 @@ export function WeightChart({
 // as UTC midnight and renders a day early in any timezone behind UTC (same
 // reasoning as features/logging/api.ts's todayLocalDate).
 function parseLocalDate(isoDate: string): Date {
-  const [year, month, day] = isoDate.split('-').map(Number);
+  const [year, month, day] = isoDate.split("-").map(Number);
   return new Date(year, month - 1, day);
 }
