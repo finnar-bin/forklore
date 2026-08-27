@@ -51,7 +51,7 @@ db.version(3).stores({
 // on the server hasn't changed, so it falls outside every future pull's
 // range until something else happens to touch it. Without this transform
 // such a row would simply vanish from every `logged_for`-keyed query
-// (fetchTodayLogEntries'/fetchAllLogEntries', reconcileDeletes) — not
+// (fetchTodayLogEntries', fetchAllGroupLogEntries', reconcileDeletes) — not
 // corrupted, just silently unqueryable — until it happens to be updated
 // server-side again. Mirrors the server migration's own backfill
 // (`created_by = logged_for`) exactly.

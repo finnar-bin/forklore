@@ -17,10 +17,11 @@ export function LogEntryCard({
   entry: LogEntry;
   subtitle: string;
   // Who this entry counts against (entry.logged_for), distinct from whose
-  // shared log it's on (entry.group_id). Undefined on the bare,
-  // cross-context /log view (DailyLog, ambiguous which group without
-  // naming it too) — see docs/pending-deviations.md (Ticket 12 follow-up,
-  // "logged by" name, and the later "log for a group member" rework).
+  // shared log it's on (entry.group_id) — see docs/pending-deviations.md
+  // (Ticket 12 follow-up, "logged by" name, and the later "log for a group
+  // member" rework). Optional only because the backing `useProfileNames`
+  // lookup can still be mid-flight when this renders, not because any
+  // caller ever omits it outright now.
   loggedForName?: string;
   onClick?: () => void;
 }) {

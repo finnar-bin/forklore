@@ -12,17 +12,16 @@ Living document. React Router, URL-based group context.
 /onboarding                            # post-signup: profile/goal steps, then a mandatory create-or-join-a-group step
 /profile                               # account info, logout, theme toggle — reached via header avatar icon, not a bottom tab
 
-/logs                                  # all-time, cross-context: every entry the user has logged, across every group they're in
-
 /progress                              # weight/BMI trend + goal — always personal, ignores active group context entirely
 
-/groups                                # list of groups the user belongs to, + "create group"
+/groups                                # list of groups the user belongs to, + "create group" — also where switching groups happens (tap a card)
 /groups/:groupId/settings              # owner-only: rename, description, manage members, delete
 /groups/:groupId/pantry
 /groups/:groupId/pantry/:ingredientId
 /groups/:groupId/recipes
 /groups/:groupId/recipes/:recipeId
 /groups/:groupId/log                   # this group's shared daily log
+/groups/:groupId/logs                  # this group's own all-time history
 
 /invite/:inviteCode                    # public — accept-invite landing page, calls accept_group_invite RPC
 ```
@@ -31,13 +30,13 @@ Living document. React Router, URL-based group context.
 
 Pantry/Recipes/Log used to exist twice — a personal route (`/pantry`) and a group route (`/groups/:groupId/pantry`) pointing at the same component, with `groupId` from `useParams()` either `undefined` or a uuid. That duplication existed because "personal" (no group) was a valid state for an account to be in. It no longer is — onboarding now requires creating or joining a group before it completes (see `docs/pending-deviations.md`, "Remove personal mode") — so the personal routes are gone and `/groups/:groupId/...` is the only path to Pantry/Recipes/Log. `groupId` is a plain required route param now, no `?? null` fallback needed.
 
-### `/logs` sits outside the `/groups/:groupId/` nesting deliberately
+### No more bare, cross-context `/log`/`/logs`, and no context switcher
 
-It's a cross-context view by definition — everything the user has logged, across every group they're in — so it's a peer of `/groups`, not a child of it. Query: `where logged_for = :userId` with no `group_id` filter.
+A later follow-up (requested directly) removed the bare, cross-context `/log` and `/logs` routes (and `/logs/groups`, a group picker that only existed to reach a specific group's log from the bare one) along with the `ContextSwitcher` chip Pantry/Recipes used to show — see `docs/pending-deviations.md`, "Remove personal mode" for the full history of what these were and why they existed first. `/groups/:groupId/log` and `/groups/:groupId/logs` are the only log views now; switching groups happens by visiting `/groups` and tapping a card (see `GroupCard.tsx`), not from an ambient chip on each screen.
 
 ### `/progress` ignores the active group context entirely
 
-BMI and weight tracking are inherently personal (`profiles.height_cm`, `weight_logs`) — there's no such thing as a "group's BMI." This is the one screen that's still personal by design (see `docs/pending-deviations.md`, "Remove personal mode" for why it's explicitly out of scope) — unlike Pantry/Recipes/Log, it shows identical content regardless of which group is selected in the context switcher, so it's excluded from the switcher's scope even though it's a bottom-tab peer of the other three.
+BMI and weight tracking are inherently personal (`profiles.height_cm`, `weight_logs`) — there's no such thing as a "group's BMI." This is the one screen that's still personal by design (see `docs/pending-deviations.md`, "Remove personal mode" for why it's explicitly out of scope) — it shows identical content regardless of which group is active, even though it's a bottom-tab peer of Pantry/Recipes/Log.
 
 ### `/invite/:inviteCode` is top-level, not nested under `/groups`, and public
 
@@ -45,6 +44,6 @@ Needs to work for a logged-in user clicking a link from anywhere (e.g. opened fr
 
 ### Navigation structure
 
-Bottom tabs: **Pantry, Recipes, Log, Progress**. The context switcher (a group picker, once a user belongs to 2+ groups) applies to Pantry, Recipes, and Log only — switching context re-scopes the same four tabs' underlying data via the `groupId` param, it does not navigate to a different tab set. With exactly one group there's nothing to switch to, so the switcher hides itself. Progress is excluded from the switcher's effect (see above). Profile is not a tab — reached via a persistent header avatar icon across all four.
+Bottom tabs: **Pantry, Recipes, Log, Progress**. All four are peers — switching tabs re-scopes to whichever group is currently active via the `groupId` route param, it does not navigate to a different group. There's no in-screen way to switch groups anymore; that only happens via `/groups`. Profile is not a tab — reached via a persistent header avatar icon across all four.
 
-See design-system.md for the visual treatment of the context switcher and tab bar, and frontend-architecture.md for the push/pop vs. tab-switch animation rules tied to this route structure.
+See frontend-architecture.md for the push/pop vs. tab-switch animation rules tied to this route structure.

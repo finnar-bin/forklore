@@ -39,23 +39,22 @@ const EMPTY_GROUPS: GroupMembership[] = [];
 // AddRecipeIngredientDialog's "From pantry" step, applied to a type toggle
 // instead of an existing/new toggle.
 //
-// Cross-context by design (Ticket 12 follow-up, "/log shows everything"):
-// unlike the pantry/recipes tabs, this dialog doesn't take a groupId to
-// scope its own ingredient/recipe lists — it lists every ingredient/recipe
-// the caller can see across every group they're in, each labeled with where
-// it lives (see groupLabel below). Which log the resulting entry lands on
-// is decided by what gets picked (the item's own group_id)... with one
-// exception: `groupId` below (the group screen this was opened from, when
-// opened from one — DailyLog passes its own groupId through) is used to let
-// a *community* ingredient's entry land on that specific group's log, so it
+// Cross-context within the caller's groups by design (Ticket 12 follow-up,
+// "/log shows everything"): unlike the pantry/recipes tabs, this dialog
+// doesn't scope its own ingredient/recipe lists to just `groupId` — it
+// lists every ingredient/recipe the caller can see across every group
+// they're in, each labeled with where it lives (see groupLabel below).
+// Which log the resulting entry lands on is decided by what gets picked
+// (the item's own group_id)... with one exception: `groupId` below (the
+// group screen this was opened from — DailyLog's own groupId, always a
+// real group now that the bare, cross-context /log screen is gone, see
+// docs/pending-deviations.md "Remove personal mode") is used to let a
+// *community* ingredient's entry land on that specific group's log, so it
 // can be logged for a fellow member the same way a group-owned item can —
 // see resolveGroupId below and docs/pending-deviations.md ("log for a group
-// member" rework, community ingredients follow-up). A community ingredient
-// has no group of its own to fall back on, so it's excluded from the picker
-// entirely when this dialog is opened without a group context (the bare,
-// cross-context /log screen) — see docs/pending-deviations.md ("Remove
-// personal mode"). See docs/pending-deviations.md (Ticket 12) for the
-// original cross-context design.
+// member" rework, community ingredients follow-up). See
+// docs/pending-deviations.md (Ticket 12) for the original cross-context
+// design.
 export function AddLogEntryDialog({
   open,
   groupId,
@@ -63,10 +62,9 @@ export function AddLogEntryDialog({
   onLogged,
 }: {
   open: boolean;
-  // The group screen this was opened from (DailyLog's own groupId prop),
-  // or undefined/null when opened from the bare, cross-context /log screen.
+  // The group screen this was opened from (DailyLog's own groupId prop).
   // Only consulted for a community ingredient — see resolveGroupId below.
-  groupId?: string | null;
+  groupId: string;
   onClose: () => void;
   onLogged: (entry: LogEntry) => void;
 }) {
@@ -76,7 +74,7 @@ export function AddLogEntryDialog({
       {/* Mounted only while open, so selection state starts fresh each time. */}
       {open && (
         <AddLogEntryForm
-          contextGroupId={groupId ?? null}
+          contextGroupId={groupId}
           onClose={onClose}
           onLogged={onLogged}
         />
@@ -90,7 +88,7 @@ function AddLogEntryForm({
   onClose,
   onLogged,
 }: {
-  contextGroupId: string | null;
+  contextGroupId: string;
   onClose: () => void;
   onLogged: (entry: LogEntry) => void;
 }) {
@@ -104,10 +102,7 @@ function AddLogEntryForm({
   const groups = useMyGroups(userId) ?? EMPTY_GROUPS;
   // Cross-context, so community ingredients are included if *any* of the
   // caller's groups has opted in — see docs/pending-deviations.md
-  // ("Community pantry"). Only actually merged into the fetched list below
-  // when contextGroupId is set, though — a community ingredient has no
-  // group of its own to land its log entry in, so it's meaningless to offer
-  // one from the bare, cross-context /log screen (see resolveGroupId).
+  // ("Community pantry").
   const communityEnabled = groups.some(
     (membership) => membership.group.community_pantry_enabled,
   );
@@ -145,12 +140,10 @@ function AddLogEntryForm({
   // lands on the group screen this dialog was opened from, so it can be
   // logged for a fellow member the same way any other group-owned item can.
   // A community *recipe* doesn't exist (recipes have no community tier).
-  // Only ever called on an already-selected ingredient/recipe, and a
-  // community ingredient is excluded from the picker entirely when
-  // contextGroupId is null (see the fetch effect below), so this always
-  // resolves to a real group in practice — `string | null` is kept only so
-  // TypeScript doesn't have to trust that invariant, and handleLog guards
-  // against it defensively.
+  // `string | null` only because `item` itself can be null (nothing
+  // selected yet) — once an item is selected this always resolves to a
+  // real group, since `contextGroupId` always is one now. `handleLog` still
+  // guards against null defensively.
   function resolveGroupId(
     item: { group_id: string | null; is_community?: boolean } | null,
   ): string | null {
@@ -162,16 +155,13 @@ function AddLogEntryForm({
   useEffect(() => {
     if (!userId) return;
     const groupIds = groups.map((membership) => membership.group.id);
-    // See this file's own top comment — a community ingredient has no group
-    // of its own, so it's only worth including when there's an actual group
-    // screen (contextGroupId) to attribute its log entry to.
-    fetchAllIngredients(groupIds, contextGroupId !== null && communityEnabled)
+    fetchAllIngredients(groupIds, communityEnabled)
       .then(setIngredients)
       .catch(() => setIngredients([]));
     fetchAllRecipes(groupIds)
       .then(setRecipes)
       .catch(() => setRecipes([]));
-  }, [userId, groups, communityEnabled, contextGroupId]);
+  }, [userId, groups, communityEnabled]);
 
   function groupLabel(groupId: string | null, isCommunity?: boolean): string {
     if (isCommunity) return "Community";

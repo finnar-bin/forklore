@@ -28,9 +28,10 @@ export function GroupCard({
   const navigate = useNavigate();
   const { group, role } = membership;
 
-  // Same "switch context" action as ContextSwitcher.tsx's own
-  // selectContext — persist the pick (so BottomNav/the "/" redirect land
-  // back here next time) and jump into this group's pantry.
+  // The only way to switch groups now (Pantry/Recipes' own ContextSwitcher
+  // chip was removed, requested directly) — persist the pick (so
+  // BottomNav/the "/" redirect land back here next time, see
+  // resolveDefaultGroupId) and jump into this group's pantry.
   function selectGroup() {
     setStoredGroupId(group.id);
     navigate(`/groups/${group.id}/pantry`);

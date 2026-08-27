@@ -4,41 +4,28 @@ import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { useAppStore } from "../../store/useAppStore";
 import { useProfileNames } from "../profiles/useProfileNames";
-import { fetchAllGroupLogEntries, fetchAllLogEntries } from "./api";
+import { fetchAllGroupLogEntries } from "./api";
 import { EditLogEntryDialog } from "./EditLogEntryDialog";
 import { LogEntryCard } from "./LogEntryCard";
 import type { LogEntry } from "../../types/log";
 
-// All-time history. `groupId: null` (the /logs route) is cross-context —
-// everything the caller has logged, across every group combined (see
-// fetchAllLogEntries). A group id (the /groups/:groupId/logs route, Ticket
-// 12 follow-up) instead shows that one group's own shared history — every
-// entry logged into it by any member, same scoping DailyLog's group branch
-// already uses for "today." See docs/pending-deviations.md.
-export function AllTimeLog({ groupId }: { groupId: string | null }) {
-  const userId = useAppStore((state) => state.userId);
-
+// A group's own all-time history — every entry logged into it by any
+// member, same scoping DailyLog's own query uses for "today." The bare,
+// cross-context all-time view this component used to also serve (a null
+// `groupId`) was removed (requested directly, alongside bare /log/`/logs`).
+export function AllTimeLog({ groupId }: { groupId: string }) {
   const [editingEntry, setEditingEntry] = useState<LogEntry | null>(null);
 
   // Reads from Dexie, not Supabase — re-renders automatically on
   // create/edit/delete (this device) and pulled remote changes alike.
   const entries = useLiveQuery(
-    () =>
-      groupId
-        ? fetchAllGroupLogEntries(groupId)
-        : userId
-          ? fetchAllLogEntries(userId)
-          : [],
-    [userId, groupId],
+    () => fetchAllGroupLogEntries(groupId),
+    [groupId],
   );
   const loading = entries === undefined;
 
-  // Group context only — same reasoning as DailyLog's own `names` lookup.
-  const names = useProfileNames(
-    groupId ? (entries ?? []).map((e) => e.logged_for) : [],
-  );
+  const names = useProfileNames((entries ?? []).map((e) => e.logged_for));
 
   const groups = useMemo(() => {
     const byDate = new Map<string, LogEntry[]>();
@@ -63,9 +50,7 @@ export function AllTimeLog({ groupId }: { groupId: string | null }) {
 
       {!loading && groups.length === 0 && (
         <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-          {groupId
-            ? "Nothing logged yet in this group. Entries logged here will show up."
-            : "Nothing logged yet. Entries you log will show up here."}
+          Nothing logged yet in this group. Entries logged here will show up.
         </Typography>
       )}
 
@@ -99,7 +84,7 @@ export function AllTimeLog({ groupId }: { groupId: string | null }) {
                   hour: "numeric",
                   minute: "2-digit",
                 })}
-                loggedForName={groupId ? names[entry.logged_for] : undefined}
+                loggedForName={names[entry.logged_for]}
                 // See DailyLog's identical onClick comment — every entry
                 // here is already something the update RLS lets the viewer
                 // edit, group-inclusive since the "log for a group member"

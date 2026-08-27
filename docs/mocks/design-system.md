@@ -97,7 +97,7 @@ MuiPaper: {
 
 Tapping the card expands to full detail (photo enlarged, edit history, full nutrition breakdown) rather than cramming everything into the list view.
 
-**Context switcher chip** — pill-shaped, sits below the header on Pantry/Recipes/Log screens only (Progress ignores it — BMI/weight data has no group dimension, see routes.md). Shows current context name with a dropdown chevron; tapping opens the group/personal picker.
+**Context switcher chip** — removed (requested directly; see docs/pending-deviations.md, "Remove personal mode"). Originally a pill-shaped chip below the header on Pantry/Recipes/Log showing the current context with a dropdown picker; switching groups now happens by visiting `/groups` and tapping a card instead.
 
 **Bottom navigation** — 4 tabs: Pantry, Recipes, Log, Progress. Active tab uses the primary accent color for both icon and label; inactive tabs use muted text color. No filled/pill background on the active tab — text/icon color change alone is sufficient, keeping with the overall restraint in the visual language.
 

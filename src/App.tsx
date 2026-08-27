@@ -15,7 +15,6 @@ import { RecipesPage } from "./routes/RecipesPage";
 import { RecipeDetailPage } from "./routes/RecipeDetailPage";
 import { LogPage } from "./routes/LogPage";
 import { LogsPage } from "./routes/LogsPage";
-import { GroupLogsPage } from "./routes/GroupLogsPage";
 import { GroupsPage } from "./routes/GroupsPage";
 import { CommunityPantryPage } from "./routes/CommunityPantryPage";
 import { InvitePage } from "./routes/InvitePage";
@@ -88,15 +87,6 @@ function App() {
                 docs/pending-deviations.md (Ticket 16). */}
             <Route element={<AnimatedAppShell />}>
               <Route path="/" element={<HomeRedirect />} />
-              {/* Bare /log and /logs are cross-context by design — everything
-                  logged across every group the caller is in, not tied to any
-                  single group (see docs/pending-deviations.md, Ticket 12
-                  follow-up and "Remove personal mode"). Pantry and Recipes
-                  have no equivalent bare route — a group's inventory isn't
-                  meaningfully aggregatable the way a daily kcal total is. */}
-              <Route path="/log" element={<LogPage />} />
-              <Route path="/logs" element={<LogsPage />} />
-              <Route path="/logs/groups" element={<GroupLogsPage />} />
               <Route path="/progress" element={<ProgressPage />} />
               {/* RequireGroupMember guards every route under this parent —
                   see issue #34's audit ("group routes trust the local cache

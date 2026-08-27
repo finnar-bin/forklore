@@ -26,17 +26,12 @@ const TABS: Array<{
   key: BottomTab;
   label: string;
   icon: ReactNode;
-  // "always-group": no bare route exists anymore (Pantry/Recipes — see
-  // docs/pending-deviations.md, "Remove personal mode"), so tapping it
-  // always needs a real resolved group, even from a screen with no
-  // :groupId of its own (Progress, Profile, bare /log).
-  // "group-or-bare": Log kept a genuine bare, cross-context route
-  // deliberately — this only follows the *current* route's own group (if
-  // any), same as every tab did before "Remove personal mode"; it never
-  // synthesizes a fallback group, so tapping Log from a non-group screen
-  // still lands on the cross-context /log rather than forcing one group.
+  // "always-group": no bare route exists for this tab (Pantry, Recipes, and
+  // now Log too — its own bare, cross-context /log was removed, requested
+  // directly), so tapping it always needs a real resolved group, even from
+  // a screen with no :groupId of its own (Progress, Profile).
   // "context-free": Progress, never group-scoped.
-  nav: "always-group" | "group-or-bare" | "context-free";
+  nav: "always-group" | "context-free";
 }> = [
   {
     key: "pantry",
@@ -50,7 +45,7 @@ const TABS: Array<{
     icon: <MenuBookIcon />,
     nav: "always-group",
   },
-  { key: "log", label: "Log", icon: <EventNoteIcon />, nav: "group-or-bare" },
+  { key: "log", label: "Log", icon: <EventNoteIcon />, nav: "always-group" },
   {
     key: "progress",
     label: "Progress",
@@ -71,12 +66,11 @@ export function BottomNav() {
 
   const activeTab = getBottomTab(location.pathname);
 
-  // Only Pantry/Recipes need this — tapping one from Progress/Profile
-  // (neither carries a :groupId) needs somewhere to land, same resolution
-  // the "/" redirect uses. Null (nothing explicitly picked yet — see
-  // resolveDefaultGroupId) falls through to the `else` branch below,
-  // sending the tap to /groups to choose instead of guessing one. Log's own
-  // "group-or-bare" nav never consults this.
+  // Pantry/Recipes/Log tapped from Progress/Profile (none of which carry a
+  // :groupId) need somewhere to land, same resolution the "/" redirect
+  // uses. Null (nothing explicitly picked yet — see resolveDefaultGroupId)
+  // falls through to the `else` branch below, sending the tap to /groups to
+  // choose instead of guessing one.
   const fallbackGroupId =
     routeGroupId ?? resolveDefaultGroupId(groups, getStoredGroupId());
 
@@ -88,10 +82,6 @@ export function BottomNav() {
         if (!tab) return;
         if (tab.nav === "context-free") {
           navigate(`/${tab.key}`);
-        } else if (tab.nav === "group-or-bare") {
-          navigate(
-            routeGroupId ? `/groups/${routeGroupId}/${tab.key}` : `/${tab.key}`,
-          );
         } else if (fallbackGroupId) {
           navigate(`/groups/${fallbackGroupId}/${tab.key}`);
         } else {
