@@ -66,6 +66,16 @@ export function GroupList() {
     // animated transform.
     <Box sx={{ position: "relative", minHeight: "calc(100vh - 64px)" }}>
       <Stack spacing={1.5} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 10 }}>
+        <Stack spacing={0.5} sx={{ mb: 0.5 }}>
+          <Typography variant="h5" fontWeight={500}>
+            Your groups
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Each group shares its own pantry, recipes, and log with everyone in
+            it. Tap a group to switch into it, or start a new one.
+          </Typography>
+        </Stack>
+
         {error && <Alert severity="error">{error}</Alert>}
 
         {loading && (
