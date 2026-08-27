@@ -6,6 +6,8 @@ import MobileStepper from "@mui/material/MobileStepper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useAppStore } from "../../store/useAppStore";
+import { getStoredGroupId } from "../../lib/activeGroupStorage";
+import { resolveDefaultGroupId } from "../../lib/defaultGroup";
 import { useMyGroups } from "../groups/useMyGroups";
 import { fetchMyProfile, updateMyProfile } from "../profiles/api";
 import { deletePhoto } from "../../lib/photoUpload";
@@ -267,7 +269,11 @@ export function OnboardingStepper() {
       setOnboardingComplete(true);
       // "/" would resolve to the same place via HomeRedirect, but going
       // straight there avoids a redirect hop right as onboarding finishes.
-      const groupId = groups?.[0]?.group.id;
+      // Same resolveDefaultGroupId convention HomeRedirect/BottomNav use
+      // (not just groups[0]) — a user who accepted an invite before
+      // finishing onboarding, on top of already belonging to a group, can
+      // reach this with more than one membership.
+      const groupId = resolveDefaultGroupId(groups, getStoredGroupId());
       navigate(groupId ? `/groups/${groupId}/pantry` : "/", { replace: true });
     } catch (err) {
       setError(
@@ -346,6 +352,9 @@ export function OnboardingStepper() {
           mealKcalTargets={mealKcalTargets}
           onMealKcalTargetChange={handleMealKcalTargetChange}
         />
+      )}
+      {activeStep === GROUP_STEP_INDEX && (
+        <CreateOrJoinGroupStep hasGroup={hasGroup} />
       )}
 
       <MobileStepper
