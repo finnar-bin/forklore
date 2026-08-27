@@ -1,19 +1,15 @@
 import { useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import { AppHeader } from "../components/AppHeader";
-import { ContextSwitcher } from "../components/ContextSwitcher";
 import { PantryList } from "../features/pantry/PantryList";
-import { useAppStore, useSyncedActiveGroupId } from "../store/useAppStore";
 
 export function PantryPage() {
-  const { groupId: routeGroupId } = useParams<{ groupId?: string }>();
-  const userId = useAppStore((state) => state.userId);
-  const groupId = useSyncedActiveGroupId(routeGroupId, "pantry", userId);
+  const { groupId } = useParams<{ groupId: string }>();
+  if (!groupId) return null;
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
       <AppHeader title="Pantry" />
-      <ContextSwitcher tab="pantry" activeGroupId={groupId} />
       <PantryList groupId={groupId} />
     </Box>
   );

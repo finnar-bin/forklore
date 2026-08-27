@@ -24,7 +24,7 @@ export function IngredientKcalHeader({
   kcal,
 }: {
   ingredient: Pick<Ingredient, "name" | "quantity" | "unit" | "brand" | "kcal">;
-  // "Personal"/the owning group's name/"Community" — resolved by the caller
+  // The owning group's name, or "Community" — resolved by the caller
   // (each screen already has its own reason to know this).
   groupLabel: string;
   // Scaled from the ingredient's own kcalPerUnit rate by whatever quantity

@@ -47,7 +47,7 @@ export function CopyRecipeDialog({
   open: boolean;
   recipeId: string;
   recipeName: string;
-  groupId: string | null;
+  groupId: string;
   onClose: () => void;
   onCopied: () => void;
 }) {
@@ -93,7 +93,7 @@ export function CopyRecipeDialog({
   }
 
   async function finishCopy(
-    targetGroupId: string | null,
+    targetGroupId: string,
     allResolutions: IngredientResolution[],
   ) {
     if (!userId) return;
@@ -101,7 +101,6 @@ export function CopyRecipeDialog({
     setError(null);
     try {
       const newRecipeId = await copyRecipe(
-        userId,
         recipeId,
         targetGroupId,
         allResolutions,

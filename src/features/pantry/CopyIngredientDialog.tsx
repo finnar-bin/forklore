@@ -54,7 +54,7 @@ export function CopyIngredientDialog({
     setError(null);
     setCopying(true);
     try {
-      await copyIngredient(userId, ingredientId, target.groupId);
+      await copyIngredient(ingredientId, target.groupId);
       setSelectedIndex(null);
       onCopied();
     } catch (err) {

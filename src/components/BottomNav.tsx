@@ -8,6 +8,10 @@ import EventNoteIcon from "@mui/icons-material/EventNote";
 import InsightsIcon from "@mui/icons-material/Insights";
 import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../theme/theme";
+import { useAppStore } from "../store/useAppStore";
+import { useMyGroups } from "../features/groups/useMyGroups";
+import { getStoredGroupId } from "../lib/activeGroupStorage";
+import { resolveDefaultGroupId } from "../lib/defaultGroup";
 import { getBottomTab, type BottomTab } from "../routes/navigationTransition";
 
 // Bottom-tab bar — routes.md "Navigation structure" / design-system.md
@@ -22,33 +26,53 @@ const TABS: Array<{
   key: BottomTab;
   label: string;
   icon: ReactNode;
-  groupAware: boolean;
+  // "always-group": no bare route exists for this tab (Pantry, Recipes, and
+  // now Log too — its own bare, cross-context /log was removed, requested
+  // directly), so tapping it always needs a real resolved group, even from
+  // a screen with no :groupId of its own (Progress, Profile).
+  // "context-free": Progress, never group-scoped.
+  nav: "always-group" | "context-free";
 }> = [
-  { key: "pantry", label: "Pantry", icon: <KitchenIcon />, groupAware: true },
+  {
+    key: "pantry",
+    label: "Pantry",
+    icon: <KitchenIcon />,
+    nav: "always-group",
+  },
   {
     key: "recipes",
     label: "Recipes",
     icon: <MenuBookIcon />,
-    groupAware: true,
+    nav: "always-group",
   },
-  { key: "log", label: "Log", icon: <EventNoteIcon />, groupAware: true },
+  { key: "log", label: "Log", icon: <EventNoteIcon />, nav: "always-group" },
   {
     key: "progress",
     label: "Progress",
     icon: <InsightsIcon />,
-    groupAware: false,
+    nav: "context-free",
   },
 ];
 
 export function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { groupId } = useParams<{ groupId?: string }>();
+  const { groupId: routeGroupId } = useParams<{ groupId?: string }>();
+  const userId = useAppStore((state) => state.userId);
+  const groups = useMyGroups(userId);
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === "system" ? systemMode : mode;
   const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
 
   const activeTab = getBottomTab(location.pathname);
+
+  // Pantry/Recipes/Log tapped from Progress/Profile (none of which carry a
+  // :groupId) need somewhere to land, same resolution the "/" redirect
+  // uses. Null (nothing explicitly picked yet — see resolveDefaultGroupId)
+  // falls through to the `else` branch below, sending the tap to /groups to
+  // choose instead of guessing one.
+  const fallbackGroupId =
+    routeGroupId ?? resolveDefaultGroupId(groups, getStoredGroupId());
 
   return (
     <BottomNavigation
@@ -56,11 +80,13 @@ export function BottomNav() {
       onChange={(_event, value: BottomTab) => {
         const tab = TABS.find((candidate) => candidate.key === value);
         if (!tab) return;
-        navigate(
-          tab.groupAware && groupId
-            ? `/groups/${groupId}/${tab.key}`
-            : `/${tab.key}`,
-        );
+        if (tab.nav === "context-free") {
+          navigate(`/${tab.key}`);
+        } else if (fallbackGroupId) {
+          navigate(`/groups/${fallbackGroupId}/${tab.key}`);
+        } else {
+          navigate("/groups");
+        }
       }}
       showLabels
       sx={{

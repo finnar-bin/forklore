@@ -23,7 +23,7 @@ export interface IngredientUsage {
 // unconditionally for every signed-in user (see sync/pull.ts). Used directly
 // by the /community-pantry browsing page, and merged into the functions
 // below wherever a caller's `includeCommunity` flag says the relevant
-// personal/group context has opted in.
+// group has opted in.
 //
 // Filtered in JS rather than via a Dexie `.where('is_community')` index —
 // booleans aren't valid IndexedDB key values (only number/date/string/binary/
@@ -36,54 +36,43 @@ export async function fetchCommunityIngredients(): Promise<Ingredient[]> {
 }
 
 // Reads come from Dexie, not Supabase — see frontend-architecture.md
-// "Offline sync — outbox pattern". `groupId: null` is the personal pantry
-// (scoped to the caller via `created_by`, matching the personal RLS policy's
-// own shape); a group id shows every ingredient belonging to that group
-// regardless of who added it, matching "group members see the whole group's
-// pantry" (schema.md's RLS policies key group rows off `group_id` alone, not
-// `created_by`). See docs/pending-deviations.md (Ticket 12).
+// "Offline sync — outbox pattern". Shows every ingredient belonging to
+// `groupId` regardless of who added it, matching "group members see the
+// whole group's pantry" (schema.md's RLS policies key group rows off
+// `group_id` alone, not `created_by`). See docs/pending-deviations.md
+// (Ticket 12, "Remove personal mode").
 //
-// `includeCommunity` merges in every community ingredient (the personal
-// profile's or that group's own `community_pantry_enabled` switch, decided
-// by the caller) — see docs/pending-deviations.md ("Community pantry").
+// `includeCommunity` merges in every community ingredient (that group's own
+// `community_pantry_enabled` switch, decided by the caller) — see
+// docs/pending-deviations.md ("Community pantry").
 export async function fetchIngredients(
-  userId: string,
-  groupId: string | null,
+  groupId: string,
   includeCommunity = false,
 ): Promise<Ingredient[]> {
-  const rows =
-    groupId === null
-      ? (
-          await db.ingredients.where("created_by").equals(userId).toArray()
-        ).filter((i) => i.group_id === null && !i.is_community)
-      : await db.ingredients.where("group_id").equals(groupId).toArray();
+  const rows = await db.ingredients.where("group_id").equals(groupId).toArray();
   const community = includeCommunity ? await fetchCommunityIngredients() : [];
   return [...rows, ...community].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 // Cross-context read for the log entry dialog (Ticket 12 follow-up, "log
-// entry dialog shows every ingredient") — the caller's own personal
-// ingredients plus every ingredient belonging to any group in `groupIds`
-// (their memberships), combined into one flat, name-sorted list rather than
-// the strict personal-xor-one-group split fetchIngredients above enforces.
+// entry dialog shows every ingredient") — every ingredient belonging to any
+// group in `groupIds` (the caller's memberships), combined into one flat,
+// name-sorted list rather than the strict one-group-at-a-time split
+// fetchIngredients above enforces.
 //
 // `includeCommunity` — see fetchIngredients above; the caller passes true
-// here if the personal profile or *any* of the caller's groups has opted in
-// (docs/pending-deviations.md, "Community pantry").
+// here if *any* of the caller's groups has opted in (docs/pending-deviations.md,
+// "Community pantry").
 export async function fetchAllIngredients(
-  userId: string,
   groupIds: string[],
   includeCommunity = false,
 ): Promise<Ingredient[]> {
-  const personal = (
-    await db.ingredients.where("created_by").equals(userId).toArray()
-  ).filter((i) => i.group_id === null && !i.is_community);
   const grouped =
     groupIds.length > 0
       ? await db.ingredients.where("group_id").anyOf(groupIds).toArray()
       : [];
   const community = includeCommunity ? await fetchCommunityIngredients() : [];
-  return [...personal, ...grouped, ...community].sort((a, b) =>
+  return [...grouped, ...community].sort((a, b) =>
     a.name.localeCompare(b.name),
   );
 }
@@ -112,8 +101,10 @@ export async function createIngredient(
   const ingredient: Ingredient = {
     id,
     // A community ingredient always has group_id null (the DB's own
-    // ingredients_community_no_group check constraint enforces this too) —
+    // ingredients_group_or_community check constraint enforces this too) —
     // forced here rather than trusted from the caller's groupId argument.
+    // A non-community ingredient always has a real groupId (see
+    // docs/pending-deviations.md, "Remove personal mode").
     group_id: isCommunity ? null : groupId,
     created_by: userId,
     updated_by: null,
@@ -151,11 +142,12 @@ export async function updateIngredient(
   return ingredient;
 }
 
-// Promotes a personal or group ingredient into the community pantry —
-// `group_id` is forced to null alongside `is_community: true` in the same
-// write, satisfying the `ingredients_community_no_group` check constraint
-// (see docs/pending-deviations.md, "Community pantry") in one step rather
-// than risking a transient state where only one of the two is set.
+// Promotes a group ingredient into the community pantry — `group_id` is
+// forced to null alongside `is_community: true` in the same write,
+// satisfying the `ingredients_group_or_community` check constraint (see
+// docs/pending-deviations.md, "Community pantry", "Remove personal mode")
+// in one step rather than risking a transient state where only one of the
+// two is set.
 export async function moveIngredientToCommunity(
   id: string,
   userId: string,

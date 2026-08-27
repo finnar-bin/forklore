@@ -8,7 +8,10 @@ export type WeightUnit = "g" | "kg";
 
 export interface Recipe {
   id: string;
-  group_id: string | null;
+  // Required — every recipe belongs to a real group (see
+  // docs/pending-deviations.md, "Remove personal mode"). Recipes have no
+  // community exception (that's ingredients-only).
+  group_id: string;
   created_by: string;
   // Null until the first edit after creation — see docs/pending-deviations.md
   // (Ticket 12). Distinguishes "never edited" (show created_at/created_by)

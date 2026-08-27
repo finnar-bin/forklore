@@ -62,7 +62,7 @@ $$ language sql stable;
 
 ### copy_ingredient
 
-Copies a single ingredient into a different context (personal or another group). Direction-agnostic — the same function handles group→group, group→personal, and personal→group; the only variable is `p_target_group_id` (null for personal). RLS on the underlying insert enforces the caller must be a member of the target group if not personal.
+Copies a single ingredient into a different group's pantry (or, as a source, out of a community ingredient into one). `p_target_group_id` is required — since personal mode was removed (docs/pending-deviations.md, "Remove personal mode"), every copy target is a real group the caller belongs to; the function itself re-checks this (`is_group_member`) rather than relying on RLS alone, since it's `security definer` and so bypasses RLS on its own insert.
 
 ```sql
 create or replace function copy_ingredient(p_ingredient_id uuid, p_target_group_id uuid)
@@ -70,6 +70,22 @@ returns uuid as $$
 declare
   v_new_id uuid;
 begin
+  if p_target_group_id is null then
+    raise exception 'Target group is required';
+  end if;
+
+  if not public.is_group_member(p_target_group_id) then
+    raise exception 'Not a member of the target group';
+  end if;
+
+  if not exists (
+    select 1 from public.ingredients
+    where id = p_ingredient_id
+      and (public.is_group_member(group_id) or is_community = true)
+  ) then
+    raise exception 'Ingredient not found or not accessible';
+  end if;
+
   insert into public.ingredients (group_id, created_by, name, brand, quantity, unit, kcal, photo_url)
   select p_target_group_id, auth.uid(), name, brand, quantity, unit, kcal, photo_url
   from public.ingredients
@@ -78,7 +94,7 @@ begin
 
   return v_new_id;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 ```
 
 ### find_ingredient_match
@@ -92,10 +108,7 @@ returns table(id uuid, name text, unit ingredient_unit, quantity numeric, kcal n
   from public.ingredients
   where lower(name) = lower(p_name)
     and unit = p_unit
-    and (
-      (p_target_group_id is null and created_by = auth.uid() and group_id is null)
-      or group_id = p_target_group_id
-    );
+    and group_id = p_target_group_id;
 $$ language sql stable;
 ```
 
@@ -104,6 +117,8 @@ $$ language sql stable;
 ### copy_recipe
 
 Deep-copies a recipe and its ingredients into a target context in one transaction. `p_ingredient_resolutions` is a JSON array the client builds after running `find_ingredient_match` per ingredient and collecting the user's confirmations — `use_existing_id` set where the user confirmed a match, `null` where a fresh copy should be created (including all silent-copy cases from unit/name mismatches above).
+
+`p_target_group_id` is required, same as `copy_ingredient` — recipes have no community tier, so the source-access check is plain group membership.
 
 ```sql
 create or replace function copy_recipe(
@@ -117,8 +132,23 @@ declare
   v_source record;
   v_target_ingredient_id uuid;
 begin
-  insert into public.recipes (group_id, created_by, name, servings, photo_url, forked_from_recipe_id)
-  select p_target_group_id, auth.uid(), name, servings, photo_url, id
+  if p_target_group_id is null then
+    raise exception 'Target group is required';
+  end if;
+
+  if not public.is_group_member(p_target_group_id) then
+    raise exception 'Not a member of the target group';
+  end if;
+
+  if not exists (
+    select 1 from public.recipes
+    where id = p_recipe_id and public.is_group_member(group_id)
+  ) then
+    raise exception 'Recipe not found or not accessible';
+  end if;
+
+  insert into public.recipes (group_id, created_by, name, weight_g, photo_url, forked_from_recipe_id)
+  select p_target_group_id, auth.uid(), name, weight_g, photo_url, id
   from public.recipes where id = p_recipe_id
   returning id into v_new_recipe_id;
 

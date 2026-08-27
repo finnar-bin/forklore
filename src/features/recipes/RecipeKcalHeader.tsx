@@ -13,8 +13,8 @@ export function RecipeKcalHeader({
   kcal,
 }: {
   recipe: Recipe;
-  // "Personal" or the owning group's name — resolved by the caller
-  // (recipes have no community tier).
+  // The owning group's name — resolved by the caller (recipes have no
+  // community tier).
   groupLabel: string;
   // Scaled from the recipe's own kcalPerUnit rate by whatever amount the
   // caller's own input currently holds.

@@ -10,8 +10,8 @@ import type { Ingredient } from "../../types/ingredient";
 // subtitle, primary/secondary metric on the right.
 export function IngredientCard({
   ingredient,
-  // Every list of ingredients that can mix community rows in with
-  // personal/group ones needs the indicator (PantryList.tsx). The
+  // Every list of ingredients that can mix community rows in with a
+  // group's own needs the indicator (PantryList.tsx). The
   // community pantry's own list is 100% community ingredients, so it'd be
   // pure noise there — CommunityPantryList.tsx passes false. See
   // docs/pending-deviations.md ("Community pantry").

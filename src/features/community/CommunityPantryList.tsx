@@ -15,9 +15,9 @@ import { IngredientCard } from "../pantry/IngredientCard";
 // Every community ingredient, browsable by any signed-in user regardless of
 // their own or any group's opt-in switch — see docs/pending-deviations.md
 // ("Community pantry"). Same list/FAB/detail-navigation shape as
-// PantryList.tsx, minus the ContextSwitcher (there's no personal/group
-// context here) and minus the opt-in gating (this page always shows every
-// community ingredient, to everyone).
+// PantryList.tsx, minus the opt-in gating (this page always shows every
+// community ingredient, to everyone) — there's no group context here at
+// all, so nothing to switch between regardless.
 export function CommunityPantryList() {
   const navigate = useNavigate();
   const [createOpen, setCreateOpen] = useState(false);

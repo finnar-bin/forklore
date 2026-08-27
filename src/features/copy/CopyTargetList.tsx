@@ -40,7 +40,7 @@ export function CopyTargetList({
     <List dense disablePadding>
       {targets.map((target, index) => (
         <ListItemButton
-          key={target.groupId ?? "personal"}
+          key={target.groupId}
           selected={selectedIndex === index}
           onClick={() => onSelect(index)}
           sx={{ borderRadius: "10px" }}

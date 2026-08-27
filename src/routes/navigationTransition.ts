@@ -4,18 +4,19 @@
 // hardcoded per-route, so any future route slots into the right category
 // automatically:
 //
-// - Both paths resolve to one of the four bottom-tab roots (personal or
-//   group-scoped) -> 'tab': covers a literal tab switch (Pantry -> Recipes)
-//   and a context switch within the same tab (Pantry -> a group's Pantry),
-//   neither of which should slide directionally.
-// - Next path is a descendant of the previous one (e.g. /pantry ->
-//   /pantry/:id) -> 'push': drilling into a detail screen.
+// - Both paths resolve to one of the four bottom-tab roots -> 'tab': covers
+//   a literal tab switch (Pantry -> Recipes) and a context switch within the
+//   same tab (one group's Pantry -> another group's Pantry), neither of
+//   which should slide directionally.
+// - Next path is a descendant of the previous one (e.g.
+//   /groups/:id/pantry -> /groups/:id/pantry/:ingredientId) -> 'push':
+//   drilling into a detail screen.
 // - Previous path is a descendant of the next one (the reverse) -> 'pop':
 //   backing out of a detail screen.
 // - Next path is a bottom-tab root and the previous path isn't -> 'pop':
 //   covers "back" affordances that return to a tab root without the new path
-//   being a literal parent of the old one (e.g. /sync-status -> /pantry,
-//   /logs -> /log, /logs/groups -> /log, /groups/:id/settings ->
+//   being a literal parent of the old one (e.g. /sync-status -> a group's
+//   /pantry, /groups/:id/logs -> /groups/:id/log, /groups/:id/settings ->
 //   /groups/:id/pantry). BottomNav only renders on tab roots (see
 //   AnimatedAppShell), so the only way to *arrive* at one from a non-tab
 //   screen is that screen's own explicit back navigation — never a fresh
@@ -26,10 +27,14 @@
 export type TransitionVariant = "push" | "pop" | "tab";
 export type BottomTab = "pantry" | "recipes" | "log" | "progress";
 
+// Pantry/Recipes/Log have no bare route anymore — every one of them is only
+// ever reached nested under /groups/:groupId (see docs/pending-deviations.md,
+// "Remove personal mode" and the later removal of bare /log, /logs, and
+// /logs/groups). Progress stays bare — it never takes a group context.
 const TAB_ROOT_PATTERNS: Array<[BottomTab, RegExp]> = [
-  ["pantry", /^\/(groups\/[^/]+\/)?pantry$/],
-  ["recipes", /^\/(groups\/[^/]+\/)?recipes$/],
-  ["log", /^\/(groups\/[^/]+\/)?log$/],
+  ["pantry", /^\/groups\/[^/]+\/pantry$/],
+  ["recipes", /^\/groups\/[^/]+\/recipes$/],
+  ["log", /^\/groups\/[^/]+\/log$/],
   ["progress", /^\/progress$/],
 ];
 

@@ -6,6 +6,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import GroupIcon from "@mui/icons-material/Group";
 import { useColorScheme } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
+import { setStoredGroupId } from "../../lib/activeGroupStorage";
 import { shadows } from "../../theme/theme";
 import type { GroupMembership } from "../../types/group";
 
@@ -27,8 +28,18 @@ export function GroupCard({
   const navigate = useNavigate();
   const { group, role } = membership;
 
+  // The only way to switch groups now (Pantry/Recipes' own ContextSwitcher
+  // chip was removed, requested directly) — persist the pick (so
+  // BottomNav/the "/" redirect land back here next time, see
+  // resolveDefaultGroupId) and jump into this group's pantry.
+  function selectGroup() {
+    setStoredGroupId(group.id);
+    navigate(`/groups/${group.id}/pantry`);
+  }
+
   return (
     <Box
+      onClick={selectGroup}
       sx={{
         bgcolor: "background.paper",
         borderRadius: "14px",
@@ -37,6 +48,7 @@ export function GroupCard({
         display: "flex",
         gap: 1.5,
         alignItems: "center",
+        cursor: "pointer",
       }}
     >
       <Box
@@ -66,7 +78,10 @@ export function GroupCard({
       {role === "owner" && (
         <IconButton
           aria-label={`Invite someone to ${group.name}`}
-          onClick={onInvite}
+          onClick={(event) => {
+            event.stopPropagation();
+            onInvite();
+          }}
         >
           <PersonAddAltIcon />
         </IconButton>
@@ -78,7 +93,10 @@ export function GroupCard({
       {role === "owner" && (
         <IconButton
           aria-label={`${group.name} settings`}
-          onClick={() => navigate(`/groups/${group.id}/settings`)}
+          onClick={(event) => {
+            event.stopPropagation();
+            navigate(`/groups/${group.id}/settings`);
+          }}
         >
           <SettingsIcon />
         </IconButton>

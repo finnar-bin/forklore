@@ -16,9 +16,10 @@ export interface IngredientResolution {
   use_existing_id: string | null;
 }
 
-// Copies a single ingredient into a different context (personal or another
-// group) — see copy_ingredient in rpcs.md. Direction-agnostic, same as the
-// RPC itself; the only variable is targetGroupId (null for personal).
+// Copies a single ingredient into a different group's pantry — see
+// copy_ingredient in rpcs.md. targetGroupId is always a real group now that
+// personal mode is gone (see docs/pending-deviations.md, "Remove personal
+// mode") — the RPC itself re-checks and rejects a missing target.
 // copy_ingredient/copy_recipe write straight to Supabase, bypassing Dexie and
 // the outbox entirely (same as every other RPC call in this codebase, e.g.
 // createGroup) — pullScope immediately re-syncs the target context so the
@@ -31,16 +32,15 @@ export interface IngredientResolution {
 // a duplicate. The target context just picks the copy up on the next
 // periodic pull (useSyncEngine) instead.
 export async function copyIngredient(
-  userId: string,
   ingredientId: string,
-  targetGroupId: string | null,
+  targetGroupId: string,
 ): Promise<string> {
   const { data, error } = await supabase.rpc("copy_ingredient", {
     p_ingredient_id: ingredientId,
     p_target_group_id: targetGroupId,
   });
   if (error) throw error;
-  await pullScope({ userId, groupId: targetGroupId }).catch(() => {});
+  await pullScope({ groupId: targetGroupId }).catch(() => {});
   return data as string;
 }
 
@@ -51,7 +51,7 @@ export async function copyIngredient(
 export async function findIngredientMatch(
   name: string,
   unit: IngredientUnit,
-  targetGroupId: string | null,
+  targetGroupId: string,
 ): Promise<IngredientMatch | null> {
   const { data, error } = await supabase.rpc("find_ingredient_match", {
     p_name: name,
@@ -70,9 +70,8 @@ export async function findIngredientMatch(
 // Same "don't let a post-commit pullScope failure read as a failed copy"
 // reasoning as copyIngredient above.
 export async function copyRecipe(
-  userId: string,
   recipeId: string,
-  targetGroupId: string | null,
+  targetGroupId: string,
   resolutions: IngredientResolution[],
 ): Promise<string> {
   const { data, error } = await supabase.rpc("copy_recipe", {
@@ -81,6 +80,6 @@ export async function copyRecipe(
     p_ingredient_resolutions: resolutions,
   });
   if (error) throw error;
-  await pullScope({ userId, groupId: targetGroupId }).catch(() => {});
+  await pullScope({ groupId: targetGroupId }).catch(() => {});
   return data as string;
 }

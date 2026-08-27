@@ -6,22 +6,18 @@ import { supabase } from "../lib/supabase";
 // per table and merges them into Dexie via bulkPut (last-write-wins, per the
 // same doc section — no client-side conflict resolution beyond that).
 //
-// Written generically over a `scope` (personal vs. a specific group) rather
-// than hardcoding `group_id is null` so Ticket 12 can reuse this unchanged
-// for group-scoped pulls — see this ticket's "Out of scope" note.
+// One scope per group the caller belongs to — there's no personal scope
+// anymore (see docs/pending-deviations.md, "Remove personal mode"), so this
+// simplified to a plain per-group pull; RLS membership is what actually
+// gates each row, this just narrows the query to one group at a time.
 export interface PullScope {
-  groupId: string | null;
-  userId: string;
+  groupId: string;
 }
 
 interface TableSyncConfig {
   table: "ingredients" | "recipes" | "log_entries";
   // Column compared against the last-synced cursor.
   cursorColumn: "updated_at" | "created_at";
-  // Column that identifies "this row is personal to the caller" when
-  // `scope.groupId` is null. Group-scoped rows (Ticket 12) rely on RLS
-  // membership instead, so this column isn't filtered on in that case.
-  ownerColumn: "created_by" | "logged_for";
 }
 
 async function getCursor(metaKey: string): Promise<string | null> {
@@ -34,9 +30,7 @@ async function setCursor(metaKey: string, value: string): Promise<void> {
 }
 
 function scopeKey(table: string, scope: PullScope): string {
-  return scope.groupId === null
-    ? `${table}:personal:${scope.userId}`
-    : `${table}:group:${scope.groupId}`;
+  return `${table}:group:${scope.groupId}`;
 }
 
 // Ids with a not-yet-synced outbox item (any status — pending, retrying, or
@@ -86,11 +80,10 @@ async function reconcileDeletes(
   config: TableSyncConfig,
   scope: PullScope,
 ): Promise<void> {
-  let idQuery = supabase.from(config.table).select("id");
-  idQuery =
-    scope.groupId === null
-      ? idQuery.is("group_id", null).eq(config.ownerColumn, scope.userId)
-      : idQuery.eq("group_id", scope.groupId);
+  const idQuery = supabase
+    .from(config.table)
+    .select("id")
+    .eq("group_id", scope.groupId);
 
   const { data, error } = await idQuery;
   if (error) throw error;
@@ -98,15 +91,13 @@ async function reconcileDeletes(
 
   const table = db.table(config.table);
   // Mirrors pullTable's own scope filter above, not any particular screen's
-  // display query (e.g. log_entries' personal-history view deliberately
-  // skips the group_id === null check) — this has to match what was actually
-  // pulled into this scope, not how a screen chooses to display it.
-  const localRows =
-    scope.groupId === null
-      ? (
-          await table.where(config.ownerColumn).equals(scope.userId).toArray()
-        ).filter((row) => row.group_id === null)
-      : await table.where("group_id").equals(scope.groupId).toArray();
+  // display query (e.g. log_entries' cross-context view deliberately skips
+  // any group_id filter) — this has to match what was actually pulled into
+  // this scope, not how a screen chooses to display it.
+  const localRows = await table
+    .where("group_id")
+    .equals(scope.groupId)
+    .toArray();
 
   await deleteStaleLocalRows(config.table, serverIds, localRows);
 }
@@ -123,11 +114,10 @@ async function pullTable(
   // timestamp was recorded.
   const syncStartedAt = new Date().toISOString();
 
-  let query = supabase.from(config.table).select("*");
-  query =
-    scope.groupId === null
-      ? query.is("group_id", null).eq(config.ownerColumn, scope.userId)
-      : query.eq("group_id", scope.groupId);
+  let query = supabase
+    .from(config.table)
+    .select("*")
+    .eq("group_id", scope.groupId);
   if (lastSyncedAt) {
     query = query.gt(config.cursorColumn, lastSyncedAt);
   }
@@ -145,22 +135,13 @@ async function pullTable(
 }
 
 const TABLE_CONFIGS: TableSyncConfig[] = [
-  {
-    table: "ingredients",
-    cursorColumn: "updated_at",
-    ownerColumn: "created_by",
-  },
-  { table: "recipes", cursorColumn: "updated_at", ownerColumn: "created_by" },
-  {
-    table: "log_entries",
-    cursorColumn: "updated_at",
-    ownerColumn: "logged_for",
-  },
+  { table: "ingredients", cursorColumn: "updated_at" },
+  { table: "recipes", cursorColumn: "updated_at" },
+  { table: "log_entries", cursorColumn: "updated_at" },
 ];
 
-// Pulls every table for one scope (personal, or — once Ticket 12 lands — a
-// specific group). Runs the three tables concurrently; one table's failure
-// (e.g. offline) doesn't block the others from progressing.
+// Pulls every table for one group. Runs the three tables concurrently; one
+// table's failure (e.g. offline) doesn't block the others from progressing.
 export async function pullScope(scope: PullScope): Promise<void> {
   const results = await Promise.allSettled(
     TABLE_CONFIGS.map((config) => pullTable(config, scope)),

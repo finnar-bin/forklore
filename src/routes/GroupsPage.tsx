@@ -1,18 +1,20 @@
 import Box from "@mui/material/Box";
-import { useNavigate } from "react-router-dom";
 import { AppHeader } from "../components/AppHeader";
 import { GroupList } from "../features/groups/GroupList";
 
-// Reached via the header Groups icon (routes.md, design-system.md) — not a
-// bottom tab, so there's no single parent tab root to derive a back path
-// from. Falls back to /pantry, same fixed-path convention SyncStatusPage/
-// ProfilePage already use for a header icon reachable from anywhere.
+// Reached via the header Groups icon (routes.md, design-system.md), and now
+// also a primary landing destination in its own right — "/" sends a user
+// here whenever no group context has been explicitly picked yet (see
+// resolveDefaultGroupId, docs/pending-deviations.md, "Remove personal
+// mode"). No back arrow: unlike SyncStatusPage/ProfilePage (reached from
+// exactly one place, always with somewhere to return to), this screen is
+// now just as often a starting point as a detour, so a fixed "back"
+// destination doesn't make sense here — the header's Groups icon is also
+// hidden while already on this route, matching that.
 export function GroupsPage() {
-  const navigate = useNavigate();
-
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
-      <AppHeader title="Groups" onBack={() => navigate("/pantry")} />
+      <AppHeader title="Groups" />
       <GroupList />
     </Box>
   );

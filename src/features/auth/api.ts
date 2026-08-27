@@ -1,4 +1,5 @@
 import { db } from "../../lib/db";
+import { getPendingInviteCode } from "../../lib/pendingInviteStorage";
 import { supabase } from "../../lib/supabase";
 import { useAppStore } from "../../store/useAppStore";
 
@@ -7,8 +8,23 @@ export async function signInWithEmail(email: string, password: string) {
   if (error) throw error;
 }
 
+// A pending invite code (stashed by AcceptInvite when a logged-out visitor
+// chooses to sign up) is threaded through as emailRedirectTo rather than
+// relying on localStorage alone — email confirmation is asynchronous and the
+// link may be opened on a different device/tab than the one that stashed the
+// code, where localStorage wouldn't be there to read. See
+// docs/pending-deviations.md ("Remove personal mode").
 export async function signUpWithEmail(email: string, password: string) {
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const pendingInviteCode = getPendingInviteCode();
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: pendingInviteCode
+      ? {
+          emailRedirectTo: `${window.location.origin}/invite/${pendingInviteCode}`,
+        }
+      : undefined,
+  });
   if (error) throw error;
   // If email confirmation is required, signUp succeeds but returns no session —
   // the caller needs to know so it can prompt the user to check their inbox.
@@ -16,9 +32,14 @@ export async function signUpWithEmail(email: string, password: string) {
 }
 
 export async function signInWithGoogle() {
+  const pendingInviteCode = getPendingInviteCode();
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: window.location.origin },
+    options: {
+      redirectTo: pendingInviteCode
+        ? `${window.location.origin}/invite/${pendingInviteCode}`
+        : window.location.origin,
+    },
   });
   if (error) throw error;
 }

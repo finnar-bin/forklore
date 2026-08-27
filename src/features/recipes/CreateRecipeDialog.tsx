@@ -14,7 +14,7 @@ export function CreateRecipeDialog({
   onCreated,
 }: {
   open: boolean;
-  groupId: string | null;
+  groupId: string;
   onClose: () => void;
   onCreated: (recipe: Recipe) => void;
 }) {

@@ -16,7 +16,6 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { useAppStore } from "../../store/useAppStore";
 import { kcalPerUnit } from "../../lib/kcal";
 import { useMyGroups } from "../groups/useMyGroups";
-import { useMyProfile } from "../profiles/useMyProfile";
 import {
   createIngredient,
   fetchIngredients,
@@ -31,9 +30,10 @@ import type { Ingredient } from "../../types/ingredient";
 // updates the in-memory draft; the parent commits it (along with every
 // other pending change) in one batch when the user hits the page-level Save
 // button. Creating a *new* ingredient is the one exception — it's a real,
-// immediate write to the personal pantry (same as the Pantry screen), since
-// the ingredient itself is an independent resource with its own lifecycle.
-// Only its association with this recipe gets staged into the draft.
+// immediate write to this recipe's own group's pantry (same as the Pantry
+// screen), since the ingredient itself is an independent resource with its
+// own lifecycle. Only its association with this recipe gets staged into the
+// draft.
 export function AddRecipeIngredientDialog({
   open,
   groupId,
@@ -42,7 +42,7 @@ export function AddRecipeIngredientDialog({
   onAdd,
 }: {
   open: boolean;
-  groupId: string | null;
+  groupId: string;
   excludeIngredientIds: string[];
   onClose: () => void;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
@@ -71,7 +71,7 @@ function AddRecipeIngredientForm({
   onClose,
   onAdd,
 }: {
-  groupId: string | null;
+  groupId: string;
   excludeIngredientIds: string[];
   onClose: () => void;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
@@ -116,34 +116,29 @@ function ExistingIngredientForm({
   onClose,
   onAdd,
 }: {
-  groupId: string | null;
+  groupId: string;
   excludeIngredientIds: string[];
   onClose: () => void;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
 }) {
   const userId = useAppStore((state) => state.userId);
 
-  // This recipe's own context opt-in — see docs/pending-deviations.md
+  // This recipe's own group's opt-in — see docs/pending-deviations.md
   // ("Community pantry") and PantryList.tsx's identical derivation.
-  const profile = useMyProfile(userId);
   const groups = useMyGroups(userId);
-  const membership = groupId
-    ? (groups ?? []).find((m) => m.group.id === groupId)
-    : undefined;
-  const communityEnabled = groupId
-    ? (membership?.group.community_pantry_enabled ?? false)
-    : (profile?.community_pantry_enabled ?? false);
+  const membership = (groups ?? []).find((m) => m.group.id === groupId);
+  const communityEnabled = membership?.group.community_pantry_enabled ?? false;
 
-  // fetchIngredients only ever returns this recipe's own context (personal
-  // or `groupId`) plus, when opted in, every community ingredient merged in
-  // (see docs/pending-deviations.md, "Community pantry") — so unlike
+  // fetchIngredients only ever returns this recipe's own group plus, when
+  // opted in, every community ingredient merged in (see
+  // docs/pending-deviations.md, "Community pantry") — so unlike
   // AddLogEntryDialog's cross-context picker, every non-community option
   // here is already known to belong to the same place; only "Community" vs.
-  // this context's own name needs distinguishing, so a same-named community
-  // ingredient and a context-owned one aren't indistinguishable in the list.
+  // this group's own name needs distinguishing, so a same-named community
+  // ingredient and a group-owned one aren't indistinguishable in the list.
   function groupLabel(isCommunity: boolean): string {
     if (isCommunity) return "Community";
-    return groupId ? (membership?.group.name ?? "Group") : "Personal";
+    return membership?.group.name ?? "Group";
   }
 
   const [options, setOptions] = useState<Ingredient[] | null>(null);
@@ -152,7 +147,7 @@ function ExistingIngredientForm({
 
   useEffect(() => {
     if (!userId) return;
-    fetchIngredients(userId, groupId, communityEnabled)
+    fetchIngredients(groupId, communityEnabled)
       .then(setOptions)
       .catch(() => setOptions([]));
   }, [userId, groupId, communityEnabled]);
@@ -179,8 +174,8 @@ function ExistingIngredientForm({
             <CircularProgress size={24} />
           ) : options.length === 0 ? (
             <Alert severity="info">
-              {groupId ? "This group's pantry" : "Your pantry"} is empty. Switch
-              to "New ingredient" to create one.
+              This group's pantry is empty. Switch to "New ingredient" to create
+              one.
             </Alert>
           ) : (
             <>
@@ -255,8 +250,8 @@ function ExistingIngredientForm({
 
 // Two steps, reusing the same IngredientForm the Pantry screen uses (rather
 // than duplicating its fields): (1) define and create the ingredient itself
-// — an immediate write to the same context (personal or group) this recipe
-// belongs to, same as CreateIngredientDialog — then (2) a recipe-specific
+// — an immediate write to this recipe's own group, same as
+// CreateIngredientDialog — then (2) a recipe-specific
 // "quantity used" step, since that's a distinct
 // number from the ingredient's own base quantity (e.g. "500 g package, 620
 // kcal" vs. "using 150 g here") that IngredientForm has no reason to know
@@ -266,7 +261,7 @@ function NewIngredientForm({
   onClose,
   onAdd,
 }: {
-  groupId: string | null;
+  groupId: string;
   onClose: () => void;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
 }) {
@@ -301,23 +296,16 @@ function NewIngredientForm({
   }
 
   return (
-    <RecipeQuantityStep
-      ingredient={created}
-      groupId={groupId}
-      onClose={onClose}
-      onAdd={onAdd}
-    />
+    <RecipeQuantityStep ingredient={created} onClose={onClose} onAdd={onAdd} />
   );
 }
 
 function RecipeQuantityStep({
   ingredient,
-  groupId,
   onClose,
   onAdd,
 }: {
   ingredient: Ingredient;
-  groupId: string | null;
   onClose: () => void;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
 }) {
@@ -330,8 +318,7 @@ function RecipeQuantityStep({
       <DialogContent sx={{ pt: "12px !important" }}>
         <Stack spacing={2.5}>
           <Alert severity="success">
-            {ingredient.name} added to{" "}
-            {groupId ? "this group's pantry" : "your pantry"}.
+            {ingredient.name} added to this group's pantry.
           </Alert>
           <TextField
             label="Quantity used in this recipe"

@@ -13,11 +13,12 @@ export function IngredientDetailPage() {
   // route-level groupId) — see docs/pending-deviations.md ("Community
   // pantry"). IngredientDetail itself derives edit/delete permission from
   // the loaded row's own is_community/created_by, not from this backPath.
+  // Every other entry point is /groups/:groupId/pantry/:ingredientId, which
+  // always carries a real groupId (see docs/pending-deviations.md, "Remove
+  // personal mode").
   const backPath = location.pathname.startsWith("/community-pantry")
     ? "/community-pantry"
-    : groupId
-      ? `/groups/${groupId}/pantry`
-      : "/pantry";
+    : `/groups/${groupId}/pantry`;
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>

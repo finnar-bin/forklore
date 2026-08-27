@@ -7,9 +7,10 @@ import { useProfileNames } from "../profiles/useProfileNames";
 // the caller themselves (see AddLogEntryDialog's own loggedFor state).
 // Requested directly: letting one member log an entry on a fellow member's
 // behalf. Only rendered by LogIngredientStep/LogRecipeStep when the item
-// being logged belongs to a group (a personal item has no group to
-// delegate within — see createLogEntry's own comment) and that group has
-// more than one member (nothing to pick between otherwise).
+// being logged resolves to a group (a community ingredient with no group
+// screen to attribute it to has nothing to delegate within — see
+// AddLogEntryDialog's resolveGroupId) and that group has more than one
+// member (nothing to pick between otherwise).
 export function LoggedForSelector({
   groupId,
   value,

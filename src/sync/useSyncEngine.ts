@@ -24,23 +24,21 @@ export function useSyncEngine(): void {
     let cancelled = false;
 
     async function runPull() {
-      // Personal scope, plus every group the caller currently belongs to —
-      // not just whichever one is being actively viewed (Ticket 12's
-      // original scoping). The log entry dialog (Ticket 12 follow-up, "/log
-      // shows everything") lets the user log any ingredient/recipe from any
-      // of their groups regardless of which screen they're on, so Dexie
-      // needs all of them available locally, not just the group currently
-      // on screen. Membership is refetched each cycle so a newly joined
-      // group starts pulling without needing a full reload. Each scope's
-      // failure (e.g. offline) doesn't block the others.
+      // Every group the caller currently belongs to — not just whichever
+      // one is being actively viewed (Ticket 12's original scoping). The
+      // log entry dialog (Ticket 12 follow-up, "/log shows everything")
+      // lets the user log any ingredient/recipe from any of their groups
+      // regardless of which screen they're on, so Dexie needs all of them
+      // available locally, not just the group currently on screen. No more
+      // separate personal scope (docs/pending-deviations.md, "Remove
+      // personal mode") — one less scope to fan out per cycle. Membership
+      // is refetched each cycle so a newly joined group starts pulling
+      // without needing a full reload. Each scope's failure (e.g. offline)
+      // doesn't block the others.
       const groups = await fetchMyGroups(currentUserId).catch(() => []);
-      const scopes: PullScope[] = [
-        { userId: currentUserId, groupId: null },
-        ...groups.map((membership) => ({
-          userId: currentUserId,
-          groupId: membership.group.id,
-        })),
-      ];
+      const scopes: PullScope[] = groups.map((membership) => ({
+        groupId: membership.group.id,
+      }));
 
       // Community ingredients are global, not owned by a user or group, and
       // pulled unconditionally for every signed-in caller regardless of

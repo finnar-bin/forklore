@@ -37,8 +37,7 @@ import { WeightChart } from "./WeightChart";
 import { BMI_CATEGORY_LABELS, calculateBmi, getBmiCategory } from "./bmi";
 
 // Always personal, ignores active group context entirely — see routes.md
-// ("/progress ignores the active group context entirely"). No ContextSwitcher
-// here, unlike PantryPage/RecipesPage/LogPage.
+// ("/progress ignores the active group context entirely").
 export function Progress({ userId }: { userId: string }) {
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === "system" ? systemMode : mode;

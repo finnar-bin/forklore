@@ -8,7 +8,9 @@ export type { MealType };
 
 export interface LogEntry {
   id: string;
-  group_id: string | null;
+  // Required — every log entry belongs to a real group (see
+  // docs/pending-deviations.md, "Remove personal mode").
+  group_id: string;
   // Who this entry counts against (kcal totals, personal history) — not
   // necessarily who wrote it, see created_by below. Renamed from logged_by:
   // that name misled once actor and attribution target could differ (a
@@ -16,9 +18,9 @@ export interface LogEntry {
   logged_for: string;
   // Who actually created this entry. Equal to logged_for for anything a
   // user logs for themselves; differs only when logged on a fellow group
-  // member's behalf (group_id is not null in that case — a personal entry
-  // can only ever be logged for yourself, see the insert RLS policy in
-  // supabase/migrations/20260910000000_log_entries_logged_for.sql).
+  // member's behalf, see the insert RLS policy in
+  // supabase/migrations/20260910000000_log_entries_logged_for.sql (as
+  // amended by supabase/migrations/20260912000000_require_group_membership.sql).
   created_by: string;
   // Real (soft) references, not mere breadcrumbs — name/kcal/unit below are
   // re-derived from whichever of these is set whenever the entry is
