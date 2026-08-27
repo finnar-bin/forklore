@@ -77,14 +77,10 @@ export function DailyLog({
 
   const totalKcal = (entries ?? []).reduce((sum, entry) => sum + entry.kcal, 0);
 
-  // Group context only — see LogEntryCard's loggedForName/loggedByName
-  // props and docs/pending-deviations.md (Ticket 12 follow-up, "logged by"
-  // name, and the later "log for a group member" rework). Both ids are
-  // batched into one lookup since an entry logged on someone else's behalf
-  // needs both names.
-  const names = useProfileNames(
-    groupId ? (entries ?? []).flatMap((e) => [e.logged_for, e.created_by]) : [],
-  );
+  // Group context only — see LogEntryCard's loggedForName prop and
+  // docs/pending-deviations.md (Ticket 12 follow-up, "logged by" name, and
+  // the later "log for a group member" rework).
+  const names = useProfileNames(groupId ? (entries ?? []).map((e) => e.logged_for) : []);
 
   return (
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
@@ -200,10 +196,7 @@ export function DailyLog({
                     hour: 'numeric',
                     minute: '2-digit',
                   })}
-                  loggedForName={groupId && entry.logged_for !== userId ? names[entry.logged_for] : undefined}
-                  loggedByName={
-                    groupId && entry.created_by !== entry.logged_for ? names[entry.created_by] : undefined
-                  }
+                  loggedForName={groupId ? names[entry.logged_for] : undefined}
                   // Every entry surfaced by fetchTodayLogEntries is already
                   // something the update RLS lets the viewer edit — a
                   // personal one is always their own, and a group one is

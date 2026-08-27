@@ -31,9 +31,7 @@ export function AllTimeLog({ groupId }: { groupId: string | null }) {
   const loading = entries === undefined;
 
   // Group context only — same reasoning as DailyLog's own `names` lookup.
-  const names = useProfileNames(
-    groupId ? (entries ?? []).flatMap((e) => [e.logged_for, e.created_by]) : [],
-  );
+  const names = useProfileNames(groupId ? (entries ?? []).map((e) => e.logged_for) : []);
 
   const groups = useMemo(() => {
     const byDate = new Map<string, LogEntry[]>();
@@ -88,10 +86,7 @@ export function AllTimeLog({ groupId }: { groupId: string | null }) {
                   hour: 'numeric',
                   minute: '2-digit',
                 })}
-                loggedForName={groupId && entry.logged_for !== userId ? names[entry.logged_for] : undefined}
-                loggedByName={
-                  groupId && entry.created_by !== entry.logged_for ? names[entry.created_by] : undefined
-                }
+                loggedForName={groupId ? names[entry.logged_for] : undefined}
                 // See DailyLog's identical onClick comment — every entry
                 // here is already something the update RLS lets the viewer
                 // edit, group-inclusive since the "log for a group member"

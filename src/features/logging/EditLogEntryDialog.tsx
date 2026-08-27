@@ -12,7 +12,6 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { kcalPerUnit } from '../../lib/kcal';
-import { useAppStore } from '../../store/useAppStore';
 import { IngredientKcalHeader } from '../pantry/IngredientKcalHeader';
 import { fetchIngredient } from '../pantry/api';
 import { useMemberKcalProfiles } from '../profiles/useMemberKcalProfiles';
@@ -84,8 +83,6 @@ function EditLogEntryForm({
   onSaved: (entry: LogEntry) => void;
   onDeleted: (entryId: string) => void;
 }) {
-  const userId = useAppStore((state) => state.userId);
-
   // undefined = still loading, null = no source (either never had one — not
   // a real case today — or the source has been deleted since).
   const [ingredient, setIngredient] = useState<Ingredient | null | undefined>(
@@ -136,15 +133,13 @@ function EditLogEntryForm({
   // useMyGroups just for this header.
   const groupLabel = entry.group_id === null ? 'Personal' : 'Group';
 
-  // Attribution — who this entry counts against vs. who actually created
-  // it, only worth surfacing in a group context and only the half(ves) that
-  // differ from the obvious default (the viewer themselves, or each other).
-  // Display-only: reassigning logged_for after creation isn't supported —
-  // see docs/pending-deviations.md.
-  const names = useProfileNames(entry.group_id ? [entry.logged_for, entry.created_by] : []);
-  const loggedForName = entry.group_id && entry.logged_for !== userId ? names[entry.logged_for] : null;
-  const loggedByName =
-    entry.group_id && entry.created_by !== entry.logged_for ? names[entry.created_by] : null;
+  // Who this entry counts against — always shown in group context (even
+  // when it's the viewer's own entry, matching LogEntryCard's identical
+  // treatment), not surfaced at all outside a group. Display-only:
+  // reassigning logged_for after creation isn't supported — see
+  // docs/pending-deviations.md.
+  const names = useProfileNames(entry.group_id ? [entry.logged_for] : []);
+  const loggedForName = entry.group_id ? names[entry.logged_for] : null;
 
   // Whether the entry's own logged_for has meal-type breakdown enabled —
   // same reasoning as AddLogEntryDialog's identical lookup: the selector
@@ -245,14 +240,6 @@ function EditLogEntryForm({
             />
           )}
 
-          {(loggedForName || loggedByName) && (
-            <Typography fontSize={12} color="text.secondary" sx={{ mt: -1.5 }}>
-              {loggedForName && `For ${loggedForName}`}
-              {loggedForName && loggedByName && ' · '}
-              {loggedByName && `logged by ${loggedByName}`}
-            </Typography>
-          )}
-
           <TextField
             label="Quantity"
             type="number"
@@ -287,6 +274,12 @@ function EditLogEntryForm({
 
           {mealBreakdownEnabled && (
             <MealTypeSelector value={mealType} onChange={setMealType} disabled={saving || locked} />
+          )}
+
+          {loggedForName && (
+            <Typography fontSize={12} color="text.secondary" sx={{ mt: -1.5 }}>
+              {loggedForName}
+            </Typography>
           )}
 
           {locked && (

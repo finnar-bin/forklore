@@ -12,7 +12,6 @@ export function LogEntryCard({
   entry,
   subtitle,
   loggedForName,
-  loggedByName,
   onClick,
 }: {
   entry: LogEntry;
@@ -23,10 +22,6 @@ export function LogEntryCard({
   // it's the viewer. See docs/pending-deviations.md (Ticket 12 follow-up,
   // "logged by" name, and the later "log for a group member" rework).
   loggedForName?: string;
-  // Group context only, and only when it differs from loggedForName — who
-  // actually created the entry (entry.created_by), i.e. it was logged on
-  // loggedForName's behalf rather than by them.
-  loggedByName?: string;
   onClick?: () => void;
 }) {
   const { mode, systemMode } = useColorScheme();
@@ -59,9 +54,8 @@ export function LogEntryCard({
           </Typography>
         </Box>
         <Typography fontSize={12} color="text.secondary" noWrap>
+          {loggedForName && `${loggedForName} · `}
           {subtitle}
-          {loggedForName && ` · For ${loggedForName}`}
-          {loggedByName && ` · logged by ${loggedByName}`}
         </Typography>
       </Box>
       <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
