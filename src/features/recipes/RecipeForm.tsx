@@ -48,7 +48,11 @@ export function RecipeForm({
     setError(null);
     setSubmitting(true);
     try {
-      const parsedWeight = Number(weight);
+      // Weight is optional at creation. weight_g is `numeric not null` with
+      // no default (supabase/migrations/20260829000000_recipes_servings_to_weight.sql
+      // drops the old `default 1` but never adds `drop not null`), so an
+      // empty field can't submit `null` — it's stored as 0 instead.
+      const parsedWeight = weight === "" ? 0 : Number(weight);
       // Rounded to the nearest gram — a plain `* 1000` can land on a
       // floating-point artifact (e.g. 1.005 * 1000 === 1004.9999999999999)
       // that would otherwise get stored and displayed as-is.
@@ -98,7 +102,6 @@ export function RecipeForm({
           type="number"
           value={weight}
           onChange={(e) => setWeight(e.target.value)}
-          required
           fullWidth
           slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
         />
