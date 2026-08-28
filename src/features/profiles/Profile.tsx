@@ -204,7 +204,8 @@ export function Profile() {
           left: 0,
           right: 0,
           bottom: 0,
-          py: 1,
+          pt: 1,
+          pb: "calc(8px + env(safe-area-inset-bottom, 0px))",
           textAlign: "center",
         }}
       >

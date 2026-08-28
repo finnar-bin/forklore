@@ -27,7 +27,15 @@ export function CommunityPantryList() {
 
   return (
     <Box sx={{ position: "relative", minHeight: "calc(100vh - 64px)" }}>
-      <Stack spacing={1.75} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 10 }}>
+      <Stack
+        spacing={1.75}
+        sx={{
+          p: 2,
+          maxWidth: 480,
+          mx: "auto",
+          pb: "calc(80px + env(safe-area-inset-bottom, 0px))",
+        }}
+      >
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress />
@@ -58,7 +66,7 @@ export function CommunityPantryList() {
           sx={{
             position: "fixed",
             right: 16,
-            bottom: 24,
+            bottom: "calc(24px + env(safe-area-inset-bottom, 0px))",
             boxShadow: (theme) =>
               theme.palette.mode === "dark"
                 ? "0 6px 14px rgba(0,0,0,.5)"

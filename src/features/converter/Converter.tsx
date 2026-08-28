@@ -54,7 +54,14 @@ export function Converter() {
     : null;
 
   return (
-    <Box sx={{ p: 2, maxWidth: 480, mx: "auto" }}>
+    <Box
+      sx={{
+        p: 2,
+        pb: "calc(72px + env(safe-area-inset-bottom, 0px))",
+        maxWidth: 480,
+        mx: "auto",
+      }}
+    >
       <ToggleButtonGroup
         value={category}
         exclusive

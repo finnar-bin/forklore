@@ -102,6 +102,8 @@ export function BottomNav() {
         left: 0,
         right: 0,
         bottom: 0,
+        height: "calc(56px + env(safe-area-inset-bottom, 0px))",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
         borderTop: "1px solid",
         borderColor: "divider",
         boxShadow: tokens.sh1,
