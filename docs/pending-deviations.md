@@ -1061,3 +1061,13 @@ A live UI surface was found to have quietly lost its only home in the process: `
 **Why:** Requested directly — "In /groups/[id]/log, remove the view logs across all groups button. Then delete the /log, /logs and /logs/groups page including their components unless these are being used elsewhere," followed by "Get rid of the context switcher component."
 
 **Not yet verified:** No database change — pure client-side. `tsc -b`, `oxlint`, `prettier --check` clean. Manual follow-up: visit `/groups/:groupId/log` → confirm only "View `<group>`'s all-time history" remains, no second button; confirm `/log`, `/logs`, and `/logs/groups` all 404/redirect gracefully rather than crashing; confirm `/groups/:groupId/logs` still works and shows that group's history; confirm `/pantry`'s and `/recipes`' bottom tabs no longer show any chip below the header, and that BottomNav still lands in the right group when tapped from Progress/Profile.
+
+## Weight is optional when creating a recipe (2026-08-28, requested directly)
+
+**Deviation:** `RecipeForm.tsx` (the create-only dialog form, per this repo's create/edit split — see `CLAUDE.md`) no longer marks its "Weight" `TextField` `required`. Leaving the field blank at submit time is now treated as `0`: `handleSubmit` treats an empty `weight` string as `parsedWeight = 0` before the existing kg→g rounding logic runs, so `onSubmit`'s `weight_g` payload is `0` rather than `NaN`. The "Unit" select stays required (it already defaults to `g` and offers no blank option). `weight_g`'s column (`numeric not null`, no default — see the "servings → weight" entry above) is unaffected: `0` is a valid, non-null value, so no migration is needed for this change.
+
+`RecipeDetail.tsx`'s own inline edit fields (a separate implementation per the create/edit split) were intentionally left untouched — this request was scoped to recipe creation, not editing an existing recipe's weight, and `RecipeDetail`'s existing `weightG > 0` validity check wasn't asked about.
+
+**Why:** Requested directly — "When creating a new recipe, make the weight amount optional."
+
+**Not yet verified:** No database change — pure client-side, and no migration needed since `0` already satisfies the `not null` column. `tsc -b`, `oxlint`, `prettier --check` clean. Manual follow-up: open "Create recipe," leave Weight blank, and confirm submitting succeeds with the recipe showing `0 g`/`0.00`/g kcal-per-gram on its card and detail screen rather than being blocked by a required-field error; confirm entering a weight (in either `g` or `kg`) still works exactly as before.
