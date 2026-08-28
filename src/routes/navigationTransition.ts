@@ -4,7 +4,7 @@
 // hardcoded per-route, so any future route slots into the right category
 // automatically:
 //
-// - Both paths resolve to one of the four bottom-tab roots -> 'tab': covers
+// - Both paths resolve to one of the bottom-tab roots -> 'tab': covers
 //   a literal tab switch (Pantry -> Recipes) and a context switch within the
 //   same tab (one group's Pantry -> another group's Pantry), neither of
 //   which should slide directionally.

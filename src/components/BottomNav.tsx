@@ -32,7 +32,7 @@ const TABS: Array<{
   // now Log too — its own bare, cross-context /log was removed, requested
   // directly), so tapping it always needs a real resolved group, even from
   // a screen with no :groupId of its own (Progress, Profile).
-  // "context-free": Progress, never group-scoped.
+  // "context-free": Progress and Converter, never group-scoped.
   nav: "always-group" | "context-free";
 }> = [
   {
