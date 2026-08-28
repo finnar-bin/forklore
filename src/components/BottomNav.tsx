@@ -6,6 +6,7 @@ import KitchenIcon from "@mui/icons-material/Kitchen";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import EventNoteIcon from "@mui/icons-material/EventNote";
 import InsightsIcon from "@mui/icons-material/Insights";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../theme/theme";
 import { useAppStore } from "../store/useAppStore";
@@ -19,9 +20,10 @@ import { getBottomTab, type BottomTab } from "../routes/navigationTransition";
 // default BottomNavigationAction selected-color behavior (primary.main icon
 // + label, muted text otherwise) already matches that on its own.
 //
-// Progress ignores group context entirely (routes.md), so it's the one tab
-// that never gets a /groups/:groupId prefix even while the other three are
-// showing a group's content.
+// Progress and Converter both ignore group context entirely (routes.md /
+// pending-deviations.md "Converter tab"), so neither ever gets a
+// /groups/:groupId prefix even while the other three are showing a group's
+// content.
 const TABS: Array<{
   key: BottomTab;
   label: string;
@@ -30,7 +32,7 @@ const TABS: Array<{
   // now Log too — its own bare, cross-context /log was removed, requested
   // directly), so tapping it always needs a real resolved group, even from
   // a screen with no :groupId of its own (Progress, Profile).
-  // "context-free": Progress, never group-scoped.
+  // "context-free": Progress and Converter, never group-scoped.
   nav: "always-group" | "context-free";
 }> = [
   {
@@ -50,6 +52,12 @@ const TABS: Array<{
     key: "progress",
     label: "Progress",
     icon: <InsightsIcon />,
+    nav: "context-free",
+  },
+  {
+    key: "converter",
+    label: "Converter",
+    icon: <SwapHorizIcon />,
     nav: "context-free",
   },
 ];
@@ -94,6 +102,8 @@ export function BottomNav() {
         left: 0,
         right: 0,
         bottom: 0,
+        height: "calc(56px + env(safe-area-inset-bottom, 0px))",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
         borderTop: "1px solid",
         borderColor: "divider",
         boxShadow: tokens.sh1,

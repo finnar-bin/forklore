@@ -64,7 +64,15 @@ export function DailyLog({
     <Box sx={{ position: "relative", minHeight: "calc(100vh - 64px)" }}>
       {/* pb clears both the FAB (bottom: 80) and BottomNav below it — see
           docs/pending-deviations.md (Ticket 16). */}
-      <Stack spacing={1.5} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 18 }}>
+      <Stack
+        spacing={1.5}
+        sx={{
+          p: 2,
+          maxWidth: 480,
+          mx: "auto",
+          pb: "calc(144px + env(safe-area-inset-bottom, 0px))",
+        }}
+      >
         {/* A daily target is personal, not group-wide — this card shows
             every member's own target (and optional per-meal breakdown)
             side by side instead of one aggregate total that wouldn't
@@ -149,7 +157,7 @@ export function DailyLog({
             // Log is a bottom-tab root, so it clears BottomNav — see
             // docs/pending-deviations.md (Ticket 16).
             right: 16,
-            bottom: 80,
+            bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
             boxShadow: (theme) =>
               theme.palette.mode === "dark"
                 ? "0 6px 14px rgba(0,0,0,.5)"

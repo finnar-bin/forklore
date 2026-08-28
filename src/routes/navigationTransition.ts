@@ -4,7 +4,7 @@
 // hardcoded per-route, so any future route slots into the right category
 // automatically:
 //
-// - Both paths resolve to one of the four bottom-tab roots -> 'tab': covers
+// - Both paths resolve to one of the bottom-tab roots -> 'tab': covers
 //   a literal tab switch (Pantry -> Recipes) and a context switch within the
 //   same tab (one group's Pantry -> another group's Pantry), neither of
 //   which should slide directionally.
@@ -25,17 +25,20 @@
 // - Anything else (e.g. opening /groups or /sync-status from the header) is
 //   treated as 'push' — a new screen being opened, not a sibling swap.
 export type TransitionVariant = "push" | "pop" | "tab";
-export type BottomTab = "pantry" | "recipes" | "log" | "progress";
+export type BottomTab = "pantry" | "recipes" | "log" | "progress" | "converter";
 
 // Pantry/Recipes/Log have no bare route anymore — every one of them is only
 // ever reached nested under /groups/:groupId (see docs/pending-deviations.md,
 // "Remove personal mode" and the later removal of bare /log, /logs, and
-// /logs/groups). Progress stays bare — it never takes a group context.
+// /logs/groups). Progress and Converter stay bare — neither takes a group
+// context (Converter holds no user/group data at all — see
+// docs/pending-deviations.md, "Converter tab").
 const TAB_ROOT_PATTERNS: Array<[BottomTab, RegExp]> = [
   ["pantry", /^\/groups\/[^/]+\/pantry$/],
   ["recipes", /^\/groups\/[^/]+\/recipes$/],
   ["log", /^\/groups\/[^/]+\/log$/],
   ["progress", /^\/progress$/],
+  ["converter", /^\/converter$/],
 ];
 
 // Used both to classify transitions below and to drive BottomNav's active

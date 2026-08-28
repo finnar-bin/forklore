@@ -27,6 +27,7 @@ import { RequireGroupMember } from "./routes/RequireGroupMember";
 import { RequireGroupOwner } from "./routes/RequireGroupOwner";
 import { GroupSettingsPage } from "./routes/GroupSettingsPage";
 import { ProgressPage } from "./routes/ProgressPage";
+import { ConverterPage } from "./routes/ConverterPage";
 import { ProfilePage } from "./routes/ProfilePage";
 import { PrivacyPolicyPage } from "./routes/PrivacyPolicyPage";
 import { TermsPage } from "./routes/TermsPage";
@@ -88,6 +89,10 @@ function App() {
             <Route element={<AnimatedAppShell />}>
               <Route path="/" element={<HomeRedirect />} />
               <Route path="/progress" element={<ProgressPage />} />
+              {/* Bare, context-free like /progress, but with no userId
+                  dependency either — see docs/pending-deviations.md
+                  ("Converter tab"). */}
+              <Route path="/converter" element={<ConverterPage />} />
               {/* RequireGroupMember guards every route under this parent —
                   see issue #34's audit ("group routes trust the local cache
                   with no server-side membership check"). */}

@@ -65,7 +65,15 @@ export function GroupList() {
     // no nav bar to clear, but it still sits under AnimatedAppShell's
     // animated transform.
     <Box sx={{ position: "relative", minHeight: "calc(100vh - 64px)" }}>
-      <Stack spacing={1.5} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 10 }}>
+      <Stack
+        spacing={1.5}
+        sx={{
+          p: 2,
+          maxWidth: 480,
+          mx: "auto",
+          pb: "calc(80px + env(safe-area-inset-bottom, 0px))",
+        }}
+      >
         <Stack spacing={0.5} sx={{ mb: 0.5 }}>
           <Typography variant="h5" fontWeight={500}>
             Your groups
@@ -108,7 +116,7 @@ export function GroupList() {
           sx={{
             position: "fixed",
             right: 16,
-            bottom: 24,
+            bottom: "calc(24px + env(safe-area-inset-bottom, 0px))",
             boxShadow: (theme) =>
               theme.palette.mode === "dark"
                 ? "0 6px 14px rgba(0,0,0,.5)"
