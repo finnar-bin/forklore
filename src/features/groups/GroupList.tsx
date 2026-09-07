@@ -75,10 +75,20 @@ export function GroupList() {
         }}
       >
         <Stack spacing={0.5} sx={{ mb: 0.5 }}>
-          <Typography variant="h5" fontWeight={500}>
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 500,
+            }}
+          >
             Your groups
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+            }}
+          >
             Each group shares its own pantry, recipes, and log with everyone in
             it. Tap a group to switch into it, or start a new one.
           </Typography>
@@ -93,7 +103,13 @@ export function GroupList() {
         )}
 
         {!loading && !error && groups?.length === 0 && (
-          <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
+          <Typography
+            sx={{
+              color: "text.secondary",
+              textAlign: "center",
+              py: 4,
+            }}
+          >
             You're not in any groups yet. Create one to share a pantry, recipes,
             and a log with others.
           </Typography>

@@ -38,9 +38,11 @@ export function MealBreakdownFields({
         />
       ))}
       <Typography
-        fontSize={12}
         color={remaining === 0 ? "text.secondary" : "error.main"}
-        textAlign="right"
+        sx={{
+          fontSize: 12,
+          textAlign: "right",
+        }}
       >
         {remaining === 0
           ? `${allocated.toFixed(2)} / ${dailyTotal.toFixed(2)} kcal allocated`

@@ -38,10 +38,12 @@ export function GroupMemberKcalCard({
   return (
     <Paper sx={{ p: 2, borderRadius: "14px", boxShadow: tokens.sh2 }}>
       <Typography
-        fontSize={13}
-        fontWeight={600}
-        color="text.secondary"
-        sx={{ mb: loading ? 0 : 1 }}
+        sx={{
+          fontSize: 13,
+          fontWeight: 600,
+          color: "text.secondary",
+          mb: loading ? 0 : 1,
+        }}
       >
         Members' kcal targets
       </Typography>
@@ -65,24 +67,30 @@ export function GroupMemberKcalCard({
             <Stack key={member.user_id} spacing={0.75}>
               <Stack
                 direction="row"
-                justifyContent="space-between"
-                alignItems="baseline"
                 spacing={1}
+                sx={{
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                }}
               >
                 <Typography
-                  fontSize={13}
-                  fontWeight={500}
                   noWrap
-                  sx={{ minWidth: 0 }}
+                  sx={{
+                    fontSize: 13,
+                    fontWeight: 500,
+                    minWidth: 0,
+                  }}
                 >
                   {profile?.name ?? "Loading…"}
                   {member.user_id === userId ? " (you)" : ""}
                 </Typography>
                 <Typography
-                  fontSize={13}
-                  fontWeight={500}
-                  color="primary.main"
-                  sx={{ flexShrink: 0 }}
+                  sx={{
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: "primary.main",
+                    flexShrink: 0,
+                  }}
                 >
                   {target !== null
                     ? `${loggedToday.toFixed(2)} / ${target.toFixed(2)} kcal`
@@ -91,7 +99,12 @@ export function GroupMemberKcalCard({
               </Stack>
 
               {profile?.meal_breakdown_enabled && mealTargets && (
-                <Stack direction="row" justifyContent="space-around">
+                <Stack
+                  direction="row"
+                  sx={{
+                    justifyContent: "space-around",
+                  }}
+                >
                   {MEAL_TYPES.map((meal) => {
                     const mealTarget = mealTargets[meal] ?? 0;
                     // `?? null` guards a pre-feature row cached before
@@ -105,14 +118,27 @@ export function GroupMemberKcalCard({
                       .reduce((sum, entry) => sum + entry.kcal, 0);
                     const remaining = mealTarget - consumed;
                     return (
-                      <Stack key={meal} alignItems="center" spacing={0.25}>
-                        <Typography fontSize={10} color="text.secondary">
+                      <Stack
+                        key={meal}
+                        spacing={0.25}
+                        sx={{
+                          alignItems: "center",
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            fontSize: 10,
+                            color: "text.secondary",
+                          }}
+                        >
                           {MEAL_TYPE_LABELS[meal]}
                         </Typography>
                         <Typography
-                          fontSize={12}
-                          fontWeight={500}
                           color={remaining < 0 ? "error.main" : undefined}
+                          sx={{
+                            fontSize: 12,
+                            fontWeight: 500,
+                          }}
                         >
                           {remaining >= 0
                             ? `${remaining.toFixed(2)} left`
@@ -129,7 +155,13 @@ export function GroupMemberKcalCard({
       </Stack>
 
       {!loading && (members ?? []).length === 0 && (
-        <Typography fontSize={12} color="text.secondary" textAlign="center">
+        <Typography
+          sx={{
+            fontSize: 12,
+            color: "text.secondary",
+            textAlign: "center",
+          }}
+        >
           No members found.
         </Typography>
       )}

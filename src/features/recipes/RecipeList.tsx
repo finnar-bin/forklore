@@ -56,7 +56,13 @@ export function RecipeList({ groupId }: { groupId: string }) {
         )}
 
         {!loading && recipes?.length === 0 && (
-          <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
+          <Typography
+            sx={{
+              color: "text.secondary",
+              textAlign: "center",
+              py: 4,
+            }}
+          >
             This group's recipes are empty. Add the first recipe to get started.
           </Typography>
         )}

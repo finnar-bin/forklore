@@ -45,7 +45,13 @@ export function WeightChart({
           height: 220,
         }}
       >
-        <Typography color="text.secondary" fontSize={13} textAlign="center">
+        <Typography
+          sx={{
+            color: "text.secondary",
+            fontSize: 13,
+            textAlign: "center",
+          }}
+        >
           {emptyMessage}
         </Typography>
       </Box>

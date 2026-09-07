@@ -42,11 +42,21 @@ export function SelectableCard({
       }}
     >
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography fontSize={14} fontWeight={500}>
+        <Typography
+          sx={{
+            fontSize: 14,
+            fontWeight: 500,
+          }}
+        >
           {title}
         </Typography>
         {description && (
-          <Typography fontSize={12} color="text.secondary">
+          <Typography
+            sx={{
+              fontSize: 12,
+              color: "text.secondary",
+            }}
+          >
             {description}
           </Typography>
         )}

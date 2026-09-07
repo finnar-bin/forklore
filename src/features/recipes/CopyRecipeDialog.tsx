@@ -225,9 +225,20 @@ export function CopyRecipeDialog({
               </Alert>
             )}
             {phase === "checking" || phase === "copying" ? (
-              <Stack alignItems="center" spacing={1.5} sx={{ py: 2 }}>
+              <Stack
+                spacing={1.5}
+                sx={{
+                  alignItems: "center",
+                  py: 2,
+                }}
+              >
                 <CircularProgress size={24} />
-                <Typography fontSize={13} color="text.secondary">
+                <Typography
+                  sx={{
+                    fontSize: 13,
+                    color: "text.secondary",
+                  }}
+                >
                   {phase === "checking"
                     ? "Checking ingredients…"
                     : "Copying recipe…"}
@@ -303,22 +314,39 @@ function ConflictStep({
         </DialogContentText>
         <Stack direction="row" spacing={1.5}>
           <Box sx={{ flex: 1 }}>
-            <Typography fontSize={11} color="text.secondary">
+            <Typography
+              sx={{
+                fontSize: 11,
+                color: "text.secondary",
+              }}
+            >
               This recipe's copy
             </Typography>
-            <Typography fontSize={14} fontWeight={500}>
+            <Typography
+              sx={{
+                fontSize: 14,
+                fontWeight: 500,
+              }}
+            >
               {formatKcalPerUnit(source.kcal, source.quantity)} kcal/
               {source.unit}
             </Typography>
           </Box>
           <Box sx={{ flex: 1 }}>
-            <Typography fontSize={11} color="text.secondary">
+            <Typography
+              sx={{
+                fontSize: 11,
+                color: "text.secondary",
+              }}
+            >
               Existing ingredient
             </Typography>
             <Typography
-              fontSize={14}
-              fontWeight={500}
               color={kcalDiffers ? "error.main" : undefined}
+              sx={{
+                fontSize: 14,
+                fontWeight: 500,
+              }}
             >
               {match.kcal_per_unit.toFixed(2)} kcal/{match.unit}
             </Typography>

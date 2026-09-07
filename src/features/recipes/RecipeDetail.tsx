@@ -17,7 +17,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../../theme/theme";
 import { DeferredPhotoUpload } from "../../components/DeferredPhotoUpload";
@@ -461,10 +461,21 @@ export function RecipeDetail({
             boxShadow: tokens.sh1,
           }}
         >
-          <Typography fontSize={18} fontWeight={500} color="primary.main">
+          <Typography
+            sx={{
+              fontSize: 18,
+              fontWeight: 500,
+              color: "primary.main",
+            }}
+          >
             {totalKcal.toFixed(2)}
           </Typography>
-          <Typography fontSize={11} color="text.secondary">
+          <Typography
+            sx={{
+              fontSize: 11,
+              color: "text.secondary",
+            }}
+          >
             total kcal
           </Typography>
         </Paper>
@@ -477,10 +488,21 @@ export function RecipeDetail({
             boxShadow: tokens.sh1,
           }}
         >
-          <Typography fontSize={18} fontWeight={500} color="primary.main">
+          <Typography
+            sx={{
+              fontSize: 18,
+              fontWeight: 500,
+              color: "primary.main",
+            }}
+          >
             {formatKcalPerUnit(totalKcal, weightG)}
           </Typography>
-          <Typography fontSize={11} color="text.secondary">
+          <Typography
+            sx={{
+              fontSize: 11,
+              color: "text.secondary",
+            }}
+          >
             kcal per gram
           </Typography>
         </Paper>

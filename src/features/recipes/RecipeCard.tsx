@@ -39,18 +39,41 @@ export function RecipeCard({
     >
       <PhotoThumbnail photoUrl={recipe.photo_url} alt={recipe.name} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography fontSize={14} fontWeight={500} noWrap>
+        <Typography
+          noWrap
+          sx={{
+            fontSize: 14,
+            fontWeight: 500,
+          }}
+        >
           {recipe.name}
         </Typography>
-        <Typography fontSize={12} color="text.secondary" noWrap>
+        <Typography
+          noWrap
+          sx={{
+            fontSize: 12,
+            color: "text.secondary",
+          }}
+        >
           {recipe.weight_g} g{creatorName && ` · Added by ${creatorName}`}
         </Typography>
       </Box>
       <Box sx={{ textAlign: "right", flexShrink: 0 }}>
-        <Typography fontSize={14} fontWeight={500} color="primary.main">
+        <Typography
+          sx={{
+            fontSize: 14,
+            fontWeight: 500,
+            color: "primary.main",
+          }}
+        >
           {recipe.total_kcal.toFixed(2)} kcal
         </Typography>
-        <Typography fontSize={11} color="text.secondary">
+        <Typography
+          sx={{
+            fontSize: 11,
+            color: "text.secondary",
+          }}
+        >
           {formatKcalPerUnit(recipe.total_kcal, recipe.weight_g)}/g
         </Typography>
       </Box>

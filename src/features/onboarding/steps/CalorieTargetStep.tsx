@@ -105,7 +105,13 @@ export function CalorieTargetStep({
           selected={selection === "maintain"}
           onClick={() => onSelectionChange("maintain")}
           trailing={
-            <Typography fontSize={14} fontWeight={500} color="primary.main">
+            <Typography
+              sx={{
+                fontSize: 14,
+                fontWeight: 500,
+                color: "primary.main",
+              }}
+            >
               {calorieOptions.maintenanceKcal.toFixed(2)} kcal/day
             </Typography>
           }
@@ -123,7 +129,13 @@ export function CalorieTargetStep({
             selected={selection === preset.pace}
             onClick={() => onSelectionChange(preset.pace)}
             trailing={
-              <Typography fontSize={14} fontWeight={500} color="primary.main">
+              <Typography
+                sx={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: "primary.main",
+                }}
+              >
                 {preset.kcal.toFixed(2)} kcal/day
               </Typography>
             }
@@ -173,7 +185,12 @@ export function CalorieTargetStep({
         </>
       )}
 
-      <Typography fontSize={11} color="text.secondary">
+      <Typography
+        sx={{
+          fontSize: 11,
+          color: "text.secondary",
+        }}
+      >
         These suggestions are estimates based on general guidelines for your
         stated goal, not medical advice — consider checking in with a doctor or
         registered dietitian before making significant changes to your diet.
@@ -192,7 +209,12 @@ export function CalorieTargetStep({
           }
           label="Break down by meal"
         />
-        <Typography fontSize={11} color="text.secondary">
+        <Typography
+          sx={{
+            fontSize: 11,
+            color: "text.secondary",
+          }}
+        >
           {dailyTotal === null
             ? "Pick a daily target above first."
             : "Set a kcal limit for breakfast, lunch, dinner, and snack that adds up to your daily target."}

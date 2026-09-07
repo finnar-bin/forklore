@@ -275,7 +275,12 @@ function EditGoalForm({
         <Stack spacing={2.5}>
           {error && <Alert severity="error">{error}</Alert>}
 
-          <Typography fontSize={12} color="text.secondary">
+          <Typography
+            sx={{
+              fontSize: 12,
+              color: "text.secondary",
+            }}
+          >
             Step {step + 1} of {STEP_LABELS.length} · {STEP_LABELS[step]}
           </Typography>
 

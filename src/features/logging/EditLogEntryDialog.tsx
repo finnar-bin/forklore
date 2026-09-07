@@ -313,13 +313,25 @@ function EditLogEntryForm({
           )}
 
           {loggedForName && (
-            <Typography fontSize={12} color="text.secondary" sx={{ mt: -1.5 }}>
+            <Typography
+              sx={{
+                fontSize: 12,
+                color: "text.secondary",
+                mt: -1.5,
+              }}
+            >
               {loggedForName}
             </Typography>
           )}
 
           {locked && (
-            <Typography fontSize={13} fontWeight={700} color="error.main">
+            <Typography
+              sx={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: "error.main",
+              }}
+            >
               {detached
                 ? "Source deleted — this entry is locked at its last known values."
                 : "This ingredient's unit has changed since logging — this entry is locked at its last known values."}

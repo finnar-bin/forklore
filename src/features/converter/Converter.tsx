@@ -108,12 +108,21 @@ export function Converter() {
             </IconButton>
           </Box>
 
-          <Stack direction="row" spacing={1.5} alignItems="center">
+          <Stack
+            direction="row"
+            spacing={1.5}
+            sx={{
+              alignItems: "center",
+            }}
+          >
             <Typography
-              fontSize={24}
-              fontWeight={500}
-              color="primary.main"
-              sx={{ flex: 1, overflowWrap: "anywhere" }}
+              sx={{
+                fontSize: 24,
+                fontWeight: 500,
+                color: "primary.main",
+                flex: 1,
+                overflowWrap: "anywhere",
+              }}
             >
               {result !== null ? result.toFixed(4).replace(/\.?0+$/, "") : "—"}
             </Typography>
@@ -134,7 +143,13 @@ export function Converter() {
         </Stack>
       </Paper>
 
-      <Typography fontSize={12} color="text.secondary" sx={{ mt: 2 }}>
+      <Typography
+        sx={{
+          fontSize: 12,
+          color: "text.secondary",
+          mt: 2,
+        }}
+      >
         Cup, tablespoon, teaspoon, and fluid ounce use US customary
         measurements.
       </Typography>

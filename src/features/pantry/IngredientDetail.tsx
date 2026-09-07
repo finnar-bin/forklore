@@ -17,7 +17,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import GroupsIcon from "@mui/icons-material/Groups";
 import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../../theme/theme";
@@ -326,10 +326,21 @@ export function IngredientDetail({
             boxShadow: tokens.sh1,
           }}
         >
-          <Typography fontSize={18} fontWeight={500} color="primary.main">
+          <Typography
+            sx={{
+              fontSize: 18,
+              fontWeight: 500,
+              color: "primary.main",
+            }}
+          >
             {parsedKcal.toFixed(2)}
           </Typography>
-          <Typography fontSize={11} color="text.secondary">
+          <Typography
+            sx={{
+              fontSize: 11,
+              color: "text.secondary",
+            }}
+          >
             kcal
           </Typography>
         </Paper>
@@ -342,10 +353,21 @@ export function IngredientDetail({
             boxShadow: tokens.sh1,
           }}
         >
-          <Typography fontSize={18} fontWeight={500} color="primary.main">
+          <Typography
+            sx={{
+              fontSize: 18,
+              fontWeight: 500,
+              color: "primary.main",
+            }}
+          >
             {formatKcalPerUnit(parsedKcal, parsedQuantity)}
           </Typography>
-          <Typography fontSize={11} color="text.secondary">
+          <Typography
+            sx={{
+              fontSize: 11,
+              color: "text.secondary",
+            }}
+          >
             kcal per {unit || ingredient.unit}
           </Typography>
         </Paper>
@@ -412,16 +434,35 @@ export function IngredientDetail({
         // Read-only — only the creator may edit/delete a community
         // ingredient (docs/pending-deviations.md, "Community pantry").
         <Paper sx={{ p: 3, borderRadius: "14px", boxShadow: tokens.sh2 }}>
-          <Stack spacing={1} alignItems="center">
-            <Typography fontSize={18} fontWeight={500}>
+          <Stack
+            spacing={1}
+            sx={{
+              alignItems: "center",
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: 18,
+                fontWeight: 500,
+              }}
+            >
               {ingredient.name}
             </Typography>
             {ingredient.brand && (
-              <Typography fontSize={13} color="text.secondary">
+              <Typography
+                sx={{
+                  fontSize: 13,
+                  color: "text.secondary",
+                }}
+              >
                 {ingredient.brand}
               </Typography>
             )}
-            <Typography color="text.secondary">
+            <Typography
+              sx={{
+                color: "text.secondary",
+              }}
+            >
               {ingredient.quantity} {ingredient.unit} ·{" "}
               {ingredient.kcal.toFixed(2)} kcal
             </Typography>

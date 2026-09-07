@@ -31,12 +31,22 @@ export function ItemMetadata({
 }) {
   return (
     <Stack spacing={0.25}>
-      <Typography fontSize={12} color="text.secondary">
+      <Typography
+        sx={{
+          fontSize: 12,
+          color: "text.secondary",
+        }}
+      >
         Added by {creatorName ?? "someone"}
         {!wasUpdated && ` · ${formatDateTime(createdAt)}`}
       </Typography>
       {wasUpdated && (
-        <Typography fontSize={12} color="text.secondary">
+        <Typography
+          sx={{
+            fontSize: 12,
+            color: "text.secondary",
+          }}
+        >
           Last updated by {updaterName ?? "someone"} ·{" "}
           {formatDateTime(updatedAt)}
         </Typography>

@@ -6,7 +6,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../../theme/theme";
 import { kcalPerUnit } from "../../lib/kcal";
@@ -38,11 +38,19 @@ export function RecipeIngredientsList({
     <Box>
       <Stack
         direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ mb: 1 }}
+        sx={{
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 1,
+        }}
       >
-        <Typography fontSize={13} fontWeight={500} color="text.secondary">
+        <Typography
+          sx={{
+            fontSize: 13,
+            fontWeight: 500,
+            color: "text.secondary",
+          }}
+        >
           Ingredients
         </Typography>
         <Button
@@ -56,7 +64,13 @@ export function RecipeIngredientsList({
       </Stack>
 
       {ingredients.length === 0 ? (
-        <Typography color="text.secondary" fontSize={13} sx={{ py: 2 }}>
+        <Typography
+          sx={{
+            color: "text.secondary",
+            fontSize: 13,
+            py: 2,
+          }}
+        >
           No ingredients yet. Add some from your pantry.
         </Typography>
       ) : (
@@ -157,10 +171,20 @@ function RecipeIngredientRow({
         </Box>
       )}
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography fontSize={13} noWrap>
+        <Typography
+          noWrap
+          sx={{
+            fontSize: 13,
+          }}
+        >
           {item.name}
         </Typography>
-        <Typography fontSize={11} color="text.secondary">
+        <Typography
+          sx={{
+            fontSize: 11,
+            color: "text.secondary",
+          }}
+        >
           {kcalContribution.toFixed(2)} kcal
           {item.brand && ` · ${item.brand}`}
         </Typography>
@@ -177,7 +201,13 @@ function RecipeIngredientRow({
         }}
         sx={{ width: 88 }}
       />
-      <Typography fontSize={12} color="text.secondary" sx={{ minWidth: 32 }}>
+      <Typography
+        sx={{
+          fontSize: 12,
+          color: "text.secondary",
+          minWidth: 32,
+        }}
+      >
         {item.unit}
       </Typography>
 

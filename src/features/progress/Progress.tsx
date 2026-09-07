@@ -134,10 +134,21 @@ export function Progress({ userId }: { userId: string }) {
               flex: 1,
             }}
           >
-            <Typography fontSize={24} fontWeight={500} color="primary.main">
+            <Typography
+              sx={{
+                fontSize: 24,
+                fontWeight: 500,
+                color: "primary.main",
+              }}
+            >
               {latestWeight !== null ? latestWeight.toFixed(1) : "—"}
             </Typography>
-            <Typography fontSize={12} color="text.secondary">
+            <Typography
+              sx={{
+                fontSize: 12,
+                color: "text.secondary",
+              }}
+            >
               current weight (kg)
             </Typography>
           </Paper>
@@ -151,10 +162,21 @@ export function Progress({ userId }: { userId: string }) {
               flex: 1,
             }}
           >
-            <Typography fontSize={24} fontWeight={500} color="primary.main">
+            <Typography
+              sx={{
+                fontSize: 24,
+                fontWeight: 500,
+                color: "primary.main",
+              }}
+            >
               {bmi !== null ? bmi.toFixed(1) : "—"}
             </Typography>
-            <Typography fontSize={12} color="text.secondary">
+            <Typography
+              sx={{
+                fontSize: 12,
+                color: "text.secondary",
+              }}
+            >
               BMI
               {bmi !== null
                 ? ` · ${BMI_CATEGORY_LABELS[getBmiCategory(bmi)]}`
@@ -176,15 +198,22 @@ export function Progress({ userId }: { userId: string }) {
         >
           <Stack spacing={0.25}>
             <Typography
-              fontSize={14}
               color={goalTypeLabel ? "text.primary" : "text.secondary"}
+              sx={{
+                fontSize: 14,
+              }}
             >
               {goalTypeLabel
                 ? `Goal: ${goalTypeLabel}${profile.goal_weight_kg ? ` to ${profile.goal_weight_kg} kg` : ""}`
                 : "No goal set"}
             </Typography>
             {profile.daily_kcal_target !== null && (
-              <Typography fontSize={12} color="text.secondary">
+              <Typography
+                sx={{
+                  fontSize: 12,
+                  color: "text.secondary",
+                }}
+              >
                 {profile.daily_kcal_target.toFixed(2)} kcal/day target
               </Typography>
             )}
@@ -197,11 +226,19 @@ export function Progress({ userId }: { userId: string }) {
         <Paper sx={{ p: 2, borderRadius: "14px", boxShadow: tokens.sh2 }}>
           <Stack
             direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-            sx={{ mb: 1 }}
+            sx={{
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 1,
+            }}
           >
-            <Typography fontSize={14}>Weight trend</Typography>
+            <Typography
+              sx={{
+                fontSize: 14,
+              }}
+            >
+              Weight trend
+            </Typography>
             <Select
               value={rangeDays}
               onChange={handleRangeChange}

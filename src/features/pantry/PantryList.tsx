@@ -129,7 +129,11 @@ export function PantryList({ groupId }: { groupId: string }) {
                 />
               }
               label={
-                <Typography fontSize={13}>
+                <Typography
+                  sx={{
+                    fontSize: 13,
+                  }}
+                >
                   Use community pantry ingredients in this group
                 </Typography>
               }
@@ -147,7 +151,13 @@ export function PantryList({ groupId }: { groupId: string }) {
         )}
 
         {!loading && ingredients?.length === 0 && (
-          <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
+          <Typography
+            sx={{
+              color: "text.secondary",
+              textAlign: "center",
+              py: 4,
+            }}
+          >
             This group's pantry is empty. Add the first ingredient to get
             started.
           </Typography>

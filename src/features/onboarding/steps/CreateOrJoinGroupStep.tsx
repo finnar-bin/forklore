@@ -42,9 +42,20 @@ export function CreateOrJoinGroupStep({ hasGroup }: { hasGroup: boolean }) {
   // "Joining…" button with no way forward.
   if (hasGroup || joinStatus === "joined") {
     return (
-      <Stack spacing={1.5} alignItems="center" sx={{ py: 2 }}>
+      <Stack
+        spacing={1.5}
+        sx={{
+          alignItems: "center",
+          py: 2,
+        }}
+      >
         <CheckCircleIcon color="success" sx={{ fontSize: 40 }} />
-        <Typography fontWeight={500} textAlign="center">
+        <Typography
+          sx={{
+            fontWeight: 500,
+            textAlign: "center",
+          }}
+        >
           You're in a group — you're all set.
         </Typography>
       </Stack>
@@ -93,7 +104,12 @@ export function CreateOrJoinGroupStep({ hasGroup }: { hasGroup: boolean }) {
 
   return (
     <Stack spacing={2.5}>
-      <Typography variant="body2" color="text.secondary">
+      <Typography
+        variant="body2"
+        sx={{
+          color: "text.secondary",
+        }}
+      >
         Forklore is shared with a household group — create your own, or join one
         you were invited to.
       </Typography>

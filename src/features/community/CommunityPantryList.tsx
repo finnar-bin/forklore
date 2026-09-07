@@ -43,7 +43,13 @@ export function CommunityPantryList() {
         )}
 
         {!loading && ingredients?.length === 0 && (
-          <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
+          <Typography
+            sx={{
+              color: "text.secondary",
+              textAlign: "center",
+              py: 4,
+            }}
+          >
             No community ingredients yet. Add the first one to get started.
           </Typography>
         )}

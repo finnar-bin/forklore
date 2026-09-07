@@ -119,20 +119,40 @@ export function AcceptInvite() {
           textAlign: "center",
         }}
       >
-        <Stack spacing={2} alignItems="center">
+        <Stack
+          spacing={2}
+          sx={{
+            alignItems: "center",
+          }}
+        >
           {status === "loading" && (
             <>
               <CircularProgress />
-              <Typography color="text.secondary">Checking invite…</Typography>
+              <Typography
+                sx={{
+                  color: "text.secondary",
+                }}
+              >
+                Checking invite…
+              </Typography>
             </>
           )}
 
           {status === "confirm" && userId && (
             <>
-              <Typography variant="h6" fontWeight={500}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 500,
+                }}
+              >
                 Join {groupName}?
               </Typography>
-              <Typography color="text.secondary">
+              <Typography
+                sx={{
+                  color: "text.secondary",
+                }}
+              >
                 You'll get full read/write access to this group's shared pantry,
                 recipes, and log.
               </Typography>
@@ -156,10 +176,19 @@ export function AcceptInvite() {
 
           {status === "confirm" && !userId && (
             <>
-              <Typography variant="h6" fontWeight={500}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 500,
+                }}
+              >
                 Join {groupName}?
               </Typography>
-              <Typography color="text.secondary">
+              <Typography
+                sx={{
+                  color: "text.secondary",
+                }}
+              >
                 Sign up or log in to accept this invite and get full read/write
                 access to this group's shared pantry, recipes, and log.
               </Typography>
@@ -184,13 +213,24 @@ export function AcceptInvite() {
           {status === "accepting" && (
             <>
               <CircularProgress />
-              <Typography color="text.secondary">Joining group…</Typography>
+              <Typography
+                sx={{
+                  color: "text.secondary",
+                }}
+              >
+                Joining group…
+              </Typography>
             </>
           )}
 
           {status === "success" && (
             <>
-              <Typography variant="h6" fontWeight={500}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 500,
+                }}
+              >
                 You've joined {groupName}
               </Typography>
               <Button

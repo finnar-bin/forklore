@@ -141,7 +141,12 @@ export function GroupSettings({ groupId }: { groupId: string }) {
       </Paper>
 
       <Paper sx={{ p: 2, borderRadius: "14px", boxShadow: tokens.sh2 }}>
-        <Typography fontWeight={500} sx={{ mb: 1.5 }}>
+        <Typography
+          sx={{
+            fontWeight: 500,
+            mb: 1.5,
+          }}
+        >
           Members
         </Typography>
 
@@ -164,11 +169,21 @@ export function GroupSettings({ groupId }: { groupId: string }) {
               sx={{ display: "flex", alignItems: "center", gap: 1, py: 1 }}
             >
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography fontSize={14} noWrap>
+                <Typography
+                  noWrap
+                  sx={{
+                    fontSize: 14,
+                  }}
+                >
                   {memberNames[member.user_id] ?? "Loading…"}
                   {member.user_id === userId ? " (you)" : ""}
                 </Typography>
-                <Typography fontSize={12} color="text.secondary">
+                <Typography
+                  sx={{
+                    fontSize: 12,
+                    color: "text.secondary",
+                  }}
+                >
                   {member.role === "owner" ? "Owner" : "Member"}
                 </Typography>
               </Box>

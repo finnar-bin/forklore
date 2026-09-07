@@ -66,7 +66,13 @@ export function AboutYouStep({
       />
       <FormControl>
         <FormLabel sx={{ fontSize: 13 }}>Biological sex</FormLabel>
-        <Typography fontSize={12} color="text.secondary" sx={{ mb: 0.5 }}>
+        <Typography
+          sx={{
+            fontSize: 12,
+            color: "text.secondary",
+            mb: 0.5,
+          }}
+        >
           Used only to calculate your calorie needs accurately.
         </Typography>
         <RadioGroup
