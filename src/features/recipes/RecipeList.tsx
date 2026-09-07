@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import Box from "@mui/material/Box";
@@ -8,20 +8,49 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
 import { FloatingPortal } from "../../components/FloatingPortal";
+import { VirtualizedCardList } from "../../components/VirtualizedCardList";
 import { useProfileNames } from "../profiles/useProfileNames";
 import { fetchRecipes } from "./api";
 import { RecipeCard } from "./RecipeCard";
 import { CreateRecipeDialog } from "./CreateRecipeDialog";
+
+// Initial/incremental page size for the infinite-scroll load below — see
+// docs/pending-deviations.md ("List virtualization + pagination").
+const PAGE_SIZE = 30;
 
 export function RecipeList({ groupId }: { groupId: string }) {
   const navigate = useNavigate();
 
   const [createOpen, setCreateOpen] = useState(false);
 
+  // How many (name-sorted) recipes to load from Dexie, grown by PAGE_SIZE as
+  // VirtualizedCardList reports the window scrolling near the end of the
+  // currently-loaded page. Reset whenever groupId changes so switching
+  // groups doesn't carry over an inflated count from the previous one.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => setVisibleCount(PAGE_SIZE), [groupId]);
+
+  // Stable across renders (empty deps — functional setState needs no
+  // outside values) so VirtualizedCardList's onEndReached effect only
+  // re-fires on genuine scroll, not on every unrelated parent re-render
+  // (e.g. the sync engine's periodic Dexie writes re-running useLiveQuery
+  // above) — see docs/pending-deviations.md ("List virtualization +
+  // pagination").
+  const handleEndReached = useCallback(
+    () => setVisibleCount((c) => c + PAGE_SIZE),
+    [],
+  );
+
   // Reads from Dexie, not Supabase — re-renders automatically on local
   // writes (this device) and pulled remote changes alike.
-  const recipes = useLiveQuery(() => fetchRecipes(groupId), [groupId]);
+  const recipes = useLiveQuery(
+    () => fetchRecipes(groupId, visibleCount),
+    [groupId, visibleCount],
+  );
   const loading = recipes === undefined;
+  // fetchRecipes returns fewer rows than asked for only once the group's
+  // whole (sorted) recipe set has been exhausted.
+  const hasMore = (recipes?.length ?? 0) >= visibleCount;
   const detailPath = `/groups/${groupId}/recipes`;
 
   // See RecipeCard's creatorName prop and docs/pending-deviations.md
@@ -67,14 +96,23 @@ export function RecipeList({ groupId }: { groupId: string }) {
           </Typography>
         )}
 
-        {(recipes ?? []).map((recipe) => (
-          <RecipeCard
-            key={recipe.id}
-            recipe={recipe}
-            creatorName={creatorNames[recipe.created_by]}
-            onClick={() => navigate(`${detailPath}/${recipe.id}`)}
+        {recipes && recipes.length > 0 && (
+          <VirtualizedCardList
+            items={recipes}
+            estimateSize={76}
+            gap={12}
+            getItemKey={(recipe) => recipe.id}
+            hasMore={hasMore}
+            onEndReached={handleEndReached}
+            renderItem={(recipe) => (
+              <RecipeCard
+                recipe={recipe}
+                creatorName={creatorNames[recipe.created_by]}
+                onClick={() => navigate(`${detailPath}/${recipe.id}`)}
+              />
+            )}
           />
-        ))}
+        )}
       </Stack>
 
       <FloatingPortal>

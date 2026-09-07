@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import Box from "@mui/material/Box";
@@ -10,6 +10,10 @@ import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
 import { useAppStore } from "../../store/useAppStore";
 import { FloatingPortal } from "../../components/FloatingPortal";
+import {
+  VirtualizedSectionedCardList,
+  type VirtualizedSection,
+} from "../../components/VirtualizedSectionedCardList";
 import { useProfileNames } from "../profiles/useProfileNames";
 import { fetchTodayLogEntries } from "./api";
 import { AddLogEntryDialog } from "./AddLogEntryDialog";
@@ -53,6 +57,45 @@ export function DailyLog({
   // (Ticket 12 follow-up, "logged by" name, and the later "log for a group
   // member" rework).
   const names = useProfileNames((entries ?? []).map((e) => e.logged_for));
+
+  // Each meal-type's LogEntryCards plus its own header — flattened into
+  // VirtualizedSectionedCardList's row list so only near-viewport rows are
+  // ever mounted. Empty sections are dropped, same as the plain .map() this
+  // replaced. "Today" is naturally bounded (unlike AllTimeLog.tsx's whole
+  // history), so this virtualizes render/mount count without also windowing
+  // the fetch — see docs/pending-deviations.md ("List virtualization +
+  // pagination", log entries follow-up).
+  const virtualSections = useMemo<VirtualizedSection<LogEntry>[]>(
+    () =>
+      MEAL_TYPE_SECTIONS.map(({ key, label }) => {
+        // `?? null` guards a row cached before this feature shipped —
+        // never re-pulled since (pull.ts's cursor only re-fetches rows
+        // past their updated_at), so meal_type is `undefined` at runtime
+        // on such a row despite the `MealType | null` type, and would
+        // otherwise match neither a real meal nor the "Uncategorized"
+        // bucket under strict ===.
+        const sectionEntries = (entries ?? []).filter(
+          (entry) => (entry.meal_type ?? null) === key,
+        );
+        return {
+          key: label,
+          header: (
+            <Typography
+              sx={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "text.secondary",
+                px: 0.5,
+              }}
+            >
+              {label}
+            </Typography>
+          ),
+          items: sectionEntries,
+        };
+      }).filter((section) => section.items.length > 0),
+    [entries],
+  );
 
   return (
     // Root box, not a nested wrapper — see design-system.md's FAB positioning
@@ -109,50 +152,31 @@ export function DailyLog({
           </Typography>
         )}
 
-        {MEAL_TYPE_SECTIONS.map(({ key, label }) => {
-          // `?? null` guards a row cached before this feature shipped —
-          // never re-pulled since (pull.ts's cursor only re-fetches rows
-          // past their updated_at), so meal_type is `undefined` at runtime
-          // on such a row despite the `MealType | null` type, and would
-          // otherwise match neither a real meal nor the "Uncategorized"
-          // bucket under strict ===.
-          const sectionEntries = (entries ?? []).filter(
-            (entry) => (entry.meal_type ?? null) === key,
-          );
-          if (sectionEntries.length === 0) return null;
-          return (
-            <Stack key={label} spacing={1.5}>
-              <Typography
-                sx={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "text.secondary",
-                  px: 0.5,
-                }}
-              >
-                {label}
-              </Typography>
-              {sectionEntries.map((entry) => (
-                <LogEntryCard
-                  key={entry.id}
-                  entry={entry}
-                  subtitle={new Date(entry.created_at).toLocaleTimeString([], {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                  loggedForName={names[entry.logged_for]}
-                  // Every entry surfaced by fetchTodayLogEntries is already
-                  // something the update RLS lets the viewer edit — editable
-                  // by any fellow group member (docs/pending-deviations.md,
-                  // "log for a group member" rework) — so this no longer
-                  // needs an ownership gate the way it did when log_entries'
-                  // update policy was owner-only.
-                  onClick={() => setEditingEntry(entry)}
-                />
-              ))}
-            </Stack>
-          );
-        })}
+        {!loading && virtualSections.length > 0 && (
+          <VirtualizedSectionedCardList
+            sections={virtualSections}
+            estimateSize={76}
+            gap={12}
+            getItemKey={(entry) => entry.id}
+            renderItem={(entry) => (
+              <LogEntryCard
+                entry={entry}
+                subtitle={new Date(entry.created_at).toLocaleTimeString([], {
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+                loggedForName={names[entry.logged_for]}
+                // Every entry surfaced by fetchTodayLogEntries is already
+                // something the update RLS lets the viewer edit — editable
+                // by any fellow group member (docs/pending-deviations.md,
+                // "log for a group member" rework) — so this no longer
+                // needs an ownership gate the way it did when log_entries'
+                // update policy was owner-only.
+                onClick={() => setEditingEntry(entry)}
+              />
+            )}
+          />
+        )}
       </Stack>
 
       <FloatingPortal>

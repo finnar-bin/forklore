@@ -41,16 +41,23 @@ export async function fetchTodayLogEntries(
 // /groups/:groupId/logs — a single group's own all-time history, same
 // "every entry logged into it by any member" shape as the group branch of
 // fetchTodayLogEntries above, just without the "today" filter. See
-// docs/pending-deviations.md (Ticket 12 follow-up, "group's all-time history").
+// docs/pending-deviations.md (Ticket 12 follow-up, "group's all-time
+// history", and "List virtualization + pagination" for `limit`).
+//
+// `limit` is optional and windows the sorted result the same way
+// fetchRecipes/fetchIngredients do — omitted (the default), it returns
+// every row, so no pre-existing caller behavior changes.
 export async function fetchAllGroupLogEntries(
   groupId: string,
+  limit?: number,
 ): Promise<LogEntry[]> {
   const rows = await db.log_entries.where("group_id").equals(groupId).toArray();
-  return rows.sort(
+  const sorted = rows.sort(
     (a, b) =>
       b.logged_at.localeCompare(a.logged_at) ||
       b.created_at.localeCompare(a.created_at),
   );
+  return limit === undefined ? sorted : sorted.slice(0, limit);
 }
 
 // Writes go to Dexie immediately (optimistic UI), then queue to the outbox

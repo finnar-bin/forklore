@@ -1,7 +1,7 @@
 {
   "name": "forklore",
   "private": true,
-  "version": "1.5.0",
+  "version": "1.6.0",
   "type": "module",
   "scripts": {
     "dev": "vite --mode dev",
@@ -25,6 +25,7 @@
     "@mui/x-charts": "^9.13.0",
     "@mui/x-date-pickers": "^9.13.0",
     "@supabase/supabase-js": "^2.112.3",
+    "@tanstack/react-virtual": "^3.14.10",
     "browser-image-compression": "^2.0.2",
     "dayjs": "^1.11.23",
     "dexie": "^4.4.5",

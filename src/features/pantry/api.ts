@@ -30,9 +30,22 @@ export interface IngredientUsage {
 // array), so an index on a boolean column silently never matches anything.
 // Same reason `group_id === null` is filtered in JS below rather than
 // queried directly.
-export async function fetchCommunityIngredients(): Promise<Ingredient[]> {
+//
+// `limit` windows the sorted result to its first `limit` rows for
+// CommunityPantryList's incremental-load pagination (docs/pending-deviations.md,
+// "List virtualization + pagination"). There's no `name` index in Dexie's
+// schema (db.ts) to page against directly, so this still reads and sorts the
+// whole local table — that's an in-memory IndexedDB read, not a network
+// round trip, and unrelated to the sync/pull layer's full-table mirroring
+// (frontend-architecture.md); `limit` only bounds what's returned to the
+// caller to render. Omitted (existing callers: fetchAllIngredients,
+// fetchIngredients below) it still returns everything, unchanged.
+export async function fetchCommunityIngredients(
+  limit?: number,
+): Promise<Ingredient[]> {
   const rows = (await db.ingredients.toArray()).filter((i) => i.is_community);
-  return rows.sort((a, b) => a.name.localeCompare(b.name));
+  const sorted = rows.sort((a, b) => a.name.localeCompare(b.name));
+  return limit === undefined ? sorted : sorted.slice(0, limit);
 }
 
 // Reads come from Dexie, not Supabase — see frontend-architecture.md
@@ -45,13 +58,23 @@ export async function fetchCommunityIngredients(): Promise<Ingredient[]> {
 // `includeCommunity` merges in every community ingredient (that group's own
 // `community_pantry_enabled` switch, decided by the caller) — see
 // docs/pending-deviations.md ("Community pantry").
+//
+// `limit` windows the merged, name-sorted result for PantryList's
+// incremental-load pagination — see fetchCommunityIngredients' comment
+// above for why this still reads the full matching set rather than paging
+// the Dexie query itself. Omitted (AddRecipeIngredientDialog's existing
+// call), it returns everything, unchanged.
 export async function fetchIngredients(
   groupId: string,
   includeCommunity = false,
+  limit?: number,
 ): Promise<Ingredient[]> {
   const rows = await db.ingredients.where("group_id").equals(groupId).toArray();
   const community = includeCommunity ? await fetchCommunityIngredients() : [];
-  return [...rows, ...community].sort((a, b) => a.name.localeCompare(b.name));
+  const sorted = [...rows, ...community].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+  return limit === undefined ? sorted : sorted.slice(0, limit);
 }
 
 // Cross-context read for the log entry dialog (Ticket 12 follow-up, "log
