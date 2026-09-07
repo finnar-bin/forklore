@@ -3,7 +3,7 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import { PhotoThumbnail } from "./PhotoThumbnail";
 
 // Stages a picked file locally (preview via a blob URL) instead of

@@ -67,10 +67,22 @@ export function GroupCard({
         <GroupIcon />
       </Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography fontSize={14} fontWeight={500} noWrap>
+        <Typography
+          noWrap
+          sx={{
+            fontSize: 14,
+            fontWeight: 500,
+          }}
+        >
           {group.name}
         </Typography>
-        <Typography fontSize={12} color="text.secondary" noWrap>
+        <Typography
+          noWrap
+          sx={{
+            fontSize: 12,
+            color: "text.secondary",
+          }}
+        >
           {group.description ||
             (role === "owner" ? "You're the owner" : "Member")}
         </Typography>

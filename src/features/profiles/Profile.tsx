@@ -143,11 +143,19 @@ export function Profile() {
           justifyContent: "space-between",
         }}
       >
-        <Typography fontSize={14}>Dark mode</Typography>
+        <Typography
+          sx={{
+            fontSize: 14,
+          }}
+        >
+          Dark mode
+        </Typography>
         <Switch
           checked={resolvedMode === "dark"}
           onChange={() => setMode(resolvedMode === "dark" ? "light" : "dark")}
-          inputProps={{ "aria-label": "Toggle dark mode" }}
+          slotProps={{
+            input: { "aria-label": "Toggle dark mode" },
+          }}
         />
       </Paper>
 
@@ -211,8 +219,10 @@ export function Profile() {
       >
         <Typography
           variant="caption"
-          color="text.secondary"
-          sx={{ display: "block" }}
+          sx={{
+            color: "text.secondary",
+            display: "block",
+          }}
         >
           <Link component={RouterLink} to="/terms" color="inherit">
             Terms
@@ -222,7 +232,12 @@ export function Profile() {
             Privacy
           </Link>
         </Typography>
-        <Typography variant="caption" color="text.secondary">
+        <Typography
+          variant="caption"
+          sx={{
+            color: "text.secondary",
+          }}
+        >
           <Link
             href={REPO_URL}
             target="_blank"

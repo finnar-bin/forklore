@@ -39,7 +39,12 @@ export function LegalPageLayout({
         <IconButton aria-label="Back" onClick={() => navigate(-1)} edge="start">
           <ArrowBackIcon />
         </IconButton>
-        <Typography variant="h6" fontWeight={500}>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 500,
+          }}
+        >
           {title}
         </Typography>
       </Box>

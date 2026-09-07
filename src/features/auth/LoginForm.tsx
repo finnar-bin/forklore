@@ -55,7 +55,12 @@ export function LoginForm() {
 
   return (
     <Stack spacing={3} component="form" onSubmit={handleSubmit}>
-      <Typography variant="h5" fontWeight={500}>
+      <Typography
+        variant="h5"
+        sx={{
+          fontWeight: 500,
+        }}
+      >
         Log in
       </Typography>
 
@@ -101,7 +106,13 @@ export function LoginForm() {
         {submitting ? "Logging in…" : "Log in"}
       </Button>
 
-      <Typography variant="body2" color="text.secondary" textAlign="center">
+      <Typography
+        variant="body2"
+        sx={{
+          color: "text.secondary",
+          textAlign: "center",
+        }}
+      >
         New here?{" "}
         <Link component={RouterLink} to="/signup">
           Create an account

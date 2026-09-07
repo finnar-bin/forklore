@@ -25,9 +25,11 @@ export function AuthLayout({ children }: { children: ReactNode }) {
       <Box sx={{ width: "100%", maxWidth: 400 }}>
         <Typography
           variant="h4"
-          fontWeight={700}
-          textAlign="center"
-          sx={{ mb: 3 }}
+          sx={{
+            fontWeight: 700,
+            textAlign: "center",
+            mb: 3,
+          }}
         >
           Forklore
         </Typography>
@@ -36,9 +38,12 @@ export function AuthLayout({ children }: { children: ReactNode }) {
         </Paper>
         <Typography
           variant="caption"
-          color="text.secondary"
-          textAlign="center"
-          sx={{ display: "block", mt: 2 }}
+          sx={{
+            color: "text.secondary",
+            textAlign: "center",
+            display: "block",
+            mt: 2,
+          }}
         >
           By continuing, you agree to our{" "}
           <Link component={RouterLink} to="/terms" color="inherit">

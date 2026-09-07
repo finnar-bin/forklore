@@ -297,34 +297,51 @@ function AddLogEntryForm({
                       }}
                     >
                       <Typography
-                        fontSize={14}
-                        fontWeight={500}
                         noWrap
-                        sx={{ minWidth: 0 }}
+                        sx={{
+                          fontSize: 14,
+                          fontWeight: 500,
+                          minWidth: 0,
+                        }}
                       >
                         {option.name}
                       </Typography>
                       <Typography
-                        fontSize={14}
-                        color="text.secondary"
-                        sx={{ flexShrink: 0 }}
+                        sx={{
+                          fontSize: 14,
+                          color: "text.secondary",
+                          flexShrink: 0,
+                        }}
                       >
                         {option.weight_g} g
                       </Typography>
                     </Box>
-                    <Typography fontSize={12} color="text.secondary" noWrap>
+                    <Typography
+                      noWrap
+                      sx={{
+                        fontSize: 12,
+                        color: "text.secondary",
+                      }}
+                    >
                       {groupLabel(option.group_id)}
                     </Typography>
                   </Box>
                   <Box sx={{ textAlign: "right", flexShrink: 0 }}>
                     <Typography
-                      fontSize={14}
-                      fontWeight={500}
-                      color="primary.main"
+                      sx={{
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: "primary.main",
+                      }}
                     >
                       {option.total_kcal.toFixed(2)} kcal
                     </Typography>
-                    <Typography fontSize={11} color="text.secondary">
+                    <Typography
+                      sx={{
+                        fontSize: 11,
+                        color: "text.secondary",
+                      }}
+                    >
                       {formatKcalPerUnit(option.total_kcal, option.weight_g)}/g
                     </Typography>
                   </Box>

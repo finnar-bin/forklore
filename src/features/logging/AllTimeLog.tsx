@@ -49,7 +49,13 @@ export function AllTimeLog({ groupId }: { groupId: string }) {
       )}
 
       {!loading && groups.length === 0 && (
-        <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
+        <Typography
+          sx={{
+            color: "text.secondary",
+            textAlign: "center",
+            py: 4,
+          }}
+        >
           Nothing logged yet in this group. Entries logged here will show up.
         </Typography>
       )}
@@ -65,14 +71,25 @@ export function AllTimeLog({ groupId }: { groupId: string }) {
                 alignItems: "baseline",
               }}
             >
-              <Typography fontSize={13} fontWeight={500} color="text.secondary">
+              <Typography
+                sx={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "text.secondary",
+                }}
+              >
                 {new Date(`${date}T00:00:00`).toLocaleDateString([], {
                   weekday: "short",
                   month: "short",
                   day: "numeric",
                 })}
               </Typography>
-              <Typography fontSize={12} color="text.secondary">
+              <Typography
+                sx={{
+                  fontSize: 12,
+                  color: "text.secondary",
+                }}
+              >
                 {dayTotal.toFixed(2)} kcal
               </Typography>
             </Box>

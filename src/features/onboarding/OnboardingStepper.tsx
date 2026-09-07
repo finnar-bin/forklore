@@ -289,17 +289,32 @@ export function OnboardingStepper() {
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h5" fontWeight={500}>
+      <Typography
+        variant="h5"
+        sx={{
+          fontWeight: 500,
+        }}
+      >
         Tell us about yourself
       </Typography>
-      <Typography variant="body2" color="text.secondary">
+      <Typography
+        variant="body2"
+        sx={{
+          color: "text.secondary",
+        }}
+      >
         This sets your starting point so we can calculate your daily calorie
         target.
       </Typography>
 
       {error && <Alert severity="error">{error}</Alert>}
 
-      <Typography fontSize={13} color="text.secondary">
+      <Typography
+        sx={{
+          fontSize: 13,
+          color: "text.secondary",
+        }}
+      >
         Step {activeStep + 1} of {STEP_LABELS.length} ·{" "}
         {STEP_LABELS[activeStep]}
       </Typography>

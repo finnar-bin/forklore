@@ -97,7 +97,13 @@ export function DailyLog({
         )}
 
         {!loading && entries?.length === 0 && (
-          <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
+          <Typography
+            sx={{
+              color: "text.secondary",
+              textAlign: "center",
+              py: 4,
+            }}
+          >
             Nothing logged yet today in this group. Add the first entry to get
             started.
           </Typography>
@@ -117,10 +123,12 @@ export function DailyLog({
           return (
             <Stack key={label} spacing={1.5}>
               <Typography
-                fontSize={13}
-                fontWeight={600}
-                color="text.secondary"
-                sx={{ px: 0.5 }}
+                sx={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "text.secondary",
+                  px: 0.5,
+                }}
               >
                 {label}
               </Typography>

@@ -33,7 +33,12 @@ export function SignupForm() {
   if (confirmEmailSent) {
     return (
       <Stack spacing={3}>
-        <Typography variant="h5" fontWeight={500}>
+        <Typography
+          variant="h5"
+          sx={{
+            fontWeight: 500,
+          }}
+        >
           Check your email
         </Typography>
         <Alert severity="success">
@@ -46,7 +51,12 @@ export function SignupForm() {
 
   return (
     <Stack spacing={3} component="form" onSubmit={handleSubmit}>
-      <Typography variant="h5" fontWeight={500}>
+      <Typography
+        variant="h5"
+        sx={{
+          fontWeight: 500,
+        }}
+      >
         Create an account
       </Typography>
 
@@ -81,7 +91,13 @@ export function SignupForm() {
         {submitting ? "Creating account…" : "Create account"}
       </Button>
 
-      <Typography variant="body2" color="text.secondary" textAlign="center">
+      <Typography
+        variant="body2"
+        sx={{
+          color: "text.secondary",
+          textAlign: "center",
+        }}
+      >
         Already have an account?{" "}
         <Link component={RouterLink} to="/login">
           Log in

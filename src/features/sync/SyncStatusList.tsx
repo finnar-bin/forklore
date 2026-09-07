@@ -54,15 +54,28 @@ function SyncItemCard({
     >
       <Stack
         direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        gap={1.5}
+        sx={{
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 1.5,
+        }}
       >
         <Box sx={{ minWidth: 0 }}>
-          <Typography fontSize={14} fontWeight={500} noWrap>
+          <Typography
+            noWrap
+            sx={{
+              fontSize: 14,
+              fontWeight: 500,
+            }}
+          >
             {describeItem(item)}
           </Typography>
-          <Typography fontSize={12} color="text.secondary">
+          <Typography
+            sx={{
+              fontSize: 12,
+              color: "text.secondary",
+            }}
+          >
             {detail}
           </Typography>
         </Box>
@@ -112,7 +125,13 @@ export function SyncStatusList() {
 
   if (waiting.length === 0 && failed.length === 0) {
     return (
-      <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
+      <Typography
+        sx={{
+          color: "text.secondary",
+          textAlign: "center",
+          py: 4,
+        }}
+      >
         Everything's synced. No outstanding changes.
       </Typography>
     );
@@ -122,7 +141,13 @@ export function SyncStatusList() {
     <Stack spacing={3} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 4 }}>
       {failed.length > 0 && (
         <Stack spacing={1.5}>
-          <Typography fontSize={13} fontWeight={500} color="text.secondary">
+          <Typography
+            sx={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: "text.secondary",
+            }}
+          >
             Needs attention
           </Typography>
           {failed.map((item) => (
@@ -157,7 +182,13 @@ export function SyncStatusList() {
 
       {waiting.length > 0 && (
         <Stack spacing={1.5}>
-          <Typography fontSize={13} fontWeight={500} color="text.secondary">
+          <Typography
+            sx={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: "text.secondary",
+            }}
+          >
             Waiting for connection
           </Typography>
           {waiting.map((item) => (

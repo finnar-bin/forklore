@@ -39,27 +39,42 @@ export function RecipeKcalHeader({
           }}
         >
           <Typography
-            fontSize={18}
-            fontWeight={500}
             noWrap
-            sx={{ minWidth: 0 }}
+            sx={{
+              fontSize: 18,
+              fontWeight: 500,
+              minWidth: 0,
+            }}
           >
             {recipe.name}
           </Typography>
           <Typography
-            fontSize={18}
-            color="text.secondary"
-            sx={{ flexShrink: 0 }}
+            sx={{
+              fontSize: 18,
+              color: "text.secondary",
+              flexShrink: 0,
+            }}
           >
             {recipe.weight_g} g
           </Typography>
         </Box>
-        <Typography fontSize={13} color="text.secondary" noWrap>
+        <Typography
+          noWrap
+          sx={{
+            fontSize: 13,
+            color: "text.secondary",
+          }}
+        >
           {groupLabel}
         </Typography>
       </Box>
       <Box sx={{ textAlign: "right", flexShrink: 0 }}>
-        <Typography fontSize={20} color="primary.main">
+        <Typography
+          sx={{
+            fontSize: 20,
+            color: "primary.main",
+          }}
+        >
           <Box component="span" sx={{ fontWeight: 700 }}>
             {kcal.toFixed(2)}
           </Box>{" "}
@@ -67,7 +82,12 @@ export function RecipeKcalHeader({
             kcal
           </Box>
         </Typography>
-        <Typography fontSize={13} color="text.secondary">
+        <Typography
+          sx={{
+            fontSize: 13,
+            color: "text.secondary",
+          }}
+        >
           {formatKcalPerUnit(recipe.total_kcal, recipe.weight_g)} kcal per g
         </Typography>
       </Box>

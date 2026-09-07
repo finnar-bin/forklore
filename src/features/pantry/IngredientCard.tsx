@@ -70,19 +70,42 @@ export function IngredientCard({
       )}
       <PhotoThumbnail photoUrl={ingredient.photo_url} alt={ingredient.name} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography fontSize={14} fontWeight={500} noWrap>
+        <Typography
+          noWrap
+          sx={{
+            fontSize: 14,
+            fontWeight: 500,
+          }}
+        >
           {ingredient.name}
         </Typography>
-        <Typography fontSize={12} color="text.secondary" noWrap>
+        <Typography
+          noWrap
+          sx={{
+            fontSize: 12,
+            color: "text.secondary",
+          }}
+        >
           {ingredient.quantity} {ingredient.unit}
           {ingredient.brand && ` · ${ingredient.brand}`}
         </Typography>
       </Box>
       <Box sx={{ textAlign: "right", flexShrink: 0 }}>
-        <Typography fontSize={14} fontWeight={500} color="primary.main">
+        <Typography
+          sx={{
+            fontSize: 14,
+            fontWeight: 500,
+            color: "primary.main",
+          }}
+        >
           {ingredient.kcal.toFixed(2)} kcal
         </Typography>
-        <Typography fontSize={11} color="text.secondary">
+        <Typography
+          sx={{
+            fontSize: 11,
+            color: "text.secondary",
+          }}
+        >
           {formatKcalPerUnit(ingredient.kcal, ingredient.quantity)}/
           {ingredient.unit}
         </Typography>
