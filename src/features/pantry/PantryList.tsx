@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import Alert from "@mui/material/Alert";
@@ -16,11 +16,16 @@ import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../../theme/theme";
 import { useAppStore } from "../../store/useAppStore";
 import { FloatingPortal } from "../../components/FloatingPortal";
+import { VirtualizedCardList } from "../../components/VirtualizedCardList";
 import { setGroupCommunityPantryEnabled } from "../groups/api";
 import { useMyGroups } from "../groups/useMyGroups";
 import { fetchIngredients } from "./api";
 import { IngredientCard } from "./IngredientCard";
 import { CreateIngredientDialog } from "./CreateIngredientDialog";
+
+// Initial/incremental page size for the infinite-scroll load below — see
+// docs/pending-deviations.md ("List virtualization + pagination").
+const PAGE_SIZE = 30;
 
 export function PantryList({ groupId }: { groupId: string }) {
   const userId = useAppStore((state) => state.userId);
@@ -69,14 +74,36 @@ export function PantryList({ groupId }: { groupId: string }) {
     }
   }
 
+  // How many (name-sorted, community-merged) ingredients to load from Dexie,
+  // grown by PAGE_SIZE as VirtualizedCardList reports the window scrolling
+  // near the end of the currently-loaded page. Reset whenever groupId or the
+  // community-merge switch changes so neither carries over an inflated count
+  // from a different group/merge state.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => setVisibleCount(PAGE_SIZE), [groupId, communityEnabled]);
+
+  // Stable across renders (empty deps — functional setState needs no
+  // outside values) so VirtualizedCardList's onEndReached effect only
+  // re-fires on genuine scroll, not on every unrelated parent re-render
+  // (e.g. the sync engine's periodic Dexie writes re-running useLiveQuery
+  // above, or the community-toggle error Alert appearing/disappearing) —
+  // see docs/pending-deviations.md ("List virtualization + pagination").
+  const handleEndReached = useCallback(
+    () => setVisibleCount((c) => c + PAGE_SIZE),
+    [],
+  );
+
   // Reads from Dexie, not Supabase — re-renders automatically on local
   // writes (this device) and pulled remote changes alike, so no manual
   // refetch/merge is needed after create/delete.
   const ingredients = useLiveQuery(
-    () => fetchIngredients(groupId, communityEnabled),
-    [groupId, communityEnabled],
+    () => fetchIngredients(groupId, communityEnabled, visibleCount),
+    [groupId, communityEnabled, visibleCount],
   );
   const loading = ingredients === undefined;
+  // fetchIngredients returns fewer rows than asked for only once the
+  // group's whole (merged, sorted) ingredient set has been exhausted.
+  const hasMore = (ingredients?.length ?? 0) >= visibleCount;
   const detailPath = `/groups/${groupId}/pantry`;
 
   return (
@@ -163,13 +190,22 @@ export function PantryList({ groupId }: { groupId: string }) {
           </Typography>
         )}
 
-        {(ingredients ?? []).map((ingredient) => (
-          <IngredientCard
-            key={ingredient.id}
-            ingredient={ingredient}
-            onClick={() => navigate(`${detailPath}/${ingredient.id}`)}
+        {ingredients && ingredients.length > 0 && (
+          <VirtualizedCardList
+            items={ingredients}
+            estimateSize={80}
+            gap={14}
+            getItemKey={(ingredient) => ingredient.id}
+            hasMore={hasMore}
+            onEndReached={handleEndReached}
+            renderItem={(ingredient) => (
+              <IngredientCard
+                ingredient={ingredient}
+                onClick={() => navigate(`${detailPath}/${ingredient.id}`)}
+              />
+            )}
           />
-        ))}
+        )}
       </Stack>
 
       <FloatingPortal>
@@ -197,7 +233,18 @@ export function PantryList({ groupId }: { groupId: string }) {
         open={createOpen}
         groupId={groupId}
         onClose={() => setCreateOpen(false)}
-        onCreated={() => setCreateOpen(false)}
+        onCreated={(created) => {
+          // Straight to detail, not back to the list (mirrors
+          // RecipeList.tsx's onCreated) — fetchIngredients now windows the
+          // name-sorted list to `visibleCount` rows (see
+          // docs/pending-deviations.md, "List virtualization + pagination"),
+          // so a newly created ingredient that sorts alphabetically past the
+          // currently loaded page would otherwise silently not appear in the
+          // list at all. Navigating to its detail page both confirms the
+          // create succeeded and sidesteps that windowing entirely.
+          setCreateOpen(false);
+          navigate(`${detailPath}/${created.id}`, { replace: true });
+        }}
       />
     </Box>
   );

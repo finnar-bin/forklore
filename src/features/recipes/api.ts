@@ -11,9 +11,22 @@ import type {
 // Reads come from Dexie, not Supabase — see frontend-architecture.md
 // "Offline sync — outbox pattern". See docs/pending-deviations.md
 // (Ticket 12, "Remove personal mode").
-export async function fetchRecipes(groupId: string): Promise<Recipe[]> {
+//
+// `limit` windows the sorted result to its first `limit` rows for
+// RecipeList's incremental-load pagination (docs/pending-deviations.md,
+// "List virtualization + pagination"). There's no `name` index in Dexie's
+// schema (db.ts) to page against directly, so this still reads and sorts
+// this group's whole local row set — an in-memory IndexedDB read, not a
+// network round trip, and unrelated to the sync/pull layer's full-table
+// mirroring; `limit` only bounds what's returned to the caller to render.
+// Omitted, it returns everything, unchanged.
+export async function fetchRecipes(
+  groupId: string,
+  limit?: number,
+): Promise<Recipe[]> {
   const rows = await db.recipes.where("group_id").equals(groupId).toArray();
-  return rows.sort((a, b) => a.name.localeCompare(b.name));
+  const sorted = rows.sort((a, b) => a.name.localeCompare(b.name));
+  return limit === undefined ? sorted : sorted.slice(0, limit);
 }
 
 // Cross-context read for the log entry dialog — see fetchAllIngredients
