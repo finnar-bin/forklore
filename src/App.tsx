@@ -1,6 +1,12 @@
+import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useAuthSession } from "./features/auth/useAuthSession";
 import { useOnboardingGate } from "./features/onboarding/useOnboardingGate";
 import { useSyncEngine } from "./sync/useSyncEngine";
@@ -32,12 +38,62 @@ import { ProfilePage } from "./routes/ProfilePage";
 import { PrivacyPolicyPage } from "./routes/PrivacyPolicyPage";
 import { TermsPage } from "./routes/TermsPage";
 
+// Bounds how long App waits on useAuthSession/useOnboardingGate before
+// giving up — a dead connection after a long-backgrounded PWA can leave
+// their promises unresolved forever with no other recovery path.
+const LOADING_TIMEOUT_MS = 15000;
+
 function App() {
   const { initializing } = useAuthSession();
   const { checking } = useOnboardingGate();
   useSyncEngine();
 
-  if (initializing || checking) {
+  const loading = initializing || checking;
+  const [timedOut, setTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (!loading) {
+      setTimedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => setTimedOut(true), LOADING_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [loading]);
+
+  if (loading && timedOut) {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          bgcolor: "background.default",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          p: 2,
+        }}
+      >
+        <Stack spacing={2} sx={{ alignItems: "center", maxWidth: 360 }}>
+          <Alert severity="warning" sx={{ width: "100%" }}>
+            This is taking longer than expected.
+          </Alert>
+          <Typography sx={{ color: "text.secondary", textAlign: "center" }}>
+            Forklore is having trouble reaching the server. Check your
+            connection and try reloading.
+          </Typography>
+          <Button
+            variant="contained"
+            size="large"
+            fullWidth
+            onClick={() => window.location.reload()}
+          >
+            Reload
+          </Button>
+        </Stack>
+      </Box>
+    );
+  }
+
+  if (loading) {
     return (
       <Box
         sx={{
@@ -54,90 +110,92 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public regardless of auth state — must be reachable while
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          {/* Public regardless of auth state — must be reachable while
             logged out (e.g. Google's OAuth consent screen review), so
             these sit outside every auth gate below. */}
-        <Route path="/privacy" element={<PrivacyPolicyPage />} />
-        <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
 
-        {/* Public regardless of auth state — a not-yet-signed-up invitee
+          {/* Public regardless of auth state — a not-yet-signed-up invitee
             needs to preview an invite, then land back here (still
             authenticated) after signup/login before ever reaching
             onboarding, so they join the group they were actually invited to
             rather than creating a redundant one in onboarding's mandatory
             group step. See docs/pending-deviations.md ("Remove personal
             mode") and AcceptInvite.tsx. */}
-        <Route path="/invite/:inviteCode" element={<InvitePage />} />
+          <Route path="/invite/:inviteCode" element={<InvitePage />} />
 
-        <Route element={<RedirectIfAuthed />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-        </Route>
-
-        <Route element={<RequireAuth />}>
-          <Route element={<RedirectIfOnboarded />}>
-            <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route element={<RedirectIfAuthed />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
           </Route>
-          <Route element={<RequireOnboarded />}>
-            {/* AnimatedAppShell wraps the router outlet in AnimatePresence
+
+          <Route element={<RequireAuth />}>
+            <Route element={<RedirectIfOnboarded />}>
+              <Route path="/onboarding" element={<OnboardingPage />} />
+            </Route>
+            <Route element={<RequireOnboarded />}>
+              {/* AnimatedAppShell wraps the router outlet in AnimatePresence
                 (push/pop vs. tab-switch transitions) and renders BottomNav
                 as a sibling of the animated content — see
                 frontend-architecture.md "Navigation animation" and
                 docs/pending-deviations.md (Ticket 16). */}
-            <Route element={<AnimatedAppShell />}>
-              <Route path="/" element={<HomeRedirect />} />
-              <Route path="/progress" element={<ProgressPage />} />
-              {/* Bare, context-free like /progress, but with no userId
+              <Route element={<AnimatedAppShell />}>
+                <Route path="/" element={<HomeRedirect />} />
+                <Route path="/progress" element={<ProgressPage />} />
+                {/* Bare, context-free like /progress, but with no userId
                   dependency either — see docs/pending-deviations.md
                   ("Converter tab"). */}
-              <Route path="/converter" element={<ConverterPage />} />
-              {/* RequireGroupMember guards every route under this parent —
+                <Route path="/converter" element={<ConverterPage />} />
+                {/* RequireGroupMember guards every route under this parent —
                   see issue #34's audit ("group routes trust the local cache
                   with no server-side membership check"). */}
-              <Route path="/groups/:groupId" element={<RequireGroupMember />}>
-                <Route path="pantry" element={<PantryPage />} />
-                <Route
-                  path="pantry/:ingredientId"
-                  element={<IngredientDetailPage />}
-                />
-                <Route path="recipes" element={<RecipesPage />} />
-                <Route
-                  path="recipes/:recipeId"
-                  element={<RecipeDetailPage />}
-                />
-                <Route path="log" element={<LogPage />} />
-                <Route path="logs" element={<LogsPage />} />
-                {/* Owner-only, nested inside the membership check above — see
+                <Route path="/groups/:groupId" element={<RequireGroupMember />}>
+                  <Route path="pantry" element={<PantryPage />} />
+                  <Route
+                    path="pantry/:ingredientId"
+                    element={<IngredientDetailPage />}
+                  />
+                  <Route path="recipes" element={<RecipesPage />} />
+                  <Route
+                    path="recipes/:recipeId"
+                    element={<RecipeDetailPage />}
+                  />
+                  <Route path="log" element={<LogPage />} />
+                  <Route path="logs" element={<LogsPage />} />
+                  {/* Owner-only, nested inside the membership check above — see
                     docs/pending-deviations.md (Ticket 13). */}
-                <Route element={<RequireGroupOwner />}>
-                  <Route path="settings" element={<GroupSettingsPage />} />
+                  <Route element={<RequireGroupOwner />}>
+                    <Route path="settings" element={<GroupSettingsPage />} />
+                  </Route>
                 </Route>
-              </Route>
-              <Route path="/groups" element={<GroupsPage />} />
-              {/* Browsable by everyone regardless of anyone's opt-in switch
+                <Route path="/groups" element={<GroupsPage />} />
+                {/* Browsable by everyone regardless of anyone's opt-in switch
                   — see docs/pending-deviations.md ("Community pantry").
                   IngredientDetailPage (same component as
                   /groups/:groupId/pantry/:ingredientId) reuses its
                   permission gating unchanged. */}
-              <Route
-                path="/community-pantry"
-                element={<CommunityPantryPage />}
-              />
-              <Route
-                path="/community-pantry/:ingredientId"
-                element={<IngredientDetailPage />}
-              />
-              <Route path="/sync-status" element={<SyncStatusPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
+                <Route
+                  path="/community-pantry"
+                  element={<CommunityPantryPage />}
+                />
+                <Route
+                  path="/community-pantry/:ingredientId"
+                  element={<IngredientDetailPage />}
+                />
+                <Route path="/sync-status" element={<SyncStatusPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+              </Route>
             </Route>
           </Route>
-        </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
