@@ -5,18 +5,22 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Fab from "@mui/material/Fab";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
-import Paper from "@mui/material/Paper";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
-import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
-import { useColorScheme } from "@mui/material/styles";
-import { shadows } from "../../theme/theme";
+import SettingsIcon from "@mui/icons-material/Settings";
 import { useAppStore } from "../../store/useAppStore";
 import { FloatingPortal } from "../../components/FloatingPortal";
 import { VirtualizedCardList } from "../../components/VirtualizedCardList";
@@ -33,11 +37,9 @@ const PAGE_SIZE = 30;
 export function PantryList({ groupId }: { groupId: string }) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
-  const { mode, systemMode } = useColorScheme();
-  const resolvedMode = mode === "system" ? systemMode : mode;
-  const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // This group's own community pantry opt-in, editable right here (not on
   // group settings — see docs/pending-deviations.md, "Community pantry").
@@ -140,71 +142,33 @@ export function PantryList({ groupId }: { groupId: string }) {
           pb: "calc(144px + env(safe-area-inset-bottom, 0px))",
         }}
       >
-        <Button onClick={() => navigate("/community-pantry")}>
-          Browse community pantry
-        </Button>
-
-        {isGroupOwner && (
-          <Paper
-            sx={{
-              p: 1,
-              borderRadius: "14px",
-              boxShadow: tokens.sh2,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          <TextField
+            placeholder="Search pantry"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            size="small"
+            fullWidth
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon
+                      fontSize="small"
+                      sx={{ color: "text.secondary" }}
+                    />
+                  </InputAdornment>
+                ),
+              },
             }}
+          />
+          <IconButton
+            aria-label="Pantry settings"
+            onClick={() => setSettingsOpen(true)}
           >
-            <FormControlLabel
-              // FormControlLabel ships with a default -11px left margin
-              // (meant to align a checkbox/radio's own padding with
-              // surrounding list text) — overridden to 0 here so the
-              // Paper's own left padding actually takes effect instead of
-              // being canceled out.
-              sx={{ flex: 1, ml: 0, mr: 1 }}
-              control={
-                <Switch
-                  size="small"
-                  checked={displayedCommunityEnabled}
-                  onChange={(e) => handleCommunityToggle(e.target.checked)}
-                  disabled={pendingCommunityEnabled !== null}
-                />
-              }
-              label={
-                <Typography
-                  sx={{
-                    fontSize: 13,
-                  }}
-                >
-                  Use community pantry ingredients in this group
-                </Typography>
-              }
-            />
-          </Paper>
-        )}
-        {communityToggleError && (
-          <Alert severity="error">{communityToggleError}</Alert>
-        )}
-
-        <TextField
-          placeholder="Search pantry"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          size="small"
-          fullWidth
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon
-                    fontSize="small"
-                    sx={{ color: "text.secondary" }}
-                  />
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
+            <SettingsIcon sx={{ color: "text.secondary" }} />
+          </IconButton>
+        </Stack>
 
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
@@ -264,6 +228,58 @@ export function PantryList({ groupId }: { groupId: string }) {
           <AddIcon />
         </Fab>
       </FloatingPortal>
+
+      <Dialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>Pantry settings</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.75} sx={{ pt: 0.5 }}>
+            {isGroupOwner && (
+              <Box>
+                <Typography sx={{ fontSize: 14 }}>
+                  Do you want to enable the community pantry ingredients for
+                  this group?
+                </Typography>
+                <RadioGroup
+                  value={displayedCommunityEnabled ? "yes" : "no"}
+                  onChange={(e) =>
+                    handleCommunityToggle(e.target.value === "yes")
+                  }
+                >
+                  <FormControlLabel
+                    value="yes"
+                    control={<Radio size="small" />}
+                    label="Yes"
+                    disabled={pendingCommunityEnabled !== null}
+                  />
+                  <FormControlLabel
+                    value="no"
+                    control={<Radio size="small" />}
+                    label="No"
+                    disabled={pendingCommunityEnabled !== null}
+                  />
+                </RadioGroup>
+              </Box>
+            )}
+            {communityToggleError && (
+              <Alert severity="error">{communityToggleError}</Alert>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: "space-between" }}>
+          <Button
+            variant="outlined"
+            onClick={() => navigate("/community-pantry")}
+          >
+            Browse community pantry
+          </Button>
+          <Button onClick={() => setSettingsOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
       <CreateIngredientDialog
         open={createOpen}
