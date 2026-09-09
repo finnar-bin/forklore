@@ -15,6 +15,7 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { useAppStore } from "../../store/useAppStore";
 import { kcalPerUnit } from "../../lib/kcal";
+import { resolveGroupLabel } from "../groups/groupLabel";
 import { useMyGroups } from "../groups/useMyGroups";
 import {
   createIngredient,
@@ -137,8 +138,7 @@ function ExistingIngredientForm({
   // group's own name needs distinguishing, so a same-named community
   // ingredient and a group-owned one aren't indistinguishable in the list.
   function groupLabel(isCommunity: boolean): string {
-    if (isCommunity) return "Community";
-    return membership?.group.name ?? "Group";
+    return resolveGroupLabel(membership?.group.name, isCommunity);
   }
 
   const [options, setOptions] = useState<Ingredient[] | null>(null);

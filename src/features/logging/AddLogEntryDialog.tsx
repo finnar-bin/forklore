@@ -18,6 +18,7 @@ import { useAppStore } from "../../store/useAppStore";
 import { fetchIngredients } from "../pantry/api";
 import { IngredientAutocompleteOption } from "../pantry/IngredientAutocompleteOption";
 import { fetchRecipes } from "../recipes/api";
+import { resolveGroupLabel } from "../groups/groupLabel";
 import { useMyGroups } from "../groups/useMyGroups";
 import { useMemberKcalProfiles } from "../profiles/useMemberKcalProfiles";
 import { createLogEntry, type LogEntryInput } from "./api";
@@ -138,12 +139,11 @@ function AddLogEntryForm({
 
   // Every option is either owned by `contextGroupId` or (for an ingredient)
   // community — "Community" vs. this group's own name is the only thing
-  // left to distinguish, same as AddRecipeIngredientDialog's identical
-  // helper. A community *recipe* doesn't exist (recipes have no community
-  // tier), so `isCommunity` is only ever passed for ingredients.
+  // left to distinguish, same as AddRecipeIngredientDialog's identical call.
+  // A community *recipe* doesn't exist (recipes have no community tier), so
+  // `isCommunity` is only ever passed for ingredients.
   function groupLabel(isCommunity?: boolean): string {
-    if (isCommunity) return "Community";
-    return membership?.group.name ?? "Group";
+    return resolveGroupLabel(membership?.group.name, isCommunity);
   }
 
   async function handleLog(input: LogEntryInput) {

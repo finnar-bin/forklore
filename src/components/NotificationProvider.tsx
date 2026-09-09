@@ -117,6 +117,16 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     currentRef.current = current;
   }, [current]);
+  // A persistent notification (autoHideDuration: null — currently only
+  // UpdatePrompt.tsx's "new version available" prompt) that got preempted
+  // by a transient one — see `notify`'s own comment below. Held here rather
+  // than spliced back into `queue` itself so it can't jump ahead of a
+  // *second* transient `notify()` call arriving in the same synchronous
+  // tick as the first (queue mutations are async/batched, so re-deriving
+  // "is something currently blocking" from `currentRef` on that second call
+  // would still see the — not-yet-updated — persistent item and reorder
+  // around it incorrectly).
+  const pendingPersistentRef = useRef<QueuedNotification | null>(null);
 
   const notify = useCallback((message: string | NotifyOptions) => {
     const options: NotifyOptions =
@@ -133,27 +143,28 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           : options.autoHideDuration,
     };
 
-    const blockingPersistent = currentRef.current;
     if (
-      blockingPersistent &&
-      blockingPersistent.autoHideDuration === null &&
-      item.autoHideDuration !== null
+      currentRef.current &&
+      currentRef.current.autoHideDuration === null &&
+      item.autoHideDuration !== null &&
+      pendingPersistentRef.current === null
     ) {
-      // A persistent notification (autoHideDuration: null — currently only
-      // UpdatePrompt.tsx's "new version available" prompt, which only closes
-      // on explicit user action) would otherwise block every transient
+      // A persistent notification would otherwise block every transient
       // notification queued after it indefinitely, since `current` never
-      // goes back to null on its own. Preempt it: close it now and requeue
-      // it behind this (and any already-queued) transient item(s) — it
-      // resurfaces once they've all shown, since its `key` and content are
-      // unchanged, so its owner's own dismiss logic (UpdatePrompt.tsx's
-      // `shownKey` ref) keeps working unmodified.
-      currentRef.current = null;
-      setQueue((prev) => [item, ...prev, blockingPersistent]);
+      // goes back to null on its own. Preempt it: close it now and remember
+      // it here so the promote-next effect below shows it again only once
+      // every transient item queued in the meantime — this one included —
+      // has had its turn, since its `key`/content are unchanged, so its
+      // owner's own dismiss logic (UpdatePrompt.tsx's `shownKey` ref) keeps
+      // working unmodified. The `pendingPersistentRef.current === null`
+      // guard (rather than nulling `currentRef.current` here, which a
+      // second `notify()` call in the same tick wouldn't see yet) is what
+      // keeps a burst of several back-to-back `notify()` calls from each
+      // independently "preempting" the same still-current persistent item.
+      pendingPersistentRef.current = currentRef.current;
       setOpen(false);
-    } else {
-      setQueue((prev) => [...prev, item]);
     }
+    setQueue((prev) => [...prev, item]);
 
     return key;
   }, []);
@@ -162,23 +173,36 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   // it keeps `current`'s content in place so the exit transition has
   // something to animate out; `handleExited` below is what actually clears
   // it once that's done. A `key` still queued (not yet shown) is just
-  // dropped from `queue` directly, nothing to animate.
+  // dropped from `queue` directly, nothing to animate; a key still pending
+  // resurfacing after a preemption (see `notify`) is cleared from there too,
+  // so a dismissed persistent notification doesn't pop back up later.
   const dismiss = useCallback(
     (key: number) => {
       setQueue((prev) => prev.filter((item) => item.key !== key));
+      if (pendingPersistentRef.current?.key === key) {
+        pendingPersistentRef.current = null;
+      }
       if (current?.key === key) setOpen(false);
     },
     [current],
   );
 
-  // Promotes the next queued item only once `current` has actually been
-  // cleared (by handleExited, once the previous item's exit transition
-  // finished) — never while an item is merely closing.
+  // Promotes the next queued item, or — once the queue's fully drained — a
+  // preempted persistent notification waiting to resurface, only once
+  // `current` has actually been cleared (by handleExited, once the previous
+  // item's exit transition finished) — never while an item is merely
+  // closing.
   useEffect(() => {
-    if (current !== null || queue.length === 0) return;
-    setCurrent(queue[0]);
-    setQueue((prev) => prev.slice(1));
-    setOpen(true);
+    if (current !== null) return;
+    if (queue.length > 0) {
+      setCurrent(queue[0]);
+      setQueue((prev) => prev.slice(1));
+      setOpen(true);
+    } else if (pendingPersistentRef.current !== null) {
+      setCurrent(pendingPersistentRef.current);
+      pendingPersistentRef.current = null;
+      setOpen(true);
+    }
   }, [current, queue]);
 
   function handleClose(key: number, reason?: string) {
