@@ -64,16 +64,26 @@ export async function fetchCommunityIngredients(
 // above for why this still reads the full matching set rather than paging
 // the Dexie query itself. Omitted (AddRecipeIngredientDialog's existing
 // call), it returns everything, unchanged.
+//
+// `search` filters the merged set by a case-insensitive substring match on
+// `name`, applied before `limit` slices the result — see fetchRecipes'
+// identical `search` param (recipes/api.ts) for the same reasoning.
+// Omitted/empty, no filtering happens.
 export async function fetchIngredients(
   groupId: string,
   includeCommunity = false,
   limit?: number,
+  search?: string,
 ): Promise<Ingredient[]> {
   const rows = await db.ingredients.where("group_id").equals(groupId).toArray();
   const community = includeCommunity ? await fetchCommunityIngredients() : [];
-  const sorted = [...rows, ...community].sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
+  const query = search?.trim().toLowerCase();
+  const merged = query
+    ? [...rows, ...community].filter((i) =>
+        i.name.toLowerCase().includes(query),
+      )
+    : [...rows, ...community];
+  const sorted = merged.sort((a, b) => a.name.localeCompare(b.name));
   return limit === undefined ? sorted : sorted.slice(0, limit);
 }
 

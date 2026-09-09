@@ -4,9 +4,12 @@ import { useLiveQuery } from "dexie-react-hooks";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Fab from "@mui/material/Fab";
+import InputAdornment from "@mui/material/InputAdornment";
 import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
+import SearchIcon from "@mui/icons-material/Search";
 import { FloatingPortal } from "../../components/FloatingPortal";
 import { VirtualizedCardList } from "../../components/VirtualizedCardList";
 import { useProfileNames } from "../profiles/useProfileNames";
@@ -23,12 +26,21 @@ export function RecipeList({ groupId }: { groupId: string }) {
 
   const [createOpen, setCreateOpen] = useState(false);
 
+  // Client-typed filter, matched against `name` in fetchRecipes — see that
+  // function's own `search` param comment (api.ts).
+  const [search, setSearch] = useState("");
+  // Reset on groupId change — this component instance persists across group
+  // switches on the same route, so without this a search typed while viewing
+  // one group's recipes would silently keep filtering the next group too.
+  useEffect(() => setSearch(""), [groupId]);
+
   // How many (name-sorted) recipes to load from Dexie, grown by PAGE_SIZE as
   // VirtualizedCardList reports the window scrolling near the end of the
-  // currently-loaded page. Reset whenever groupId changes so switching
-  // groups doesn't carry over an inflated count from the previous one.
+  // currently-loaded page. Reset whenever groupId or search changes so
+  // switching groups/narrowing the search doesn't carry over an inflated
+  // count from a different group or a wider (or unfiltered) previous query.
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  useEffect(() => setVisibleCount(PAGE_SIZE), [groupId]);
+  useEffect(() => setVisibleCount(PAGE_SIZE), [groupId, search]);
 
   // Stable across renders (empty deps — functional setState needs no
   // outside values) so VirtualizedCardList's onEndReached effect only
@@ -44,8 +56,8 @@ export function RecipeList({ groupId }: { groupId: string }) {
   // Reads from Dexie, not Supabase — re-renders automatically on local
   // writes (this device) and pulled remote changes alike.
   const recipes = useLiveQuery(
-    () => fetchRecipes(groupId, visibleCount),
-    [groupId, visibleCount],
+    () => fetchRecipes(groupId, visibleCount, search),
+    [groupId, visibleCount, search],
   );
   const loading = recipes === undefined;
   // fetchRecipes returns fewer rows than asked for only once the group's
@@ -78,6 +90,26 @@ export function RecipeList({ groupId }: { groupId: string }) {
           pb: "calc(144px + env(safe-area-inset-bottom, 0px))",
         }}
       >
+        <TextField
+          placeholder="Search recipes"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          size="small"
+          fullWidth
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon
+                    fontSize="small"
+                    sx={{ color: "text.secondary" }}
+                  />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress />
@@ -92,7 +124,9 @@ export function RecipeList({ groupId }: { groupId: string }) {
               py: 4,
             }}
           >
-            This group's recipes are empty. Add the first recipe to get started.
+            {search.trim()
+              ? "No recipes match your search."
+              : "This group's recipes are empty. Add the first recipe to get started."}
           </Typography>
         )}
 

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { Box } from "@mui/material";
 import { useLocation, useOutlet } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -41,6 +41,22 @@ function exitTo(direction: TransitionVariant) {
   if (direction === "push") return { x: "-100%", opacity: 1 };
   if (direction === "pop") return { x: "100%", opacity: 1 };
   return { x: 0, opacity: 0 }; // tab-switch: crossfade only, no slide
+}
+
+// Lets a screen-level fixed/portaled element (AppHeader.tsx) tell whether
+// it's part of the screen mid-exit below, or the one actually current —
+// both are mounted at once for the ~280ms overlap window. AppHeader uses
+// this to skip portaling itself into the shared #floating-root fixed layer
+// while outgoing, since every screen renders one: without it, every
+// navigation between two AppHeader-bearing screens portaled two full-width
+// `position: fixed` AppBars on top of each other for that whole window (see
+// docs/pending-deviations.md, "Issue #56" follow-up). Defaults to "current"
+// so a screen rendered outside this shell (there are none today, but
+// nothing should require it) behaves like the old always-current case.
+const TransitionRoleContext = createContext<"current" | "outgoing">("current");
+
+export function useIsOutgoingScreen(): boolean {
+  return useContext(TransitionRoleContext) === "outgoing";
 }
 
 interface Screen {
@@ -102,7 +118,9 @@ export function AnimatedAppShell() {
             }
             style={{ position: "absolute", inset: 0 }}
           >
-            {outgoing.node}
+            <TransitionRoleContext.Provider value="outgoing">
+              {outgoing.node}
+            </TransitionRoleContext.Provider>
           </motion.div>
         )}
         <motion.div
@@ -112,7 +130,9 @@ export function AnimatedAppShell() {
           transition={TRANSITION}
           style={overlapping ? { position: "absolute", inset: 0 } : undefined}
         >
-          {current.node}
+          <TransitionRoleContext.Provider value="current">
+            {current.node}
+          </TransitionRoleContext.Provider>
         </motion.div>
       </Box>
       {activeTab && <BottomNav />}

@@ -7,11 +7,14 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Fab from "@mui/material/Fab";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
+import SearchIcon from "@mui/icons-material/Search";
 import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../../theme/theme";
 import { useAppStore } from "../../store/useAppStore";
@@ -74,13 +77,25 @@ export function PantryList({ groupId }: { groupId: string }) {
     }
   }
 
+  // Client-typed filter, matched against `name` in fetchIngredients — see
+  // that function's own `search` param comment (api.ts).
+  const [search, setSearch] = useState("");
+  // Reset on groupId change — this component instance persists across group
+  // switches on the same route, so without this a search typed while viewing
+  // one group's pantry would silently keep filtering the next group too.
+  useEffect(() => setSearch(""), [groupId]);
+
   // How many (name-sorted, community-merged) ingredients to load from Dexie,
   // grown by PAGE_SIZE as VirtualizedCardList reports the window scrolling
-  // near the end of the currently-loaded page. Reset whenever groupId or the
-  // community-merge switch changes so neither carries over an inflated count
-  // from a different group/merge state.
+  // near the end of the currently-loaded page. Reset whenever groupId, the
+  // community-merge switch, or search changes so none of them carries over
+  // an inflated count from a different group/merge state or a wider (or
+  // unfiltered) previous query.
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  useEffect(() => setVisibleCount(PAGE_SIZE), [groupId, communityEnabled]);
+  useEffect(
+    () => setVisibleCount(PAGE_SIZE),
+    [groupId, communityEnabled, search],
+  );
 
   // Stable across renders (empty deps — functional setState needs no
   // outside values) so VirtualizedCardList's onEndReached effect only
@@ -97,8 +112,8 @@ export function PantryList({ groupId }: { groupId: string }) {
   // writes (this device) and pulled remote changes alike, so no manual
   // refetch/merge is needed after create/delete.
   const ingredients = useLiveQuery(
-    () => fetchIngredients(groupId, communityEnabled, visibleCount),
-    [groupId, communityEnabled, visibleCount],
+    () => fetchIngredients(groupId, communityEnabled, visibleCount, search),
+    [groupId, communityEnabled, visibleCount, search],
   );
   const loading = ingredients === undefined;
   // fetchIngredients returns fewer rows than asked for only once the
@@ -171,6 +186,26 @@ export function PantryList({ groupId }: { groupId: string }) {
           <Alert severity="error">{communityToggleError}</Alert>
         )}
 
+        <TextField
+          placeholder="Search pantry"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          size="small"
+          fullWidth
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon
+                    fontSize="small"
+                    sx={{ color: "text.secondary" }}
+                  />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress />
@@ -185,8 +220,9 @@ export function PantryList({ groupId }: { groupId: string }) {
               py: 4,
             }}
           >
-            This group's pantry is empty. Add the first ingredient to get
-            started.
+            {search.trim()
+              ? "No ingredients match your search."
+              : "This group's pantry is empty. Add the first ingredient to get started."}
           </Typography>
         )}
 

@@ -47,12 +47,26 @@ export async function fetchTodayLogEntries(
 // `limit` is optional and windows the sorted result the same way
 // fetchRecipes/fetchIngredients do — omitted (the default), it returns
 // every row, so no pre-existing caller behavior changes.
+//
+// `loggedFor` filters to one member's own entries (matched against
+// `logged_for`) *before* `limit` slices the result — same "paginating a
+// filtered view still windows over the filtered set" shape as fetchRecipes'
+// `search`. AllTimeLog.tsx used to filter by member client-side, after this
+// already sliced to its visibleCount page — so a member whose entries
+// didn't fall within the first page (but existed further back) could never
+// be reached, since VirtualizedSectionedCardList (the only thing that grows
+// visibleCount) unmounts once the filtered result is empty. Passing the
+// filter down here instead means `hasMore`/`onEndReached` grow visibleCount
+// against that member's own history, not the whole group's.
 export async function fetchAllGroupLogEntries(
   groupId: string,
   limit?: number,
+  loggedFor?: string | null,
 ): Promise<LogEntry[]> {
   const rows = await db.log_entries.where("group_id").equals(groupId).toArray();
-  const sorted = rows.sort(
+  const filtered =
+    loggedFor == null ? rows : rows.filter((r) => r.logged_for === loggedFor);
+  const sorted = filtered.sort(
     (a, b) =>
       b.logged_at.localeCompare(a.logged_at) ||
       b.created_at.localeCompare(a.created_at),
