@@ -15,9 +15,9 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import { formatKcalPerUnit } from "../../lib/kcal";
 import { useAppStore } from "../../store/useAppStore";
-import { fetchAllIngredients } from "../pantry/api";
+import { fetchIngredients } from "../pantry/api";
 import { IngredientAutocompleteOption } from "../pantry/IngredientAutocompleteOption";
-import { fetchAllRecipes } from "../recipes/api";
+import { fetchRecipes } from "../recipes/api";
 import { useMyGroups } from "../groups/useMyGroups";
 import { useMemberKcalProfiles } from "../profiles/useMemberKcalProfiles";
 import { createLogEntry, type LogEntryInput } from "./api";
@@ -39,22 +39,15 @@ const EMPTY_GROUPS: GroupMembership[] = [];
 // AddRecipeIngredientDialog's "From pantry" step, applied to a type toggle
 // instead of an existing/new toggle.
 //
-// Cross-context within the caller's groups by design (Ticket 12 follow-up,
-// "/log shows everything"): unlike the pantry/recipes tabs, this dialog
-// doesn't scope its own ingredient/recipe lists to just `groupId` — it
-// lists every ingredient/recipe the caller can see across every group
-// they're in, each labeled with where it lives (see groupLabel below).
-// Which log the resulting entry lands on is decided by what gets picked
-// (the item's own group_id)... with one exception: `groupId` below (the
-// group screen this was opened from — DailyLog's own groupId, always a
-// real group now that the bare, cross-context /log screen is gone, see
-// docs/pending-deviations.md "Remove personal mode") is used to let a
-// *community* ingredient's entry land on that specific group's log, so it
-// can be logged for a fellow member the same way a group-owned item can —
-// see resolveGroupId below and docs/pending-deviations.md ("log for a group
-// member" rework, community ingredients follow-up). See
-// docs/pending-deviations.md (Ticket 12) for the original cross-context
-// design.
+// Group-locked (docs/pending-deviations.md, "Log entry dialog group-locked"):
+// only lists ingredients/recipes belonging to `groupId` (the group screen
+// this was opened from), merged with community ingredients if — and only
+// if — that specific group has its own community pantry setting enabled.
+// Matches AddRecipeIngredientDialog's identical scoping exactly (same
+// fetchIngredients/fetchRecipes calls, same per-group community check).
+// The resulting entry always lands on `groupId`'s own log, including for a
+// picked community ingredient (whose own group_id is null — it isn't owned
+// by any group).
 export function AddLogEntryDialog({
   open,
   groupId,
@@ -62,8 +55,9 @@ export function AddLogEntryDialog({
   onLogged,
 }: {
   open: boolean;
-  // The group screen this was opened from (DailyLog's own groupId prop).
-  // Only consulted for a community ingredient — see resolveGroupId below.
+  // The group screen this was opened from (DailyLog's own groupId prop) —
+  // the only group this dialog's picker draws from. See the file-level
+  // comment above.
   groupId: string;
   onClose: () => void;
   onLogged: (entry: LogEntry) => void;
@@ -98,14 +92,12 @@ function AddLogEntryForm({
   // Shared cache (see useMyGroups) rather than this dialog's own fetch — it
   // remounts fresh every time it opens ("selection state starts fresh each
   // time" above), which used to mean a fresh group_members fetch every tap
-  // of the Log FAB.
+  // of the Log FAB. Only used to resolve `contextGroupId`'s own name and its
+  // own community pantry setting — see AddRecipeIngredientDialog's identical
+  // derivation.
   const groups = useMyGroups(userId) ?? EMPTY_GROUPS;
-  // Cross-context, so community ingredients are included if *any* of the
-  // caller's groups has opted in — see docs/pending-deviations.md
-  // ("Community pantry").
-  const communityEnabled = groups.some(
-    (membership) => membership.group.community_pantry_enabled,
-  );
+  const membership = groups.find((m) => m.group.id === contextGroupId);
+  const communityEnabled = membership?.group.community_pantry_enabled ?? false;
   const [ingredients, setIngredients] = useState<Ingredient[] | null>(null);
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
   const [selectedIngredient, setSelectedIngredient] =
@@ -134,46 +126,34 @@ function AddLogEntryForm({
   const mealBreakdownEnabled =
     loggedForProfiles[loggedFor]?.meal_breakdown_enabled ?? false;
 
-  // The group_id the resulting entry will actually be created with. Matches
-  // the picked item's own group_id, *except* a community ingredient (whose
-  // own group_id is always null — it isn't owned by any group) instead
-  // lands on the group screen this dialog was opened from, so it can be
-  // logged for a fellow member the same way any other group-owned item can.
-  // A community *recipe* doesn't exist (recipes have no community tier).
-  // `string | null` only because `item` itself can be null (nothing
-  // selected yet) — once an item is selected this always resolves to a
-  // real group, since `contextGroupId` always is one now. `handleLog` still
-  // guards against null defensively.
-  function resolveGroupId(
-    item: { group_id: string | null; is_community?: boolean } | null,
-  ): string | null {
-    if (!item) return null;
-    if (item.is_community) return contextGroupId;
-    return item.group_id;
-  }
-
   useEffect(() => {
     if (!userId) return;
-    const groupIds = groups.map((membership) => membership.group.id);
-    fetchAllIngredients(groupIds, communityEnabled)
+    fetchIngredients(contextGroupId, communityEnabled)
       .then(setIngredients)
       .catch(() => setIngredients([]));
-    fetchAllRecipes(groupIds)
+    fetchRecipes(contextGroupId)
       .then(setRecipes)
       .catch(() => setRecipes([]));
-  }, [userId, groups, communityEnabled]);
+  }, [userId, contextGroupId, communityEnabled]);
 
-  function groupLabel(groupId: string | null, isCommunity?: boolean): string {
+  // Every option is either owned by `contextGroupId` or (for an ingredient)
+  // community — "Community" vs. this group's own name is the only thing
+  // left to distinguish, same as AddRecipeIngredientDialog's identical
+  // helper. A community *recipe* doesn't exist (recipes have no community
+  // tier), so `isCommunity` is only ever passed for ingredients.
+  function groupLabel(isCommunity?: boolean): string {
     if (isCommunity) return "Community";
-    return (
-      groups.find((membership) => membership.group.id === groupId)?.group
-        .name ?? "Group"
-    );
+    return membership?.group.name ?? "Group";
   }
 
-  async function handleLog(groupId: string | null, input: LogEntryInput) {
-    if (!userId || !groupId) return;
-    const entry = await createLogEntry(userId, loggedFor, groupId, input);
+  async function handleLog(input: LogEntryInput) {
+    if (!userId) return;
+    const entry = await createLogEntry(
+      userId,
+      loggedFor,
+      contextGroupId,
+      input,
+    );
     onLogged(entry);
   }
 
@@ -181,15 +161,12 @@ function AddLogEntryForm({
     return (
       <LogIngredientStep
         ingredient={selectedIngredient}
-        groupLabel={groupLabel(
-          selectedIngredient.group_id,
-          selectedIngredient.is_community,
-        )}
+        groupLabel={groupLabel(selectedIngredient.is_community)}
         loggedFor={loggedFor}
         onLoggedForChange={setLoggedFor}
-        loggedForGroupId={resolveGroupId(selectedIngredient)}
+        loggedForGroupId={contextGroupId}
         mealBreakdownEnabled={mealBreakdownEnabled}
-        onLog={(input) => handleLog(resolveGroupId(selectedIngredient), input)}
+        onLog={handleLog}
         onCancel={() => setSelectedIngredient(null)}
       />
     );
@@ -199,12 +176,12 @@ function AddLogEntryForm({
     return (
       <LogRecipeStep
         recipe={selectedRecipe}
-        groupLabel={groupLabel(selectedRecipe.group_id)}
+        groupLabel={groupLabel()}
         loggedFor={loggedFor}
         onLoggedForChange={setLoggedFor}
-        loggedForGroupId={resolveGroupId(selectedRecipe)}
+        loggedForGroupId={contextGroupId}
         mealBreakdownEnabled={mealBreakdownEnabled}
-        onLog={(input) => handleLog(resolveGroupId(selectedRecipe), input)}
+        onLog={handleLog}
         onCancel={() => setSelectedRecipe(null)}
       />
     );
@@ -250,10 +227,7 @@ function AddLogEntryForm({
                     key={key}
                     liProps={liProps}
                     ingredient={option}
-                    groupLabel={groupLabel(
-                      option.group_id,
-                      option.is_community,
-                    )}
+                    groupLabel={groupLabel(option.is_community)}
                   />
                 )}
                 renderInput={(params) => (
@@ -323,7 +297,7 @@ function AddLogEntryForm({
                         color: "text.secondary",
                       }}
                     >
-                      {groupLabel(option.group_id)}
+                      {groupLabel()}
                     </Typography>
                   </Box>
                   <Box sx={{ textAlign: "right", flexShrink: 0 }}>

@@ -38,8 +38,8 @@ export interface IngredientUsage {
 // whole local table — that's an in-memory IndexedDB read, not a network
 // round trip, and unrelated to the sync/pull layer's full-table mirroring
 // (frontend-architecture.md); `limit` only bounds what's returned to the
-// caller to render. Omitted (existing callers: fetchAllIngredients,
-// fetchIngredients below) it still returns everything, unchanged.
+// caller to render. Omitted (fetchIngredients below, its only caller) it
+// still returns everything, unchanged.
 export async function fetchCommunityIngredients(
   limit?: number,
 ): Promise<Ingredient[]> {
@@ -85,29 +85,6 @@ export async function fetchIngredients(
     : [...rows, ...community];
   const sorted = merged.sort((a, b) => a.name.localeCompare(b.name));
   return limit === undefined ? sorted : sorted.slice(0, limit);
-}
-
-// Cross-context read for the log entry dialog (Ticket 12 follow-up, "log
-// entry dialog shows every ingredient") — every ingredient belonging to any
-// group in `groupIds` (the caller's memberships), combined into one flat,
-// name-sorted list rather than the strict one-group-at-a-time split
-// fetchIngredients above enforces.
-//
-// `includeCommunity` — see fetchIngredients above; the caller passes true
-// here if *any* of the caller's groups has opted in (docs/pending-deviations.md,
-// "Community pantry").
-export async function fetchAllIngredients(
-  groupIds: string[],
-  includeCommunity = false,
-): Promise<Ingredient[]> {
-  const grouped =
-    groupIds.length > 0
-      ? await db.ingredients.where("group_id").anyOf(groupIds).toArray()
-      : [];
-  const community = includeCommunity ? await fetchCommunityIngredients() : [];
-  return [...grouped, ...community].sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
 }
 
 export async function fetchIngredient(

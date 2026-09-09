@@ -35,13 +35,11 @@ export function LogIngredientStep({
   // (LoggedForSelector) when `loggedForGroupId` is set.
   loggedFor: string;
   onLoggedForChange: (userId: string) => void;
-  // The group this entry will actually land on, resolved by the caller
-  // (AddLogEntryDialog's own resolveGroupId) — usually `ingredient.group_id`,
-  // except a community ingredient opened from a specific group's log
-  // screen, which resolves to that group instead (its own group_id is
-  // always null). Passed separately from `ingredient` rather than read off
-  // it directly since a community ingredient's own group_id can't reflect
-  // this.
+  // The group this entry will actually land on — always the caller's own
+  // `contextGroupId` (AddLogEntryDialog is group-locked), including for a
+  // community ingredient, whose own group_id is null. Passed separately
+  // from `ingredient` rather than read off it directly since a community
+  // ingredient's own group_id can't reflect this.
   loggedForGroupId: string | null;
   // Whether `loggedFor`'s own profile has meal-type breakdown enabled —
   // resolved by the caller (AddLogEntryDialog's own useMemberKcalProfiles

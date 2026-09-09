@@ -39,17 +39,6 @@ export async function fetchRecipes(
   return limit === undefined ? sorted : sorted.slice(0, limit);
 }
 
-// Cross-context read for the log entry dialog — see fetchAllIngredients
-// (pantry/api.ts) for why this exists alongside the strict fetchRecipes
-// above. See docs/pending-deviations.md (Ticket 12 follow-up).
-export async function fetchAllRecipes(groupIds: string[]): Promise<Recipe[]> {
-  const grouped =
-    groupIds.length > 0
-      ? await db.recipes.where("group_id").anyOf(groupIds).toArray()
-      : [];
-  return grouped.sort((a, b) => a.name.localeCompare(b.name));
-}
-
 export async function fetchRecipe(id: string): Promise<Recipe | undefined> {
   return db.recipes.get(id);
 }
