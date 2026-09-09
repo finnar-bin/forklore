@@ -34,17 +34,7 @@ export const MEAL_TYPE_SECTIONS: { key: MealType | null; label: string }[] = [
   { key: null, label: "Uncategorized" },
 ];
 
-export function DailyLog({
-  groupId,
-  groupName,
-}: {
-  groupId: string;
-  // Resolved by LogPage (which already looks it up for the header title) so
-  // this component doesn't duplicate that fetchMyGroups call — see
-  // docs/pending-deviations.md (Ticket 12 follow-up, "group's all-time
-  // history").
-  groupName?: string | null;
-}) {
+export function DailyLog({ groupId }: { groupId: string }) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
 
@@ -155,18 +145,28 @@ export function DailyLog({
           entries={entries ?? []}
         />
 
-        <Button
-          onClick={() => navigate(`/groups/${groupId}/logs`)}
-          sx={{ alignSelf: "flex-start" }}
+        <Stack
+          direction="row"
+          sx={{
+            width: "100%",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
         >
-          View {groupName ?? "group"}'s all-time history
-        </Button>
+          <Button onClick={() => navigate(`/groups/${groupId}/logs`)}>
+            View All
+          </Button>
 
-        <LogUserFilter
-          groupId={groupId}
-          value={filterUser}
-          onChange={setFilterUser}
-        />
+          <LogUserFilter
+            groupId={groupId}
+            value={filterUser}
+            onChange={setFilterUser}
+            sx={{
+              minWidth: 120,
+              "& .MuiSelect-select": { py: 0.75 },
+            }}
+          />
+        </Stack>
 
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>

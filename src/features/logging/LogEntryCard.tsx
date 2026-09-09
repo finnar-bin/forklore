@@ -1,8 +1,10 @@
 import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../../theme/theme";
 import { PhotoThumbnail } from "../../components/PhotoThumbnail";
+import { useAppStore } from "../../store/useAppStore";
 import type { LogEntry } from "../../types/log";
 
 // Card / list item pattern from design-system.md, applied to Log as
@@ -29,6 +31,12 @@ export function LogEntryCard({
   const resolvedMode = mode === "system" ? systemMode : mode;
   const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
   const sourceLabel = entry.source_recipe_id ? "Recipe" : "Ingredient";
+  // Highlights the viewer's own entries in a shared group log, so they're
+  // easy to pick out from a fellow member's — see LoggedForSelector.tsx/
+  // docs/pending-deviations.md ("log for a group member" rework) for why
+  // an entry's logged_for isn't always the viewer.
+  const userId = useAppStore((state) => state.userId);
+  const isOwnEntry = entry.logged_for === userId;
 
   return (
     <Box
@@ -75,16 +83,33 @@ export function LogEntryCard({
             {entry.quantity} {entry.unit}
           </Typography>
         </Box>
-        <Typography
-          noWrap
-          sx={{
-            fontSize: 12,
-            color: "text.secondary",
-          }}
-        >
-          {loggedForName && `${loggedForName} · `}
-          {subtitle}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+          {loggedForName && (
+            <Chip
+              label={loggedForName}
+              size="small"
+              color={isOwnEntry ? "secondary" : undefined}
+              variant={isOwnEntry ? "filled" : "outlined"}
+              sx={{
+                height: 18,
+                fontSize: 11,
+                "& .MuiChip-label": { px: 0.75 },
+                ...(isOwnEntry
+                  ? {}
+                  : { color: "text.secondary", borderColor: "divider" }),
+              }}
+            />
+          )}
+          <Typography
+            noWrap
+            sx={{
+              fontSize: 12,
+              color: "text.secondary",
+            }}
+          >
+            {subtitle}
+          </Typography>
+        </Box>
       </Box>
       <Box sx={{ textAlign: "right", flexShrink: 0 }}>
         <Typography
