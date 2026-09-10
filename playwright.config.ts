@@ -23,6 +23,12 @@ export default defineConfig({
     command: `npx vite --mode test --port ${PORT} --strictPort`,
     url: `http://127.0.0.1:${PORT}`,
     reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
+    // A cold CI runner (fresh npm ci, no pre-warmed vite/esbuild caches) is
+    // slower to come up than a warm local machine — 60s wasn't always
+    // enough. stdout/stderr piped through so a genuine startup failure
+    // (vs. just slow) is visible in CI logs instead of silently swallowed.
+    timeout: 120_000,
+    stdout: "pipe",
+    stderr: "pipe",
   },
 });
