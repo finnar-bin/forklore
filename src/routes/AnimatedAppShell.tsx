@@ -1,8 +1,12 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { Box } from "@mui/material";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 import { useLocation, useOutlet } from "react-router-dom";
 import { motion } from "framer-motion";
 import { BottomNav } from "../components/BottomNav";
+import { NavRail } from "../components/NavRail";
+import { NAV_RAIL_WIDTH } from "../components/navTabs";
 import {
   classifyTransition,
   getBottomTab,
@@ -72,6 +76,14 @@ interface Screen {
 export function AnimatedAppShell() {
   const location = useLocation();
   const outlet = useOutlet();
+  const theme = useTheme();
+  // >=900px (md, theme.ts's default breakpoints — no override there): the
+  // persistent NavRail replaces BottomNav, and push/pop transitions drop
+  // their directional slide in favor of the same crossfade a tab-switch
+  // already uses — see docs/pending-deviations.md ("Desktop nav shell
+  // (issue #62)") for why a full-viewport-width slide next to a persistent
+  // rail (rather than a full-screen stack) reads wrong at this width.
+  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
 
   const [current, setCurrent] = useState<Screen>({
     pathname: location.pathname,
@@ -103,13 +115,23 @@ export function AnimatedAppShell() {
           otherwise collapse it to zero height, since neither contributes to
           a parent's auto height). */}
       <Box
-        sx={{ position: "relative", overflowX: "hidden", minHeight: "100vh" }}
+        sx={{
+          position: "relative",
+          overflowX: "hidden",
+          minHeight: "100vh",
+          // Pushes content right of the persistent rail at md+ — inset:0 on
+          // the absolutely positioned motion.div children below resolves
+          // against this Box's padding edge, so this alone is enough to
+          // offset both the overlapping and non-overlapping render paths
+          // without touching either screen's own layout.
+          pl: isDesktop ? `${NAV_RAIL_WIDTH}px` : 0,
+        }}
       >
         {outgoing && (
           <motion.div
             key={outgoing.pathname}
             initial={false}
-            animate={exitTo(outgoing.direction)}
+            animate={exitTo(isDesktop ? "tab" : outgoing.direction)}
             transition={TRANSITION}
             onAnimationComplete={() =>
               setOutgoing((current) =>
@@ -125,7 +147,7 @@ export function AnimatedAppShell() {
         )}
         <motion.div
           key={current.pathname}
-          initial={enterFrom(current.direction)}
+          initial={enterFrom(isDesktop ? "tab" : current.direction)}
           animate={{ x: 0, opacity: 1 }}
           transition={TRANSITION}
           style={overlapping ? { position: "absolute", inset: 0 } : undefined}
@@ -135,7 +157,7 @@ export function AnimatedAppShell() {
           </TransitionRoleContext.Provider>
         </motion.div>
       </Box>
-      {activeTab && <BottomNav />}
+      {isDesktop ? <NavRail /> : activeTab && <BottomNav />}
     </>
   );
 }

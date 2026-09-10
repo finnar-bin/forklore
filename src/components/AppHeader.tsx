@@ -16,6 +16,7 @@ import { useSyncStore } from "../store/useSyncStore";
 import { useMyProfile } from "../features/profiles/useMyProfile";
 import { FloatingPortal } from "./FloatingPortal";
 import { PhotoThumbnail } from "./PhotoThumbnail";
+import { NAV_RAIL_WIDTH } from "./navTabs";
 import { useIsOutgoingScreen } from "../routes/AnimatedAppShell";
 
 // Sticky top bar for feature screens.
@@ -186,7 +187,19 @@ export function AppHeader({
           position="fixed"
           color="transparent"
           elevation={0}
-          sx={{ bgcolor: "background.paper", boxShadow: tokens.sh1 }}
+          sx={{
+            bgcolor: "background.paper",
+            boxShadow: tokens.sh1,
+            // Starts after NavRail's width at md+ rather than overlapping
+            // or layering above it (an explicit choice, not a default —
+            // see docs/pending-deviations.md, "Desktop nav shell (issue
+            // #62)"): the rail is a separate, always-visible piece of
+            // chrome, so the header should span only the content area to
+            // its right, matching how the page content below it is already
+            // offset (AnimatedAppShell.tsx).
+            left: { xs: 0, md: NAV_RAIL_WIDTH },
+            width: { xs: "100%", md: `calc(100% - ${NAV_RAIL_WIDTH}px)` },
+          }}
         >
           {toolbarContent}
         </AppBar>
