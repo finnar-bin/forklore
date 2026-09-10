@@ -1,0 +1,43 @@
+name: e2e
+
+on:
+  pull_request:
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.19.0"
+          cache: npm
+
+      - run: npm ci
+
+      # Only the chromium binary is needed — playwright.config.ts runs a
+      # single "chromium" project.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - run: npx playwright install --with-deps chromium
+
+      # e2e/mocks/mockBackend.ts replaces Supabase entirely (see
+      # e2e/README.md) — .env.test's VITE_SUPABASE_URL is a fake host every
+      # request to which is intercepted in-process, so this job needs no
+      # Supabase project, secrets, or database connection of any kind.
+      - name: Run e2e tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
