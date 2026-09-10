@@ -17,6 +17,13 @@ dev-dist
 .env.dev
 .env.prod
 
+# Playwright (e2e/) — .env.test itself IS committed (see e2e/README.md): it
+# holds no real secret, only a fake Supabase URL every request to which is
+# intercepted by e2e/mocks/mockBackend.ts.
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

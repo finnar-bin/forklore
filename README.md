@@ -42,7 +42,20 @@ npm run format              # prettier --write .
 npm run format:check        # prettier --check .
 ```
 
-There is no automated test suite in this repo — `tsc -b`, `oxlint`, and `prettier --check` are the available verification.
+`tsc -b`, `oxlint`, and `prettier --check` are the available static verification — there's no unit/component test framework configured. There is an end-to-end test suite (Playwright) — see below.
+
+## End-to-end tests
+
+```bash
+npx playwright install chromium   # first time only
+npm run test:e2e            # headless, once
+npm run test:e2e:ui         # Playwright's UI mode
+npm run test:e2e:report     # open the last run's HTML report
+```
+
+Runs the real app against an in-process mock of Supabase (Auth/PostgREST/RPCs/Edge Functions) — no test run ever touches a real Supabase project. See `e2e/README.md` for how and why, and `e2e/specs/` for what's covered.
+
+Keep these in sync with behavior changes: update the relevant spec whenever you change a flow it already covers, add a new spec for a new flow in an already-covered area, and update `e2e/mocks/mockBackend.ts` when the Dexie schema or a Supabase table/RPC/Edge Function changes shape. See CLAUDE.md's "Working in this repo" section for the full policy.
 
 ## Backend (Supabase)
 
