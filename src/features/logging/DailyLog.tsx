@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import Box from "@mui/material/Box";
@@ -20,33 +20,37 @@ import { AddLogEntryDialog } from "./AddLogEntryDialog";
 import { EditLogEntryDialog } from "./EditLogEntryDialog";
 import { GroupMemberKcalCard } from "./GroupMemberKcalCard";
 import { LogEntryCard } from "./LogEntryCard";
+import { LogUserFilter } from "./LogUserFilter";
 import { MEAL_TYPES, MEAL_TYPE_LABELS } from "../../types/meal";
 import type { LogEntry } from "../../types/log";
 import type { MealType } from "../../types/meal";
 
-// Display order for categorizing today's entries — null (no meal picked)
-// sorts last, after the four selectable meal types.
-const MEAL_TYPE_SECTIONS: { key: MealType | null; label: string }[] = [
+// Display order for categorizing entries by meal — null (no meal picked)
+// sorts last, after the four selectable meal types. Exported so
+// AllTimeLog.tsx's nested per-day meal-type sub-grouping reuses this exact
+// order/label set rather than redefining its own copy.
+export const MEAL_TYPE_SECTIONS: { key: MealType | null; label: string }[] = [
   ...MEAL_TYPES.map((key) => ({ key, label: MEAL_TYPE_LABELS[key] })),
   { key: null, label: "Uncategorized" },
 ];
 
-export function DailyLog({
-  groupId,
-  groupName,
-}: {
-  groupId: string;
-  // Resolved by LogPage (which already looks it up for the header title) so
-  // this component doesn't duplicate that fetchMyGroups call — see
-  // docs/pending-deviations.md (Ticket 12 follow-up, "group's all-time
-  // history").
-  groupName?: string | null;
-}) {
+export function DailyLog({ groupId }: { groupId: string }) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
 
   const [addOpen, setAddOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<LogEntry | null>(null);
+
+  // Narrows the meal-type sections below to one member's own entries — see
+  // LogUserFilter.tsx. null (default) shows every member's. Reset whenever
+  // groupId changes — same reasoning as AllTimeLog.tsx's identical reset:
+  // this component instance persists across a group switch (same route, new
+  // :groupId param, no remount), so a stale userId selected in the previous
+  // group would otherwise stick around even when it isn't a member of the
+  // new one, silently showing "nothing logged" instead of resetting to
+  // "Everyone".
+  const [filterUser, setFilterUser] = useState<string | null>(null);
+  useEffect(() => setFilterUser(null), [groupId]);
 
   // Reads from Dexie, not Supabase — re-renders automatically on
   // create/edit/delete (this device) and pulled remote changes alike.
@@ -57,6 +61,21 @@ export function DailyLog({
   // (Ticket 12 follow-up, "logged by" name, and the later "log for a group
   // member" rework).
   const names = useProfileNames((entries ?? []).map((e) => e.logged_for));
+
+  // Filtered view for the meal-type sections below — GroupMemberKcalCard
+  // above intentionally keeps reading the unfiltered `entries` so every
+  // member's own kcal card still shows regardless of this filter. Memoized
+  // so it only gets a new reference when `entries` or `filterUser` actually
+  // change, not on every re-render — virtualSections' useMemo below depends
+  // on this array by reference, so an unmemoized .filter() here would defeat
+  // that memoization too.
+  const filteredEntries = useMemo(
+    () =>
+      (entries ?? []).filter(
+        (entry) => filterUser === null || entry.logged_for === filterUser,
+      ),
+    [entries, filterUser],
+  );
 
   // Each meal-type's LogEntryCards plus its own header — flattened into
   // VirtualizedSectionedCardList's row list so only near-viewport rows are
@@ -74,7 +93,7 @@ export function DailyLog({
         // on such a row despite the `MealType | null` type, and would
         // otherwise match neither a real meal nor the "Uncategorized"
         // bucket under strict ===.
-        const sectionEntries = (entries ?? []).filter(
+        const sectionEntries = filteredEntries.filter(
           (entry) => (entry.meal_type ?? null) === key,
         );
         return {
@@ -94,7 +113,7 @@ export function DailyLog({
           items: sectionEntries,
         };
       }).filter((section) => section.items.length > 0),
-    [entries],
+    [filteredEntries],
   );
 
   return (
@@ -126,12 +145,28 @@ export function DailyLog({
           entries={entries ?? []}
         />
 
-        <Button
-          onClick={() => navigate(`/groups/${groupId}/logs`)}
-          sx={{ alignSelf: "flex-start" }}
+        <Stack
+          direction="row"
+          sx={{
+            width: "100%",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
         >
-          View {groupName ?? "group"}'s all-time history
-        </Button>
+          <Button onClick={() => navigate(`/groups/${groupId}/logs`)}>
+            View All
+          </Button>
+
+          <LogUserFilter
+            groupId={groupId}
+            value={filterUser}
+            onChange={setFilterUser}
+            sx={{
+              minWidth: 120,
+              "& .MuiSelect-select": { py: 0.75 },
+            }}
+          />
+        </Stack>
 
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
@@ -151,6 +186,20 @@ export function DailyLog({
             started.
           </Typography>
         )}
+
+        {!loading &&
+          (entries?.length ?? 0) > 0 &&
+          virtualSections.length === 0 && (
+            <Typography
+              sx={{
+                color: "text.secondary",
+                textAlign: "center",
+                py: 4,
+              }}
+            >
+              Nothing logged today by this member.
+            </Typography>
+          )}
 
         {!loading && virtualSections.length > 0 && (
           <VirtualizedSectionedCardList

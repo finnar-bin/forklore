@@ -62,6 +62,7 @@ export function GroupMemberKcalCard({
             .reduce((sum, entry) => sum + entry.kcal, 0);
           const target = profile?.daily_kcal_target ?? null;
           const mealTargets = profile ? getMealKcalTargets(profile) : null;
+          const isOverDailyTarget = target !== null && loggedToday > target;
 
           return (
             <Stack key={member.user_id} spacing={0.75}>
@@ -88,7 +89,7 @@ export function GroupMemberKcalCard({
                   sx={{
                     fontSize: 13,
                     fontWeight: 500,
-                    color: "primary.main",
+                    color: isOverDailyTarget ? "error.main" : "primary.main",
                     flexShrink: 0,
                   }}
                 >
@@ -117,6 +118,7 @@ export function GroupMemberKcalCard({
                       )
                       .reduce((sum, entry) => sum + entry.kcal, 0);
                     const remaining = mealTarget - consumed;
+                    const isOverMealTarget = remaining < 0;
                     return (
                       <Stack
                         key={meal}
@@ -134,10 +136,10 @@ export function GroupMemberKcalCard({
                           {MEAL_TYPE_LABELS[meal]}
                         </Typography>
                         <Typography
-                          color={remaining < 0 ? "error.main" : undefined}
                           sx={{
                             fontSize: 12,
                             fontWeight: 500,
+                            color: isOverMealTarget ? "error.main" : undefined,
                           }}
                         >
                           {remaining >= 0

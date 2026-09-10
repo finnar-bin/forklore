@@ -10,14 +10,22 @@ import "@fontsource/inter/700.css";
 import { theme } from "./theme/theme";
 import App from "./App.tsx";
 import { UpdatePrompt } from "./pwa/UpdatePrompt.tsx";
+import { NotificationProvider } from "./components/NotificationProvider";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider theme={theme} defaultMode="system">
       <CssBaseline enableColorScheme />
       <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <App />
-        <UpdatePrompt />
+        {/* Wraps both App and UpdatePrompt (not just App) — UpdatePrompt's
+            own "new version available" toast (see that file) fires from
+            outside App's router/auth-gated tree, at the true app root, so
+            it needs useNotification() available here too, not only inside
+            App's own screens. See NotificationProvider.tsx. */}
+        <NotificationProvider>
+          <App />
+          <UpdatePrompt />
+        </NotificationProvider>
       </LocalizationProvider>
     </ThemeProvider>
   </StrictMode>,

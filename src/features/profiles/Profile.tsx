@@ -5,7 +5,6 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Link from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
-import Snackbar from "@mui/material/Snackbar";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
@@ -14,6 +13,7 @@ import SystemUpdateAltIcon from "@mui/icons-material/SystemUpdateAlt";
 import { useColorScheme } from "@mui/material/styles";
 import { Link as RouterLink } from "react-router-dom";
 import { shadows } from "../../theme/theme";
+import { useNotification } from "../../components/NotificationProvider";
 import { useAppStore } from "../../store/useAppStore";
 import {
   checkForPwaUpdate,
@@ -41,16 +41,15 @@ export function Profile() {
   const { mode, systemMode, setMode } = useColorScheme();
   const resolvedMode = mode === "system" ? systemMode : mode;
   const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
+  const { notify } = useNotification();
 
   const profile = useMyProfile(userId);
   const loadError = useMyProfileLoadError(userId);
   const checkingForUpdate = usePwaUpdateStore((state) => state.checking);
 
-  const [justSaved, setJustSaved] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
-  const [upToDate, setUpToDate] = useState(false);
 
   async function handleSave(input: ProfileInput) {
     // Unreachable in practice — the form below can't render until `profile`
@@ -59,7 +58,7 @@ export function Profile() {
     // handleSubmit guards for the same shape of invariant.
     if (!userId) return;
     await updateMyProfile(userId, input);
-    setJustSaved(true);
+    notify("Profile saved");
   }
 
   // Same two-step flow as AppHeader's prior inline logout button (see
@@ -79,13 +78,13 @@ export function Profile() {
   }
 
   // If a new version is already found (usePwaUpdateStore's needRefresh),
-  // UpdatePrompt's own root-level Snackbar already offers a Reload button —
-  // showing "up to date" feedback here too would be redundant/contradictory,
-  // so this only fires when the check comes back with nothing new.
+  // UpdatePrompt's own notification already offers a Reload button — showing
+  // "up to date" feedback here too would be redundant/contradictory, so this
+  // only fires when the check comes back with nothing new.
   async function handleCheckForUpdate() {
     await checkForPwaUpdate();
     if (!usePwaUpdateStore.getState().needRefresh) {
-      setUpToDate(true);
+      notify("You're on the latest version");
     }
   }
 
@@ -188,22 +187,6 @@ export function Profile() {
           await performLogout();
           setConfirmOpen(false);
         }}
-      />
-
-      <Snackbar
-        open={justSaved}
-        autoHideDuration={3000}
-        onClose={() => setJustSaved(false)}
-        message="Profile saved"
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      />
-
-      <Snackbar
-        open={upToDate}
-        autoHideDuration={3000}
-        onClose={() => setUpToDate(false)}
-        message="You're on the latest version"
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
 
       <Box

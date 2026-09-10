@@ -40,11 +40,11 @@ export function LogRecipeStep({
   // (LoggedForSelector) when `loggedForGroupId` is set.
   loggedFor: string;
   onLoggedForChange: (userId: string) => void;
-  // The group this entry will actually land on, resolved by the caller
-  // (AddLogEntryDialog's own resolveGroupId) — always just `recipe.group_id`
-  // in practice (recipes have no community tier to override it), but taken
-  // as an explicit prop so this component doesn't need its own copy of
-  // that resolution logic. See LogIngredientStep's identical prop.
+  // The group this entry will actually land on — always the caller's own
+  // `contextGroupId` (AddLogEntryDialog is group-locked; recipes have no
+  // community tier). Taken as an explicit prop rather than read off `recipe`
+  // so this component doesn't need its own copy of that resolution logic.
+  // See LogIngredientStep's identical prop.
   loggedForGroupId: string | null;
   // Whether `loggedFor`'s own profile has meal-type breakdown enabled — see
   // LogIngredientStep's identical prop.
@@ -122,7 +122,7 @@ export function LogRecipeStep({
                   : undefined
             }
             slotProps={{
-              htmlInput: { min: 0, max: recipe.weight_g, step: 1 },
+              htmlInput: { min: 0, max: recipe.weight_g, step: 0.01 },
               input: {
                 endAdornment: <InputAdornment position="end">g</InputAdornment>,
               },

@@ -20,24 +20,23 @@ import type {
 // network round trip, and unrelated to the sync/pull layer's full-table
 // mirroring; `limit` only bounds what's returned to the caller to render.
 // Omitted, it returns everything, unchanged.
+//
+// `search` filters by a case-insensitive substring match on `name`, applied
+// before `limit` slices the result — so paginating a filtered search still
+// windows over the filtered set, not the whole group. Omitted/empty, no
+// filtering happens (existing callers unaffected).
 export async function fetchRecipes(
   groupId: string,
   limit?: number,
+  search?: string,
 ): Promise<Recipe[]> {
   const rows = await db.recipes.where("group_id").equals(groupId).toArray();
-  const sorted = rows.sort((a, b) => a.name.localeCompare(b.name));
+  const query = search?.trim().toLowerCase();
+  const filtered = query
+    ? rows.filter((r) => r.name.toLowerCase().includes(query))
+    : rows;
+  const sorted = filtered.sort((a, b) => a.name.localeCompare(b.name));
   return limit === undefined ? sorted : sorted.slice(0, limit);
-}
-
-// Cross-context read for the log entry dialog — see fetchAllIngredients
-// (pantry/api.ts) for why this exists alongside the strict fetchRecipes
-// above. See docs/pending-deviations.md (Ticket 12 follow-up).
-export async function fetchAllRecipes(groupIds: string[]): Promise<Recipe[]> {
-  const grouped =
-    groupIds.length > 0
-      ? await db.recipes.where("group_id").anyOf(groupIds).toArray()
-      : [];
-  return grouped.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function fetchRecipe(id: string): Promise<Recipe | undefined> {

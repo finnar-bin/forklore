@@ -15,6 +15,7 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { useAppStore } from "../../store/useAppStore";
 import { kcalPerUnit } from "../../lib/kcal";
+import { resolveGroupLabel } from "../groups/groupLabel";
 import { useMyGroups } from "../groups/useMyGroups";
 import {
   createIngredient,
@@ -131,14 +132,13 @@ function ExistingIngredientForm({
 
   // fetchIngredients only ever returns this recipe's own group plus, when
   // opted in, every community ingredient merged in (see
-  // docs/pending-deviations.md, "Community pantry") — so unlike
-  // AddLogEntryDialog's cross-context picker, every non-community option
-  // here is already known to belong to the same place; only "Community" vs.
-  // this group's own name needs distinguishing, so a same-named community
+  // docs/pending-deviations.md, "Community pantry") — so every non-community
+  // option here is already known to belong to the same place (same scoping
+  // AddLogEntryDialog's own picker now uses); only "Community" vs. this
+  // group's own name needs distinguishing, so a same-named community
   // ingredient and a group-owned one aren't indistinguishable in the list.
   function groupLabel(isCommunity: boolean): string {
-    if (isCommunity) return "Community";
-    return membership?.group.name ?? "Group";
+    return resolveGroupLabel(membership?.group.name, isCommunity);
   }
 
   const [options, setOptions] = useState<Ingredient[] | null>(null);

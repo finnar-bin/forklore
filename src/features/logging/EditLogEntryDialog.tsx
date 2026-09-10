@@ -287,7 +287,7 @@ function EditLogEntryForm({
             }
             slotProps={{
               htmlInput: recipe
-                ? { min: 0, max: recipe.weight_g, step: 1 }
+                ? { min: 0, max: recipe.weight_g, step: 0.01 }
                 : { min: 0, step: 0.01 },
               input: {
                 endAdornment: (

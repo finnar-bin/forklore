@@ -11,7 +11,6 @@ import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
-import Snackbar from "@mui/material/Snackbar";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -23,6 +22,7 @@ import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../../theme/theme";
 import { DeferredPhotoUpload } from "../../components/DeferredPhotoUpload";
 import { ItemMetadata } from "../../components/ItemMetadata";
+import { useNotification } from "../../components/NotificationProvider";
 import { formatKcalPerUnit } from "../../lib/kcal";
 import { deletePhoto, uploadPhoto } from "../../lib/photoUpload";
 import { useAppStore } from "../../store/useAppStore";
@@ -63,6 +63,7 @@ export function IngredientDetail({
 }) {
   const { ingredientId } = useParams<{ ingredientId: string }>();
   const navigate = useNavigate();
+  const { notify } = useNotification();
   const userId = useAppStore((state) => state.userId);
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === "system" ? systemMode : mode;
@@ -89,13 +90,10 @@ export function IngredientDetail({
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [justSaved, setJustSaved] = useState(false);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
-  const [justCopied, setJustCopied] = useState(false);
   const [moveToCommunityOpen, setMoveToCommunityOpen] = useState(false);
-  const [justMovedToCommunity, setJustMovedToCommunity] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
   // Derived from the loaded row itself, not the route's groupId prop — a
@@ -222,7 +220,7 @@ export function IngredientDetail({
         }
       }
       setPendingPhotoFile(null);
-      setJustSaved(true);
+      notify("Ingredient saved");
     } catch (err) {
       setSaveError(
         err instanceof Error
@@ -250,7 +248,7 @@ export function IngredientDetail({
     // reactively, which is all canEdit/isCommunity/ItemMetadata need.
     await moveIngredientToCommunity(ingredientId, userId);
     setMoveToCommunityOpen(false);
-    setJustMovedToCommunity(true);
+    notify("Ingredient moved to community");
   }
 
   if (loading) {
@@ -551,7 +549,7 @@ export function IngredientDetail({
         onClose={() => setCopyOpen(false)}
         onCopied={() => {
           setCopyOpen(false);
-          setJustCopied(true);
+          notify("Ingredient copied");
         }}
       />
 
@@ -560,30 +558,6 @@ export function IngredientDetail({
         ingredientName={ingredient.name}
         onClose={() => setMoveToCommunityOpen(false)}
         onConfirm={handleMoveToCommunity}
-      />
-
-      <Snackbar
-        open={justSaved}
-        autoHideDuration={3000}
-        onClose={() => setJustSaved(false)}
-        message="Ingredient saved"
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      />
-
-      <Snackbar
-        open={justCopied}
-        autoHideDuration={3000}
-        onClose={() => setJustCopied(false)}
-        message="Ingredient copied"
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      />
-
-      <Snackbar
-        open={justMovedToCommunity}
-        autoHideDuration={3000}
-        onClose={() => setJustMovedToCommunity(false)}
-        message="Ingredient moved to community"
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
     </Stack>
   );

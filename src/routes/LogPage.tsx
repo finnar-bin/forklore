@@ -22,7 +22,7 @@ export function LogPage() {
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
       <AppHeader title={`${groupName} log`} />
-      <DailyLog groupId={groupId} groupName={groupName} />
+      <DailyLog groupId={groupId} />
     </Box>
   );
 }

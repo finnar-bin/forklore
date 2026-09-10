@@ -5,7 +5,7 @@ import { formatKcalPerUnit } from "../../lib/kcal";
 import type { Ingredient } from "../../types/ingredient";
 
 // Shared `renderOption` row for every Autocomplete that lets the user pick
-// an existing ingredient (AddLogEntryDialog.tsx's cross-context picker,
+// an existing ingredient (AddLogEntryDialog.tsx's picker,
 // AddRecipeIngredientDialog.tsx's "From pantry" step) — name + quantity/unit
 // (same size, muted) beside it, an optional second line below, and the
 // ingredient's kcal/kcal-per-unit right-aligned, no thumbnail. See

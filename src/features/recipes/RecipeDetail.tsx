@@ -11,7 +11,6 @@ import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import Paper from "@mui/material/Paper";
 import MenuItem from "@mui/material/MenuItem";
-import Snackbar from "@mui/material/Snackbar";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -22,6 +21,7 @@ import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../../theme/theme";
 import { DeferredPhotoUpload } from "../../components/DeferredPhotoUpload";
 import { ItemMetadata } from "../../components/ItemMetadata";
+import { useNotification } from "../../components/NotificationProvider";
 import { formatKcalPerUnit, kcalPerUnit } from "../../lib/kcal";
 import { deletePhoto, uploadPhoto } from "../../lib/photoUpload";
 import { useAppStore } from "../../store/useAppStore";
@@ -70,6 +70,7 @@ export function RecipeDetail({
 }) {
   const { recipeId } = useParams<{ recipeId: string }>();
   const navigate = useNavigate();
+  const { notify } = useNotification();
   const userId = useAppStore((state) => state.userId);
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === "system" ? systemMode : mode;
@@ -104,11 +105,9 @@ export function RecipeDetail({
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [justSaved, setJustSaved] = useState(false);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
-  const [justCopied, setJustCopied] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
   // Read from the last-persisted baseline (not the live draft) — see
@@ -384,7 +383,7 @@ export function RecipeDetail({
         }
       }
 
-      setJustSaved(true);
+      notify("Recipe saved");
     } catch (err) {
       setSaveError(
         err instanceof Error
@@ -623,24 +622,8 @@ export function RecipeDetail({
         onClose={() => setCopyOpen(false)}
         onCopied={() => {
           setCopyOpen(false);
-          setJustCopied(true);
+          notify("Recipe copied");
         }}
-      />
-
-      <Snackbar
-        open={justSaved}
-        autoHideDuration={3000}
-        onClose={() => setJustSaved(false)}
-        message="Recipe saved"
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      />
-
-      <Snackbar
-        open={justCopied}
-        autoHideDuration={3000}
-        onClose={() => setJustCopied(false)}
-        message="Recipe copied"
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
     </Stack>
   );

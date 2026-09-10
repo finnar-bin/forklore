@@ -7,12 +7,12 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
-import Snackbar from "@mui/material/Snackbar";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
 import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../../theme/theme";
+import { useNotification } from "../../components/NotificationProvider";
 import { useAppStore } from "../../store/useAppStore";
 import { useProfileNames } from "../profiles/useProfileNames";
 import {
@@ -34,6 +34,7 @@ import type { Group, GroupMember } from "../../types/group";
 // explicitly out of scope per the ticket.
 export function GroupSettings({ groupId }: { groupId: string }) {
   const navigate = useNavigate();
+  const { notify } = useNotification();
   const userId = useAppStore((state) => state.userId);
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === "system" ? systemMode : mode;
@@ -47,8 +48,6 @@ export function GroupSettings({ groupId }: { groupId: string }) {
   const [removeTarget, setRemoveTarget] = useState<GroupMember | null>(null);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
-
-  const [justSaved, setJustSaved] = useState(false);
 
   // Not read from Dexie (fetchMyGroups is a live Supabase call, same as
   // everywhere else groups are read — see docs/pending-deviations.md,
@@ -99,7 +98,7 @@ export function GroupSettings({ groupId }: { groupId: string }) {
   async function handleSave(input: GroupInput) {
     const updated = await updateGroup(groupId, input);
     setGroup(updated);
-    setJustSaved(true);
+    notify("Group saved");
   }
 
   async function handleRemoveMember() {
@@ -223,14 +222,6 @@ export function GroupSettings({ groupId }: { groupId: string }) {
         groupName={group.name}
         onClose={() => setDeleteOpen(false)}
         onConfirm={handleDeleteGroup}
-      />
-
-      <Snackbar
-        open={justSaved}
-        autoHideDuration={3000}
-        onClose={() => setJustSaved(false)}
-        message="Group saved"
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
     </Stack>
   );
