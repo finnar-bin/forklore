@@ -11,6 +11,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
     "supabase:push:dev": "scripts/supabase-push.sh dev",
     "supabase:push:prod": "scripts/supabase-push.sh prod",
     "supabase:deploy-functions:dev": "scripts/supabase-deploy-functions.sh dev",
@@ -37,6 +40,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
