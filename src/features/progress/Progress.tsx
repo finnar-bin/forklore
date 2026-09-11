@@ -13,6 +13,7 @@ import AddIcon from "@mui/icons-material/Add";
 import { useColorScheme } from "@mui/material/styles";
 import { primaryAccent, shadows } from "../../theme/theme";
 import { FloatingPortal } from "../../components/FloatingPortal";
+import { PageContent } from "../../components/PageContent";
 import { GOAL_TYPES } from "../onboarding/onboardingOptions";
 import {
   useMyProfile,
@@ -58,7 +59,7 @@ export function Progress({ userId }: { userId: string }) {
 
   if (profileError || logsError) {
     return (
-      <Box sx={{ p: 2, maxWidth: 480, mx: "auto" }}>
+      <PageContent sx={{ p: 2 }}>
         <Alert
           severity="error"
           action={
@@ -76,7 +77,7 @@ export function Progress({ userId }: { userId: string }) {
         >
           Couldn't load your progress.
         </Alert>
-      </Box>
+      </PageContent>
     );
   }
 
@@ -115,13 +116,14 @@ export function Progress({ userId }: { userId: string }) {
     // DailyLog (fixed, wrapped in FloatingPortal so AnimatedAppShell's
     // transform doesn't hijack it).
     <Box sx={{ position: "relative", minHeight: "calc(100vh - 64px)" }}>
-      <Stack
+      <PageContent
         spacing={1.5}
         sx={{
           p: 2,
-          maxWidth: 480,
-          mx: "auto",
-          pb: "calc(144px + env(safe-area-inset-bottom, 0px))",
+          pb: {
+            xs: "calc(144px + env(safe-area-inset-bottom, 0px))",
+            md: "calc(88px + env(safe-area-inset-bottom, 0px))",
+          },
         }}
       >
         <Stack direction="row" spacing={1.5}>
@@ -265,7 +267,7 @@ export function Progress({ userId }: { userId: string }) {
             }
           />
         </Paper>
-      </Stack>
+      </PageContent>
 
       <FloatingPortal>
         <Fab
@@ -274,8 +276,15 @@ export function Progress({ userId }: { userId: string }) {
           onClick={() => setLogOpen(true)}
           sx={{
             position: "fixed",
+            // Progress is a bottom-tab root, so on mobile it clears
+            // BottomNav (Ticket 16); at >=900px NavRail replaces BottomNav
+            // (issue #62) and there's nothing left at the bottom edge to
+            // clear — see docs/pending-deviations.md.
             right: 16,
-            bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+            bottom: {
+              xs: "calc(80px + env(safe-area-inset-bottom, 0px))",
+              md: "calc(24px + env(safe-area-inset-bottom, 0px))",
+            },
             boxShadow: (theme) =>
               theme.palette.mode === "dark"
                 ? "0 6px 14px rgba(0,0,0,.5)"

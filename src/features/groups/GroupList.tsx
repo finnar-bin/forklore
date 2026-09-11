@@ -8,6 +8,7 @@ import Alert from "@mui/material/Alert";
 import AddIcon from "@mui/icons-material/Add";
 import { useAppStore } from "../../store/useAppStore";
 import { FloatingPortal } from "../../components/FloatingPortal";
+import { PageContent } from "../../components/PageContent";
 import { fetchMyGroups } from "./api";
 import { GroupCard } from "./GroupCard";
 import { CreateGroupDialog } from "./CreateGroupDialog";
@@ -65,12 +66,10 @@ export function GroupList() {
     // no nav bar to clear, but it still sits under AnimatedAppShell's
     // animated transform.
     <Box sx={{ position: "relative", minHeight: "calc(100vh - 64px)" }}>
-      <Stack
+      <PageContent
         spacing={1.5}
         sx={{
           p: 2,
-          maxWidth: 480,
-          mx: "auto",
           pb: "calc(80px + env(safe-area-inset-bottom, 0px))",
         }}
       >
@@ -122,7 +121,7 @@ export function GroupList() {
             onInvite={() => setInviteTarget(membership)}
           />
         ))}
-      </Stack>
+      </PageContent>
 
       <FloatingPortal>
         <Fab

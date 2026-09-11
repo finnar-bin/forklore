@@ -4,10 +4,10 @@ import { useLiveQuery } from "dexie-react-hooks";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Fab from "@mui/material/Fab";
-import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
 import { FloatingPortal } from "../../components/FloatingPortal";
+import { PageContent } from "../../components/PageContent";
 import { VirtualizedCardList } from "../../components/VirtualizedCardList";
 import { fetchCommunityIngredients } from "../pantry/api";
 import { CreateIngredientDialog } from "../pantry/CreateIngredientDialog";
@@ -54,12 +54,10 @@ export function CommunityPantryList() {
 
   return (
     <Box sx={{ position: "relative", minHeight: "calc(100vh - 64px)" }}>
-      <Stack
+      <PageContent
         spacing={1.75}
         sx={{
           p: 2,
-          maxWidth: 480,
-          mx: "auto",
           pb: "calc(80px + env(safe-area-inset-bottom, 0px))",
         }}
       >
@@ -98,7 +96,7 @@ export function CommunityPantryList() {
             )}
           />
         )}
-      </Stack>
+      </PageContent>
 
       <FloatingPortal>
         <Fab
