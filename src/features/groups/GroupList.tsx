@@ -15,14 +15,24 @@ import { CreateGroupDialog } from "./CreateGroupDialog";
 import { InviteDialog } from "./InviteDialog";
 import type { GroupMembership } from "../../types/group";
 
-export function GroupList() {
+export function GroupList({
+  createOpen,
+  onCreateOpenChange,
+}: {
+  // "Create group" dialog visibility, lifted to GroupsPage so it can be
+  // opened both by this screen's own (mobile-only, <900px) FAB below and by
+  // GroupsPage's desktop (>=900px) AppHeader action Button — see
+  // docs/pending-deviations.md ("Desktop 'Add' actions move from FAB to
+  // header toolbar (issue #65)").
+  createOpen: boolean;
+  onCreateOpenChange: (open: boolean) => void;
+}) {
   const userId = useAppStore((state) => state.userId);
 
   const [groups, setGroups] = useState<GroupMembership[] | undefined>(
     undefined,
   );
   const [error, setError] = useState<string | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
   const [inviteTarget, setInviteTarget] = useState<GroupMembership | null>(
     null,
   );
@@ -127,11 +137,16 @@ export function GroupList() {
         <Fab
           color="primary"
           aria-label="Create group"
-          onClick={() => setCreateOpen(true)}
+          onClick={() => onCreateOpenChange(true)}
           sx={{
             position: "fixed",
             right: 16,
             bottom: "calc(24px + env(safe-area-inset-bottom, 0px))",
+            // Hidden at >=900px entirely: that width now gets the same
+            // action as an AppHeader Button instead (GroupsPage.tsx) — see
+            // docs/pending-deviations.md ("Desktop 'Add' actions move from
+            // FAB to header toolbar (issue #65)").
+            display: { xs: "inline-flex", md: "none" },
             boxShadow: (theme) =>
               theme.palette.mode === "dark"
                 ? "0 6px 14px rgba(0,0,0,.5)"
@@ -144,9 +159,9 @@ export function GroupList() {
 
       <CreateGroupDialog
         open={createOpen}
-        onClose={() => setCreateOpen(false)}
+        onClose={() => onCreateOpenChange(false)}
         onCreated={() => {
-          setCreateOpen(false);
+          onCreateOpenChange(false);
           loadGroups();
         }}
       />

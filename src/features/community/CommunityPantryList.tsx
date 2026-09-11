@@ -23,9 +23,19 @@ const PAGE_SIZE = 30;
 // PantryList.tsx, minus the opt-in gating (this page always shows every
 // community ingredient, to everyone) — there's no group context here at
 // all, so nothing to switch between regardless.
-export function CommunityPantryList() {
+export function CommunityPantryList({
+  createOpen,
+  onCreateOpenChange,
+}: {
+  // "Add to community pantry" dialog visibility, lifted to
+  // CommunityPantryPage so it can be opened both by this screen's own
+  // (mobile-only, <900px) FAB below and by CommunityPantryPage's desktop
+  // (>=900px) AppHeader action Button — see docs/pending-deviations.md
+  // ("Desktop 'Add' actions move from FAB to header toolbar (issue #65)").
+  createOpen: boolean;
+  onCreateOpenChange: (open: boolean) => void;
+}) {
   const navigate = useNavigate();
-  const [createOpen, setCreateOpen] = useState(false);
 
   // How many (name-sorted) community ingredients to load from Dexie, grown
   // by PAGE_SIZE as VirtualizedCardList reports the window scrolling near
@@ -84,6 +94,10 @@ export function CommunityPantryList() {
             items={ingredients}
             estimateSize={80}
             gap={14}
+            // See PantryList.tsx's identical prop and
+            // docs/pending-deviations.md ("Multi-column card grid (issue
+            // #64)").
+            columns={{ xs: 1, sm: 2, lg: 3 }}
             getItemKey={(ingredient) => ingredient.id}
             hasMore={hasMore}
             onEndReached={handleEndReached}
@@ -102,11 +116,17 @@ export function CommunityPantryList() {
         <Fab
           color="primary"
           aria-label="Add to community pantry"
-          onClick={() => setCreateOpen(true)}
+          onClick={() => onCreateOpenChange(true)}
           sx={{
             position: "fixed",
             right: 16,
             bottom: "calc(24px + env(safe-area-inset-bottom, 0px))",
+            // Hidden at >=900px entirely: that width now gets the same
+            // action as an AppHeader Button instead
+            // (CommunityPantryPage.tsx) — see docs/pending-deviations.md
+            // ("Desktop 'Add' actions move from FAB to header toolbar
+            // (issue #65)").
+            display: { xs: "inline-flex", md: "none" },
             boxShadow: (theme) =>
               theme.palette.mode === "dark"
                 ? "0 6px 14px rgba(0,0,0,.5)"
@@ -120,14 +140,14 @@ export function CommunityPantryList() {
       <CreateIngredientDialog
         open={createOpen}
         isCommunity
-        onClose={() => setCreateOpen(false)}
+        onClose={() => onCreateOpenChange(false)}
         onCreated={(created) => {
           // Straight to detail, not back to the list — same fix as
           // PantryList.tsx's onCreated, same reason: fetchCommunityIngredients
           // windows the name-sorted list to `visibleCount` rows, so a newly
           // created ingredient sorting past the currently loaded page would
           // otherwise silently not appear in the list at all.
-          setCreateOpen(false);
+          onCreateOpenChange(false);
           navigate(`/community-pantry/${created.id}`, { replace: true });
         }}
       />

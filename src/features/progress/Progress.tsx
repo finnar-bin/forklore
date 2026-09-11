@@ -39,7 +39,20 @@ import { BMI_CATEGORY_LABELS, calculateBmi, getBmiCategory } from "./bmi";
 
 // Always personal, ignores active group context entirely — see routes.md
 // ("/progress ignores the active group context entirely").
-export function Progress({ userId }: { userId: string }) {
+export function Progress({
+  userId,
+  logOpen,
+  onLogOpenChange,
+}: {
+  userId: string;
+  // "Log weight" dialog visibility, lifted to ProgressPage so it can be
+  // opened both by this screen's own (mobile-only, <900px) FAB below and by
+  // ProgressPage's desktop (>=900px) AppHeader action Button — see
+  // docs/pending-deviations.md ("Desktop 'Add' actions move from FAB to
+  // header toolbar (issue #65)").
+  logOpen: boolean;
+  onLogOpenChange: (open: boolean) => void;
+}) {
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === "system" ? systemMode : mode;
   const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
@@ -51,7 +64,6 @@ export function Progress({ userId }: { userId: string }) {
   const logs = useWeightLogs(userId);
   const logsError = useWeightLogsLoadError(userId);
 
-  const [logOpen, setLogOpen] = useState(false);
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
   const [rangeDays, setRangeDays] = useState<WeightChartRangeDays>(
     DEFAULT_WEIGHT_CHART_RANGE_DAYS,
@@ -273,18 +285,23 @@ export function Progress({ userId }: { userId: string }) {
         <Fab
           color="primary"
           aria-label="Log weight"
-          onClick={() => setLogOpen(true)}
+          onClick={() => onLogOpenChange(true)}
           sx={{
             position: "fixed",
             // Progress is a bottom-tab root, so on mobile it clears
             // BottomNav (Ticket 16); at >=900px NavRail replaces BottomNav
             // (issue #62) and there's nothing left at the bottom edge to
-            // clear — see docs/pending-deviations.md.
+            // clear — see docs/pending-deviations.md. Hidden at >=900px
+            // entirely: that width now gets the same action as an
+            // AppHeader Button instead (ProgressPage.tsx) — see
+            // docs/pending-deviations.md ("Desktop 'Add' actions move from
+            // FAB to header toolbar (issue #65)").
             right: 16,
             bottom: {
               xs: "calc(80px + env(safe-area-inset-bottom, 0px))",
               md: "calc(24px + env(safe-area-inset-bottom, 0px))",
             },
+            display: { xs: "inline-flex", md: "none" },
             boxShadow: (theme) =>
               theme.palette.mode === "dark"
                 ? "0 6px 14px rgba(0,0,0,.5)"
@@ -298,10 +315,10 @@ export function Progress({ userId }: { userId: string }) {
       <LogWeightDialog
         open={logOpen}
         userId={userId}
-        onClose={() => setLogOpen(false)}
+        onClose={() => onLogOpenChange(false)}
         onLogged={(log) => {
           addWeightLog(log);
-          setLogOpen(false);
+          onLogOpenChange(false);
         }}
       />
 

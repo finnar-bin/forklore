@@ -35,11 +35,23 @@ export const MEAL_TYPE_SECTIONS: { key: MealType | null; label: string }[] = [
   { key: null, label: "Uncategorized" },
 ];
 
-export function DailyLog({ groupId }: { groupId: string }) {
+export function DailyLog({
+  groupId,
+  addOpen,
+  onAddOpenChange,
+}: {
+  groupId: string;
+  // "Log an entry" dialog visibility, lifted to LogPage so it can be
+  // opened both by this screen's own (mobile-only, <900px) FAB below and by
+  // LogPage's desktop (>=900px) AppHeader action Button — see
+  // docs/pending-deviations.md ("Desktop 'Add' actions move from FAB to
+  // header toolbar (issue #65)").
+  addOpen: boolean;
+  onAddOpenChange: (open: boolean) => void;
+}) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
 
-  const [addOpen, setAddOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<LogEntry | null>(null);
 
   // Narrows the meal-type sections below to one member's own entries — see
@@ -234,18 +246,22 @@ export function DailyLog({ groupId }: { groupId: string }) {
         <Fab
           color="primary"
           aria-label="Log an entry"
-          onClick={() => setAddOpen(true)}
+          onClick={() => onAddOpenChange(true)}
           sx={{
             position: "fixed",
             // Log is a bottom-tab root, so on mobile it clears BottomNav
             // (Ticket 16); at >=900px NavRail replaces BottomNav (issue #62)
             // and there's nothing left at the bottom edge to clear — see
-            // docs/pending-deviations.md.
+            // docs/pending-deviations.md. Hidden at >=900px entirely: that
+            // width now gets the same action as an AppHeader Button instead
+            // (LogPage.tsx) — see docs/pending-deviations.md ("Desktop
+            // 'Add' actions move from FAB to header toolbar (issue #65)").
             right: 16,
             bottom: {
               xs: "calc(80px + env(safe-area-inset-bottom, 0px))",
               md: "calc(24px + env(safe-area-inset-bottom, 0px))",
             },
+            display: { xs: "inline-flex", md: "none" },
             boxShadow: (theme) =>
               theme.palette.mode === "dark"
                 ? "0 6px 14px rgba(0,0,0,.5)"
@@ -259,8 +275,8 @@ export function DailyLog({ groupId }: { groupId: string }) {
       <AddLogEntryDialog
         open={addOpen}
         groupId={groupId}
-        onClose={() => setAddOpen(false)}
-        onLogged={() => setAddOpen(false)}
+        onClose={() => onAddOpenChange(false)}
+        onLogged={() => onAddOpenChange(false)}
       />
 
       {editingEntry && (
