@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import type { SvgIconProps } from "@mui/material/SvgIcon";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { create } from "zustand";
 import KitchenIcon from "@mui/icons-material/Kitchen";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import EventNoteIcon from "@mui/icons-material/EventNote";
@@ -10,6 +11,10 @@ import { useAppStore } from "../store/useAppStore";
 import { useMyGroups } from "../features/groups/useMyGroups";
 import { getStoredGroupId } from "../lib/activeGroupStorage";
 import { resolveDefaultGroupId } from "../lib/defaultGroup";
+import {
+  getStoredNavRailCollapsed,
+  setStoredNavRailCollapsed,
+} from "../lib/navRailStorage";
 import { getBottomTab, type BottomTab } from "../routes/navigationTransition";
 
 // Shared tab config + group-resolution logic behind both BottomNav (<900px)
@@ -60,11 +65,46 @@ export const TABS: NavTabConfig[] = [
   },
 ];
 
-// Width of the persistent left nav rail shown at >=md (see NavRail.tsx).
-// Shared with AnimatedAppShell (to push main content right by this amount)
-// and AppHeader (to start its fixed AppBar after the rail rather than
-// overlapping it) so all three can never drift out of sync.
-export const NAV_RAIL_WIDTH = 96;
+// Widths of the persistent left nav rail shown at >=md (see NavRail.tsx),
+// a collapsible MUI drawer rather than a fixed-width bar — expanded shows
+// an icon + label per destination (standard MUI drawer width), collapsed
+// shows icons only (a standard MUI mini-drawer width). useNavRailWidth()
+// below is the single source both AnimatedAppShell (to push main content
+// right by this amount) and AppHeader (to start its fixed AppBar after the
+// rail rather than overlapping it) read, so neither can drift out of sync
+// with NavRail's own actual width.
+export const NAV_RAIL_WIDTH_EXPANDED = 240;
+export const NAV_RAIL_WIDTH_COLLAPSED = 72;
+
+interface NavRailState {
+  collapsed: boolean;
+  toggleCollapsed: () => void;
+}
+
+// A dedicated store, not folded into useAppStore, deliberately: this is
+// pure UI layout state with no session/account meaning (frontend-
+// architecture.md's "Zustand stores" section calls expanded/collapsed UI
+// state out as something that normally stays local useState) — but unlike
+// the local, single-component case that guidance describes, NavRail's own
+// collapse state has to be read reactively by two other components
+// (AnimatedAppShell, AppHeader) that don't share a parent with it, so a
+// tiny store (rather than prop-drilling through every route) is the
+// pragmatic exception. See docs/pending-deviations.md ("Collapsible
+// desktop nav rail").
+export const useNavRailStore = create<NavRailState>((set) => ({
+  collapsed: getStoredNavRailCollapsed(),
+  toggleCollapsed: () =>
+    set((state) => {
+      const collapsed = !state.collapsed;
+      setStoredNavRailCollapsed(collapsed);
+      return { collapsed };
+    }),
+}));
+
+export function useNavRailWidth(): number {
+  const collapsed = useNavRailStore((state) => state.collapsed);
+  return collapsed ? NAV_RAIL_WIDTH_COLLAPSED : NAV_RAIL_WIDTH_EXPANDED;
+}
 
 // Shared controller for BottomNav/NavRail: which tab is active for the
 // current route, and where tapping a given tab should navigate to.

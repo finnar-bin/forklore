@@ -44,6 +44,29 @@ test.describe("Desktop nav rail", () => {
     ).not.toHaveAttribute("aria-current", "page");
   });
 
+  test("carries Groups as a rail item, hiding AppHeader's own Groups icon at this width", async ({
+    page,
+    loginAsSeededUser,
+  }) => {
+    await loginAsSeededUser();
+
+    const rail = page.getByRole("navigation", { name: "Main navigation" });
+    // AppHeader's own Groups icon (routes.md's mobile-only entry point) is
+    // display:none at md+, not removed from the DOM — see
+    // docs/pending-deviations.md ("Groups moves into the desktop nav
+    // rail") — so it shouldn't be an accessible/visible button here.
+    await expect(
+      page.getByRole("banner").getByRole("button", { name: "Groups" }),
+    ).toHaveCount(0);
+
+    await rail.getByRole("button", { name: "Groups" }).click();
+    await expect(page).toHaveURL(/\/groups$/);
+    await expect(rail.getByRole("button", { name: "Groups" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  });
+
   test("resolves Pantry/Recipes/Log tapped from Progress to the last-picked group, same as BottomNav", async ({
     page,
     loginAsSeededUser,

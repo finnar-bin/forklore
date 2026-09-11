@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
-import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { PageContent } from "../../components/PageContent";
 import {
   VirtualizedSectionedCardList,
   type VirtualizedSection,
@@ -157,7 +157,7 @@ export function AllTimeLog({ groupId }: { groupId: string }) {
   }, [groups]);
 
   return (
-    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 4 }}>
+    <PageContent spacing={2} sx={{ p: 2, pb: 4 }}>
       <LogUserFilter
         groupId={groupId}
         value={filterUser}
@@ -235,6 +235,6 @@ export function AllTimeLog({ groupId }: { groupId: string }) {
           onDeleted={() => setEditingEntry(null)}
         />
       )}
-    </Stack>
+    </PageContent>
   );
 }

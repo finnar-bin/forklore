@@ -16,7 +16,7 @@ import { useSyncStore } from "../store/useSyncStore";
 import { useMyProfile } from "../features/profiles/useMyProfile";
 import { FloatingPortal } from "./FloatingPortal";
 import { PhotoThumbnail } from "./PhotoThumbnail";
-import { NAV_RAIL_WIDTH } from "./navTabs";
+import { useNavRailWidth } from "./navTabs";
 import { useIsOutgoingScreen } from "../routes/AnimatedAppShell";
 
 // Sticky top bar for feature screens.
@@ -67,6 +67,7 @@ export function AppHeader({
   const userId = useAppStore((state) => state.userId);
   const profile = useMyProfile(userId);
   const isOutgoing = useIsOutgoingScreen();
+  const navRailWidth = useNavRailWidth();
 
   // Measured (not a hardcoded Toolbar height) so the in-flow spacer below
   // always matches exactly, regardless of viewport width (MUI's default
@@ -109,7 +110,15 @@ export function AppHeader({
         {title}
       </Typography>
       {location.pathname !== "/groups" && (
-        <IconButton aria-label="Groups" onClick={() => navigate("/groups")}>
+        <IconButton
+          aria-label="Groups"
+          onClick={() => navigate("/groups")}
+          // NavRail carries its own "Groups" item at md+ (see
+          // docs/pending-deviations.md, "Groups moves into the desktop nav
+          // rail") — this header button stays mobile-only, unchanged below
+          // that breakpoint.
+          sx={{ display: { xs: "inline-flex", md: "none" } }}
+        >
           <GroupIcon />
         </IconButton>
       )}
@@ -196,9 +205,12 @@ export function AppHeader({
             // #62)"): the rail is a separate, always-visible piece of
             // chrome, so the header should span only the content area to
             // its right, matching how the page content below it is already
-            // offset (AnimatedAppShell.tsx).
-            left: { xs: 0, md: NAV_RAIL_WIDTH },
-            width: { xs: "100%", md: `calc(100% - ${NAV_RAIL_WIDTH}px)` },
+            // offset (AnimatedAppShell.tsx). navRailWidth tracks NavRail's
+            // own collapsed/expanded state (see docs/pending-deviations.md,
+            // "Collapsible desktop nav rail") so this stays in sync when
+            // it's toggled, not just across the mobile/desktop breakpoint.
+            left: { xs: 0, md: navRailWidth },
+            width: { xs: "100%", md: `calc(100% - ${navRailWidth}px)` },
           }}
         >
           {toolbarContent}

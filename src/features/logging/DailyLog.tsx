@@ -10,6 +10,7 @@ import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
 import { useAppStore } from "../../store/useAppStore";
 import { FloatingPortal } from "../../components/FloatingPortal";
+import { PageContent } from "../../components/PageContent";
 import {
   VirtualizedSectionedCardList,
   type VirtualizedSection,
@@ -126,13 +127,14 @@ export function DailyLog({ groupId }: { groupId: string }) {
     <Box sx={{ position: "relative", minHeight: "calc(100vh - 64px)" }}>
       {/* pb clears both the FAB (bottom: 80) and BottomNav below it — see
           docs/pending-deviations.md (Ticket 16). */}
-      <Stack
+      <PageContent
         spacing={1.5}
         sx={{
           p: 2,
-          maxWidth: 480,
-          mx: "auto",
-          pb: "calc(144px + env(safe-area-inset-bottom, 0px))",
+          pb: {
+            xs: "calc(144px + env(safe-area-inset-bottom, 0px))",
+            md: "calc(88px + env(safe-area-inset-bottom, 0px))",
+          },
         }}
       >
         {/* A daily target is personal, not group-wide — this card shows
@@ -226,7 +228,7 @@ export function DailyLog({ groupId }: { groupId: string }) {
             )}
           />
         )}
-      </Stack>
+      </PageContent>
 
       <FloatingPortal>
         <Fab
@@ -235,10 +237,15 @@ export function DailyLog({ groupId }: { groupId: string }) {
           onClick={() => setAddOpen(true)}
           sx={{
             position: "fixed",
-            // Log is a bottom-tab root, so it clears BottomNav — see
-            // docs/pending-deviations.md (Ticket 16).
+            // Log is a bottom-tab root, so on mobile it clears BottomNav
+            // (Ticket 16); at >=900px NavRail replaces BottomNav (issue #62)
+            // and there's nothing left at the bottom edge to clear — see
+            // docs/pending-deviations.md.
             right: 16,
-            bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+            bottom: {
+              xs: "calc(80px + env(safe-area-inset-bottom, 0px))",
+              md: "calc(24px + env(safe-area-inset-bottom, 0px))",
+            },
             boxShadow: (theme) =>
               theme.palette.mode === "dark"
                 ? "0 6px 14px rgba(0,0,0,.5)"
