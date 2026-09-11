@@ -6,7 +6,7 @@ import { useLocation, useOutlet } from "react-router-dom";
 import { motion } from "framer-motion";
 import { BottomNav } from "../components/BottomNav";
 import { NavRail } from "../components/NavRail";
-import { NAV_RAIL_WIDTH } from "../components/navTabs";
+import { useNavRailWidth } from "../components/navTabs";
 import {
   classifyTransition,
   getBottomTab,
@@ -84,6 +84,7 @@ export function AnimatedAppShell() {
   // (issue #62)") for why a full-viewport-width slide next to a persistent
   // rail (rather than a full-screen stack) reads wrong at this width.
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+  const navRailWidth = useNavRailWidth();
 
   const [current, setCurrent] = useState<Screen>({
     pathname: location.pathname,
@@ -123,8 +124,11 @@ export function AnimatedAppShell() {
           // the absolutely positioned motion.div children below resolves
           // against this Box's padding edge, so this alone is enough to
           // offset both the overlapping and non-overlapping render paths
-          // without touching either screen's own layout.
-          pl: isDesktop ? `${NAV_RAIL_WIDTH}px` : 0,
+          // without touching either screen's own layout. navRailWidth
+          // tracks NavRail's own collapsed/expanded state, not just a fixed
+          // constant — see docs/pending-deviations.md ("Collapsible desktop
+          // nav rail").
+          pl: isDesktop ? `${navRailWidth}px` : 0,
         }}
       >
         {outgoing && (
