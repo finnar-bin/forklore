@@ -21,10 +21,21 @@ import { CreateRecipeDialog } from "./CreateRecipeDialog";
 // docs/pending-deviations.md ("List virtualization + pagination").
 const PAGE_SIZE = 30;
 
-export function RecipeList({ groupId }: { groupId: string }) {
+export function RecipeList({
+  groupId,
+  createOpen,
+  onCreateOpenChange,
+}: {
+  groupId: string;
+  // "Add recipe" dialog visibility, lifted to RecipesPage so it can be
+  // opened both by this screen's own (mobile-only, <900px) FAB below and by
+  // RecipesPage's desktop (>=900px) AppHeader action Button — see
+  // docs/pending-deviations.md ("Desktop 'Add' actions move from FAB to
+  // header toolbar (issue #65)").
+  createOpen: boolean;
+  onCreateOpenChange: (open: boolean) => void;
+}) {
   const navigate = useNavigate();
-
-  const [createOpen, setCreateOpen] = useState(false);
 
   // Client-typed filter, matched against `name` in fetchRecipes — see that
   // function's own `search` param comment (api.ts).
@@ -136,6 +147,10 @@ export function RecipeList({ groupId }: { groupId: string }) {
             items={recipes}
             estimateSize={76}
             gap={12}
+            // See PantryList.tsx's identical prop and
+            // docs/pending-deviations.md ("Multi-column card grid (issue
+            // #64)").
+            columns={{ xs: 1, sm: 2, lg: 3 }}
             getItemKey={(recipe) => recipe.id}
             hasMore={hasMore}
             onEndReached={handleEndReached}
@@ -154,18 +169,22 @@ export function RecipeList({ groupId }: { groupId: string }) {
         <Fab
           color="primary"
           aria-label="Add recipe"
-          onClick={() => setCreateOpen(true)}
+          onClick={() => onCreateOpenChange(true)}
           sx={{
             position: "fixed",
             // Recipes is a bottom-tab root, so on mobile it clears BottomNav
             // (Ticket 16); at >=900px NavRail replaces BottomNav (issue #62)
             // and there's nothing left at the bottom edge to clear — see
-            // docs/pending-deviations.md.
+            // docs/pending-deviations.md. Hidden at >=900px entirely: that
+            // width now gets the same action as an AppHeader Button instead
+            // (RecipesPage.tsx) — see docs/pending-deviations.md ("Desktop
+            // 'Add' actions move from FAB to header toolbar (issue #65)").
             right: 16,
             bottom: {
               xs: "calc(80px + env(safe-area-inset-bottom, 0px))",
               md: "calc(24px + env(safe-area-inset-bottom, 0px))",
             },
+            display: { xs: "inline-flex", md: "none" },
             boxShadow: (theme) =>
               theme.palette.mode === "dark"
                 ? "0 6px 14px rgba(0,0,0,.5)"
@@ -179,7 +198,7 @@ export function RecipeList({ groupId }: { groupId: string }) {
       <CreateRecipeDialog
         open={createOpen}
         groupId={groupId}
-        onClose={() => setCreateOpen(false)}
+        onClose={() => onCreateOpenChange(false)}
         onCreated={(created) => {
           // Straight to detail, not back to the list — a brand-new recipe has
           // no ingredients yet, and that's the very next thing to add.

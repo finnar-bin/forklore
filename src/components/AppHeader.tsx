@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Box from "@mui/material/Box";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
@@ -54,9 +54,20 @@ import { useIsOutgoingScreen } from "../routes/AnimatedAppShell";
 export function AppHeader({
   title,
   onBack,
+  action,
 }: {
   title: string;
   onBack?: () => void;
+  // Optional inline action rendered in the toolbar, between the title and
+  // the persistent icons (Groups/sync/profile) — the desktop (>=900px)
+  // replacement for a screen's own FAB (e.g. an "Add ingredient" Button
+  // with a startIcon), while that screen keeps rendering its FAB unchanged
+  // below that width. AppHeader stays generic here: it just renders
+  // whatever's passed, including any responsive show/hide — each screen
+  // owns its own action content and breakpoint behavior, same as it already
+  // owns its FAB. See docs/pending-deviations.md ("Desktop 'Add' actions
+  // move from FAB to header toolbar (issue #65)").
+  action?: ReactNode;
 }) {
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === "system" ? systemMode : mode;
@@ -109,6 +120,7 @@ export function AppHeader({
       <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 500 }}>
         {title}
       </Typography>
+      {action && <Box sx={{ mr: 1 }}>{action}</Box>}
       {location.pathname !== "/groups" && (
         <IconButton
           aria-label="Groups"

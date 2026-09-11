@@ -1,11 +1,14 @@
 import {
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme, type Breakpoint } from "@mui/material/styles";
 
 // Windows-scroll virtualization for the card lists in RecipeList.tsx,
 // PantryList.tsx and CommunityPantryList.tsx (Ticket 44, "Performance
@@ -21,6 +24,32 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 // drive their own incremental-load ("infinite scroll") state as the window
 // scrolls near the bottom of whatever page of `items` is currently loaded;
 // omit them for a list that's already fully loaded.
+//
+// A responsive column count, mirroring an MUI `sx` breakpoint object's own
+// mobile-first cascade: the largest breakpoint at or below the current
+// viewport that specifies a value wins (see `useResolvedColumns` below).
+type ResponsiveColumns = Partial<Record<Breakpoint, number>>;
+
+// Resolves `columns` (see VirtualizedCardList's own prop comment) to a plain
+// number for the current viewport. Always calls the same MUI `useMediaQuery`
+// hooks regardless of whether `columns` is a plain number or a responsive
+// object — a component-level hook can't itself branch on a prop before
+// deciding whether to call another hook.
+function useResolvedColumns(columns: number | ResponsiveColumns): number {
+  const theme = useTheme();
+  const upSm = useMediaQuery(theme.breakpoints.up("sm"));
+  const upMd = useMediaQuery(theme.breakpoints.up("md"));
+  const upLg = useMediaQuery(theme.breakpoints.up("lg"));
+  const upXl = useMediaQuery(theme.breakpoints.up("xl"));
+  if (typeof columns === "number") return columns;
+  let resolved = columns.xs ?? 1;
+  if (upSm && columns.sm !== undefined) resolved = columns.sm;
+  if (upMd && columns.md !== undefined) resolved = columns.md;
+  if (upLg && columns.lg !== undefined) resolved = columns.lg;
+  if (upXl && columns.xl !== undefined) resolved = columns.xl;
+  return resolved;
+}
+
 export function VirtualizedCardList<T>({
   items,
   estimateSize,
@@ -29,22 +58,34 @@ export function VirtualizedCardList<T>({
   renderItem,
   hasMore = false,
   onEndReached,
+  columns = 1,
 }: {
   items: T[];
   // Rough starting height (px) for a not-yet-measured card — corrected per
   // item once rendered via the virtualizer's own ResizeObserver
   // (`measureElement` below), so this only has to be close enough to keep
-  // the initial scrollbar/jump reasonable.
+  // the initial scrollbar/jump reasonable. With `columns` > 1 this estimates
+  // one *row's* height (i.e. one card's height, since same-row cards share a
+  // height), not the whole grid's.
   estimateSize: number;
   // Space (px) between cards — mirrors the MUI Stack `spacing` prop each
   // caller used before switching to this component (theme spacing unit is
-  // 8px, so e.g. `spacing={1.5}` is `gap={12}`).
+  // 8px, so e.g. `spacing={1.5}` is `gap={12}`). Doubles as the column gap
+  // when `columns` > 1, so rows and columns read as evenly spaced.
   gap: number;
   getItemKey: (item: T) => string;
   renderItem: (item: T) => ReactNode;
   hasMore?: boolean;
   onEndReached?: () => void;
+  // How many cards to lay out per row — a plain number, or a responsive
+  // object cascading like an MUI `sx` breakpoint object (issue #64, "Desktop
+  // UI: multi-column grid for virtualized card lists"). Defaults to 1: a
+  // caller that never passes this gets the exact single-column DOM/behavior
+  // this component always had — see the `resolvedColumns <= 1` branches
+  // below, which are untouched by the grid path added for `columns` > 1.
+  columns?: number | ResponsiveColumns;
 }) {
+  const resolvedColumns = useResolvedColumns(columns);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // The list never renders as the very first thing on the page (a "Browse
@@ -85,18 +126,37 @@ export function VirtualizedCardList<T>({
     return () => observer.disconnect();
   }, []);
 
+  // Grouping `items` into rows of `resolvedColumns` lets the virtualizer
+  // operate on rows rather than individual cards once multi-column is
+  // active — it never sees a "column", only a row it measures as a whole
+  // (so row height naturally comes out as the tallest card in it, since
+  // that's the row `<div>`'s own rendered height). At the default of 1
+  // column this is skipped entirely (`rows` stays null) so the single-item
+  // branches below run byte-for-byte as they did before `columns` existed.
+  const rows = useMemo(() => {
+    if (resolvedColumns <= 1) return null;
+    const grouped: T[][] = [];
+    for (let i = 0; i < items.length; i += resolvedColumns) {
+      grouped.push(items.slice(i, i + resolvedColumns));
+    }
+    return grouped;
+  }, [items, resolvedColumns]);
+
   const virtualizer = useWindowVirtualizer({
-    count: items.length,
+    count: rows ? rows.length : items.length,
     estimateSize: () => estimateSize,
     overscan: 6,
     gap,
     scrollMargin,
     // Aligns the library's own item-identity tracking (itemSizeCache etc.)
     // with the React-level `key` below, so a cached measured height can't
-    // get misapplied to a different item that now occupies the same index
-    // after a live-query resort/delete (see docs/pending-deviations.md,
-    // "List virtualization + pagination").
-    getItemKey: (index) => getItemKey(items[index]),
+    // get misapplied to a different item/row that now occupies the same
+    // index after a live-query resort/delete (see
+    // docs/pending-deviations.md, "List virtualization + pagination"). A
+    // row's key is its first card's key — same caveat, applied to whichever
+    // card now leads that row.
+    getItemKey: (index) =>
+      rows ? getItemKey(rows[index][0]) : getItemKey(items[index]),
   });
 
   // Fires again whenever the visible range's end index changes (i.e. the
@@ -118,6 +178,40 @@ export function VirtualizedCardList<T>({
       }}
     >
       {virtualizer.getVirtualItems().map((virtualItem) => {
+        if (rows) {
+          const row = rows[virtualItem.index];
+          return (
+            <div
+              key={getItemKey(row[0])}
+              ref={virtualizer.measureElement}
+              data-index={virtualItem.index}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                transform: `translateY(${virtualItem.start - scrollMargin}px)`,
+                display: "grid",
+                gridTemplateColumns: `repeat(${resolvedColumns}, minmax(0, 1fr))`,
+                // Column gap only — the virtualizer's own `gap` above
+                // already spaces row to row, and this container only ever
+                // lays out one grid row.
+                columnGap: gap,
+                // Top-aligned, not stretched: a shorter card in the same
+                // row should render at its own natural height, not get
+                // stretched to match the tallest one (which would spread
+                // its noWrap text and metric row apart with the same blank
+                // vertical space design-system.md's card pattern normally
+                // never has).
+                alignItems: "start",
+              }}
+            >
+              {row.map((item) => (
+                <div key={getItemKey(item)}>{renderItem(item)}</div>
+              ))}
+            </div>
+          );
+        }
         const item = items[virtualItem.index];
         return (
           <div
