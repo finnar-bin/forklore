@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from "react";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
@@ -38,10 +39,25 @@ export function LogEntryCard({
   const userId = useAppStore((state) => state.userId);
   const isOwnEntry = entry.logged_for === userId;
 
+  // See IngredientCard.tsx's identical handler for why this exists. Only
+  // relevant when onClick is actually passed — same conditional this
+  // component already applies to `cursor` below.
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (!onClick) return;
+    if (event.target !== event.currentTarget) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onClick();
+    }
+  }
+
   return (
     <Box
       onClick={onClick}
-      sx={{
+      onKeyDown={onClick ? handleKeyDown : undefined}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      sx={(theme) => ({
         bgcolor: "background.paper",
         borderRadius: "14px",
         boxShadow: tokens.sh2,
@@ -50,7 +66,18 @@ export function LogEntryCard({
         gap: 1.5,
         alignItems: "center",
         cursor: onClick ? "pointer" : undefined,
-      }}
+        ...(onClick && {
+          transition: "box-shadow 150ms ease",
+          "@media (hover: hover)": {
+            "&:hover": { boxShadow: tokens.floating },
+          },
+          "&:focus": { outline: "none" },
+          "&:focus-visible": {
+            outline: `2px solid ${theme.palette.primary.main}`,
+            outlineOffset: 2,
+          },
+        }),
+      })}
     >
       <PhotoThumbnail photoUrl={null} alt={entry.name} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
