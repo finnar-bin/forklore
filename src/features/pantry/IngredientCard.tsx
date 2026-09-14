@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useColorScheme } from "@mui/material/styles";
@@ -27,10 +28,26 @@ export function IngredientCard({
   const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
   const showIndicator = ingredient.is_community && showCommunityIndicator;
 
+  // Bare onClick on a Box isn't natively keyboard-operable — role/tabIndex
+  // make it focusable and reachable by a screen reader, and this handler
+  // gives Enter/Space the same effect as a click. Ignore keydowns that
+  // bubble up from a nested interactive child (none today, but matches the
+  // guard used in GroupCard.tsx alongside its click-side stopPropagation).
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.target !== event.currentTarget) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onClick();
+    }
+  }
+
   return (
     <Box
       onClick={onClick}
-      sx={{
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+      sx={(theme) => ({
         position: "relative",
         bgcolor: "background.paper",
         borderRadius: "14px",
@@ -42,7 +59,16 @@ export function IngredientCard({
         gap: 1.5,
         alignItems: "center",
         cursor: "pointer",
-      }}
+        transition: "box-shadow 150ms ease",
+        "@media (hover: hover)": {
+          "&:hover": { boxShadow: tokens.floating },
+        },
+        "&:focus": { outline: "none" },
+        "&:focus-visible": {
+          outline: `2px solid ${theme.palette.primary.main}`,
+          outlineOffset: 2,
+        },
+      })}
     >
       {/* Small tab overlapping the card's own top-left corner, in the same
           color as the border — replaces an inline "Community" chip next to

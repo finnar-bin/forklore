@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from "react";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
@@ -37,10 +38,34 @@ export function GroupCard({
     navigate(`/groups/${group.id}/pantry`);
   }
 
+  // See IngredientCard.tsx's identical handler for why this exists. The
+  // target/currentTarget guard matters here specifically: the invite/
+  // settings IconButtons below already stopPropagation() their own clicks
+  // so they don't also trigger selectGroup, but a keydown they don't
+  // preventDefault still bubbles up to this handler — without the guard,
+  // pressing Enter/Space on one of those buttons would both fire its own
+  // onClick and navigate the card underneath it.
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.target !== event.currentTarget) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      selectGroup();
+    }
+  }
+
   return (
     <Box
       onClick={selectGroup}
-      sx={{
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+      // Without an explicit label, a role="button" div's accessible name is
+      // computed from its whole subtree — which would fold in the nested
+      // invite/settings IconButtons' own aria-labels below, making this
+      // card indistinguishable by name from "Invite someone to <group>".
+      // An explicit label keeps the card's own name scoped to just it.
+      aria-label={`Open ${group.name}`}
+      sx={(theme) => ({
         bgcolor: "background.paper",
         borderRadius: "14px",
         boxShadow: tokens.sh2,
@@ -49,7 +74,16 @@ export function GroupCard({
         gap: 1.5,
         alignItems: "center",
         cursor: "pointer",
-      }}
+        transition: "box-shadow 150ms ease",
+        "@media (hover: hover)": {
+          "&:hover": { boxShadow: tokens.floating },
+        },
+        "&:focus": { outline: "none" },
+        "&:focus-visible": {
+          outline: `2px solid ${theme.palette.primary.main}`,
+          outlineOffset: 2,
+        },
+      })}
     >
       <Box
         sx={{
