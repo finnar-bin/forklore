@@ -13,6 +13,7 @@ import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
 import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../../theme/theme";
 import { useNotification } from "../../components/NotificationProvider";
+import { PageContent } from "../../components/PageContent";
 import { useAppStore } from "../../store/useAppStore";
 import { useProfileNames } from "../profiles/useProfileNames";
 import {
@@ -115,9 +116,9 @@ export function GroupSettings({ groupId }: { groupId: string }) {
 
   if (loadError) {
     return (
-      <Box sx={{ p: 2, maxWidth: 480, mx: "auto" }}>
+      <PageContent sx={{ p: 2 }}>
         <Alert severity="error">{loadError}</Alert>
-      </Box>
+      </PageContent>
     );
   }
 
@@ -130,7 +131,7 @@ export function GroupSettings({ groupId }: { groupId: string }) {
   }
 
   return (
-    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 4 }}>
+    <PageContent spacing={2} sx={{ p: 2, pb: 4 }}>
       <Paper sx={{ p: 3, borderRadius: "14px", boxShadow: tokens.sh2 }}>
         <GroupForm
           initialValues={{ name: group.name, description: group.description }}
@@ -223,6 +224,6 @@ export function GroupSettings({ groupId }: { groupId: string }) {
         onClose={() => setDeleteOpen(false)}
         onConfirm={handleDeleteGroup}
       />
-    </Stack>
+    </PageContent>
   );
 }

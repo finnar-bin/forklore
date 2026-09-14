@@ -23,6 +23,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useAppStore } from "../../store/useAppStore";
 import { FloatingPortal } from "../../components/FloatingPortal";
+import { PageContent } from "../../components/PageContent";
 import { VirtualizedCardList } from "../../components/VirtualizedCardList";
 import { setGroupCommunityPantryEnabled } from "../groups/api";
 import { useMyGroups } from "../groups/useMyGroups";
@@ -34,11 +35,23 @@ import { CreateIngredientDialog } from "./CreateIngredientDialog";
 // docs/pending-deviations.md ("List virtualization + pagination").
 const PAGE_SIZE = 30;
 
-export function PantryList({ groupId }: { groupId: string }) {
+export function PantryList({
+  groupId,
+  createOpen,
+  onCreateOpenChange,
+}: {
+  groupId: string;
+  // "Add ingredient" dialog visibility, lifted to PantryPage so it can be
+  // opened both by this screen's own (mobile-only, <900px) FAB below and by
+  // PantryPage's desktop (>=900px) AppHeader action Button — see
+  // docs/pending-deviations.md ("Desktop 'Add' actions move from FAB to
+  // header toolbar (issue #65)").
+  createOpen: boolean;
+  onCreateOpenChange: (open: boolean) => void;
+}) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
 
-  const [createOpen, setCreateOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   // This group's own community pantry opt-in, editable right here (not on
@@ -133,13 +146,14 @@ export function PantryList({ groupId }: { groupId: string }) {
     <Box sx={{ position: "relative", minHeight: "calc(100vh - 64px)" }}>
       {/* pb clears both the FAB (bottom: 80) and BottomNav below it — see
           docs/pending-deviations.md (Ticket 16). */}
-      <Stack
+      <PageContent
         spacing={1.75}
         sx={{
           p: 2,
-          maxWidth: 480,
-          mx: "auto",
-          pb: "calc(144px + env(safe-area-inset-bottom, 0px))",
+          pb: {
+            xs: "calc(144px + env(safe-area-inset-bottom, 0px))",
+            md: "calc(88px + env(safe-area-inset-bottom, 0px))",
+          },
         }}
       >
         <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
@@ -195,6 +209,10 @@ export function PantryList({ groupId }: { groupId: string }) {
             items={ingredients}
             estimateSize={80}
             gap={14}
+            // 2 columns from sm (600px) up, 3 from lg (1200px) up — see
+            // docs/pending-deviations.md ("Multi-column card grid (issue
+            // #64)") for why sm rather than PageContent's own md breakpoint.
+            columns={{ xs: 1, sm: 2, lg: 3 }}
             getItemKey={(ingredient) => ingredient.id}
             hasMore={hasMore}
             onEndReached={handleEndReached}
@@ -206,19 +224,28 @@ export function PantryList({ groupId }: { groupId: string }) {
             )}
           />
         )}
-      </Stack>
+      </PageContent>
 
       <FloatingPortal>
         <Fab
           color="primary"
           aria-label="Add ingredient"
-          onClick={() => setCreateOpen(true)}
+          onClick={() => onCreateOpenChange(true)}
           sx={{
             position: "fixed",
-            // Pantry is a bottom-tab root, so it clears BottomNav — see
-            // docs/pending-deviations.md (Ticket 16).
+            // Pantry is a bottom-tab root, so on mobile it clears BottomNav
+            // (Ticket 16); at >=900px NavRail replaces BottomNav (issue #62)
+            // and there's nothing left at the bottom edge to clear — see
+            // docs/pending-deviations.md. Hidden at >=900px entirely: that
+            // width now gets the same action as an AppHeader Button instead
+            // (PantryPage.tsx) — see docs/pending-deviations.md ("Desktop
+            // 'Add' actions move from FAB to header toolbar (issue #65)").
             right: 16,
-            bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+            bottom: {
+              xs: "calc(80px + env(safe-area-inset-bottom, 0px))",
+              md: "calc(24px + env(safe-area-inset-bottom, 0px))",
+            },
+            display: { xs: "inline-flex", md: "none" },
             boxShadow: (theme) =>
               theme.palette.mode === "dark"
                 ? "0 6px 14px rgba(0,0,0,.5)"
@@ -284,7 +311,7 @@ export function PantryList({ groupId }: { groupId: string }) {
       <CreateIngredientDialog
         open={createOpen}
         groupId={groupId}
-        onClose={() => setCreateOpen(false)}
+        onClose={() => onCreateOpenChange(false)}
         onCreated={(created) => {
           // Straight to detail, not back to the list (mirrors
           // RecipeList.tsx's onCreated) — fetchIngredients now windows the
@@ -294,7 +321,7 @@ export function PantryList({ groupId }: { groupId: string }) {
           // currently loaded page would otherwise silently not appear in the
           // list at all. Navigating to its detail page both confirms the
           // create succeeded and sidesteps that windowing entirely.
-          setCreateOpen(false);
+          onCreateOpenChange(false);
           navigate(`${detailPath}/${created.id}`, { replace: true });
         }}
       />

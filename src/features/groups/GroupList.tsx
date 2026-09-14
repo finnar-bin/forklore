@@ -8,20 +8,31 @@ import Alert from "@mui/material/Alert";
 import AddIcon from "@mui/icons-material/Add";
 import { useAppStore } from "../../store/useAppStore";
 import { FloatingPortal } from "../../components/FloatingPortal";
+import { PageContent } from "../../components/PageContent";
 import { fetchMyGroups } from "./api";
 import { GroupCard } from "./GroupCard";
 import { CreateGroupDialog } from "./CreateGroupDialog";
 import { InviteDialog } from "./InviteDialog";
 import type { GroupMembership } from "../../types/group";
 
-export function GroupList() {
+export function GroupList({
+  createOpen,
+  onCreateOpenChange,
+}: {
+  // "Create group" dialog visibility, lifted to GroupsPage so it can be
+  // opened both by this screen's own (mobile-only, <900px) FAB below and by
+  // GroupsPage's desktop (>=900px) AppHeader action Button — see
+  // docs/pending-deviations.md ("Desktop 'Add' actions move from FAB to
+  // header toolbar (issue #65)").
+  createOpen: boolean;
+  onCreateOpenChange: (open: boolean) => void;
+}) {
   const userId = useAppStore((state) => state.userId);
 
   const [groups, setGroups] = useState<GroupMembership[] | undefined>(
     undefined,
   );
   const [error, setError] = useState<string | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
   const [inviteTarget, setInviteTarget] = useState<GroupMembership | null>(
     null,
   );
@@ -65,12 +76,10 @@ export function GroupList() {
     // no nav bar to clear, but it still sits under AnimatedAppShell's
     // animated transform.
     <Box sx={{ position: "relative", minHeight: "calc(100vh - 64px)" }}>
-      <Stack
+      <PageContent
         spacing={1.5}
         sx={{
           p: 2,
-          maxWidth: 480,
-          mx: "auto",
           pb: "calc(80px + env(safe-area-inset-bottom, 0px))",
         }}
       >
@@ -122,17 +131,22 @@ export function GroupList() {
             onInvite={() => setInviteTarget(membership)}
           />
         ))}
-      </Stack>
+      </PageContent>
 
       <FloatingPortal>
         <Fab
           color="primary"
           aria-label="Create group"
-          onClick={() => setCreateOpen(true)}
+          onClick={() => onCreateOpenChange(true)}
           sx={{
             position: "fixed",
             right: 16,
             bottom: "calc(24px + env(safe-area-inset-bottom, 0px))",
+            // Hidden at >=900px entirely: that width now gets the same
+            // action as an AppHeader Button instead (GroupsPage.tsx) — see
+            // docs/pending-deviations.md ("Desktop 'Add' actions move from
+            // FAB to header toolbar (issue #65)").
+            display: { xs: "inline-flex", md: "none" },
             boxShadow: (theme) =>
               theme.palette.mode === "dark"
                 ? "0 6px 14px rgba(0,0,0,.5)"
@@ -145,9 +159,9 @@ export function GroupList() {
 
       <CreateGroupDialog
         open={createOpen}
-        onClose={() => setCreateOpen(false)}
+        onClose={() => onCreateOpenChange(false)}
         onCreated={() => {
-          setCreateOpen(false);
+          onCreateOpenChange(false);
           loadGroups();
         }}
       />

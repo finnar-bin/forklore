@@ -8,6 +8,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useColorScheme } from "@mui/material/styles";
 import { db } from "../../lib/db";
+import { PageContent } from "../../components/PageContent";
 import { discardFailedItem, retryFailedItem } from "../../sync/outbox";
 import { shadows } from "../../theme/theme";
 import type { OutboxItem } from "../../types/sync";
@@ -138,7 +139,7 @@ export function SyncStatusList() {
   }
 
   return (
-    <Stack spacing={3} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 4 }}>
+    <PageContent spacing={3} sx={{ p: 2, pb: 4 }}>
       {failed.length > 0 && (
         <Stack spacing={1.5}>
           <Typography
@@ -201,6 +202,6 @@ export function SyncStatusList() {
           ))}
         </Stack>
       )}
-    </Stack>
+    </PageContent>
   );
 }

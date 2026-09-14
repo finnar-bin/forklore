@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Box from "@mui/material/Box";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
@@ -16,6 +16,7 @@ import { useSyncStore } from "../store/useSyncStore";
 import { useMyProfile } from "../features/profiles/useMyProfile";
 import { FloatingPortal } from "./FloatingPortal";
 import { PhotoThumbnail } from "./PhotoThumbnail";
+import { useNavRailWidth } from "./navTabs";
 import { useIsOutgoingScreen } from "../routes/AnimatedAppShell";
 
 // Sticky top bar for feature screens.
@@ -53,9 +54,20 @@ import { useIsOutgoingScreen } from "../routes/AnimatedAppShell";
 export function AppHeader({
   title,
   onBack,
+  action,
 }: {
   title: string;
   onBack?: () => void;
+  // Optional inline action rendered in the toolbar, between the title and
+  // the persistent icons (Groups/sync/profile) — the desktop (>=900px)
+  // replacement for a screen's own FAB (e.g. an "Add ingredient" Button
+  // with a startIcon), while that screen keeps rendering its FAB unchanged
+  // below that width. AppHeader stays generic here: it just renders
+  // whatever's passed, including any responsive show/hide — each screen
+  // owns its own action content and breakpoint behavior, same as it already
+  // owns its FAB. See docs/pending-deviations.md ("Desktop 'Add' actions
+  // move from FAB to header toolbar (issue #65)").
+  action?: ReactNode;
 }) {
   const { mode, systemMode } = useColorScheme();
   const resolvedMode = mode === "system" ? systemMode : mode;
@@ -66,6 +78,7 @@ export function AppHeader({
   const userId = useAppStore((state) => state.userId);
   const profile = useMyProfile(userId);
   const isOutgoing = useIsOutgoingScreen();
+  const navRailWidth = useNavRailWidth();
 
   // Measured (not a hardcoded Toolbar height) so the in-flow spacer below
   // always matches exactly, regardless of viewport width (MUI's default
@@ -107,8 +120,17 @@ export function AppHeader({
       <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 500 }}>
         {title}
       </Typography>
+      {action && <Box sx={{ mr: 1 }}>{action}</Box>}
       {location.pathname !== "/groups" && (
-        <IconButton aria-label="Groups" onClick={() => navigate("/groups")}>
+        <IconButton
+          aria-label="Groups"
+          onClick={() => navigate("/groups")}
+          // NavRail carries its own "Groups" item at md+ (see
+          // docs/pending-deviations.md, "Groups moves into the desktop nav
+          // rail") — this header button stays mobile-only, unchanged below
+          // that breakpoint.
+          sx={{ display: { xs: "inline-flex", md: "none" } }}
+        >
           <GroupIcon />
         </IconButton>
       )}
@@ -186,7 +208,22 @@ export function AppHeader({
           position="fixed"
           color="transparent"
           elevation={0}
-          sx={{ bgcolor: "background.paper", boxShadow: tokens.sh1 }}
+          sx={{
+            bgcolor: "background.paper",
+            boxShadow: tokens.sh1,
+            // Starts after NavRail's width at md+ rather than overlapping
+            // or layering above it (an explicit choice, not a default —
+            // see docs/pending-deviations.md, "Desktop nav shell (issue
+            // #62)"): the rail is a separate, always-visible piece of
+            // chrome, so the header should span only the content area to
+            // its right, matching how the page content below it is already
+            // offset (AnimatedAppShell.tsx). navRailWidth tracks NavRail's
+            // own collapsed/expanded state (see docs/pending-deviations.md,
+            // "Collapsible desktop nav rail") so this stays in sync when
+            // it's toggled, not just across the mobile/desktop breakpoint.
+            left: { xs: 0, md: navRailWidth },
+            width: { xs: "100%", md: `calc(100% - ${navRailWidth}px)` },
+          }}
         >
           {toolbarContent}
         </AppBar>

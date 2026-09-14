@@ -23,7 +23,14 @@ test.describe("Logging", () => {
 
     await page.getByRole("button", { name: "Log" }).click();
     await page.getByRole("button", { name: "Log an entry" }).click();
-    await page.getByLabel("Ingredient").click();
+    // getByLabel("Ingredient") is ambiguous here — it substring-matches the
+    // outgoing screen's own "Add ingredient" FAB, which can still be
+    // mounted mid-transition (AnimatedAppShell.tsx's outgoing/current
+    // overlap window) — see recipes.spec.ts's own comment on the same
+    // ambiguity. Target the combobox role directly with an exact name.
+    await page
+      .getByRole("combobox", { name: "Ingredient", exact: true })
+      .click();
     await page.getByRole("option", { name: /Greek Yogurt/ }).click();
     await page.getByLabel("Quantity eaten").fill("150");
     await page.getByRole("button", { name: "Log this ingredient" }).click();

@@ -5,7 +5,6 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Link from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -14,6 +13,7 @@ import { useColorScheme } from "@mui/material/styles";
 import { Link as RouterLink } from "react-router-dom";
 import { shadows } from "../../theme/theme";
 import { useNotification } from "../../components/NotificationProvider";
+import { PageContent } from "../../components/PageContent";
 import { useAppStore } from "../../store/useAppStore";
 import {
   checkForPwaUpdate,
@@ -90,7 +90,7 @@ export function Profile() {
 
   if (loadError) {
     return (
-      <Box sx={{ p: 2, maxWidth: 480, mx: "auto" }}>
+      <PageContent sx={{ p: 2 }}>
         <Alert
           severity="error"
           action={
@@ -105,7 +105,7 @@ export function Profile() {
         >
           Couldn't load your profile.
         </Alert>
-      </Box>
+      </PageContent>
     );
   }
 
@@ -118,7 +118,7 @@ export function Profile() {
   }
 
   return (
-    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 8 }}>
+    <PageContent spacing={2} sx={{ p: 2, pb: 8 }}>
       <Paper sx={{ p: 3, borderRadius: "14px", boxShadow: tokens.sh2 }}>
         <ProfileForm
           initialValues={{
@@ -231,6 +231,6 @@ export function Profile() {
           </Link>
         </Typography>
       </Box>
-    </Stack>
+    </PageContent>
   );
 }

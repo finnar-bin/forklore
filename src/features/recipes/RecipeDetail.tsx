@@ -22,6 +22,7 @@ import { shadows } from "../../theme/theme";
 import { DeferredPhotoUpload } from "../../components/DeferredPhotoUpload";
 import { ItemMetadata } from "../../components/ItemMetadata";
 import { useNotification } from "../../components/NotificationProvider";
+import { PageContent } from "../../components/PageContent";
 import { formatKcalPerUnit, kcalPerUnit } from "../../lib/kcal";
 import { deletePhoto, uploadPhoto } from "../../lib/photoUpload";
 import { useAppStore } from "../../store/useAppStore";
@@ -405,14 +406,14 @@ export function RecipeDetail({
 
   if (!savedRecipe) {
     return (
-      <Box sx={{ p: 2, maxWidth: 480, mx: "auto" }}>
+      <PageContent sx={{ p: 2 }}>
         <Alert severity="error">Recipe not found.</Alert>
-      </Box>
+      </PageContent>
     );
   }
 
   return (
-    <Stack spacing={2} sx={{ p: 2, maxWidth: 480, mx: "auto", pb: 4 }}>
+    <PageContent spacing={2} sx={{ p: 2, pb: 4 }}>
       <Box
         sx={{ position: "relative", display: "flex", justifyContent: "center" }}
       >
@@ -625,6 +626,6 @@ export function RecipeDetail({
           notify("Recipe copied");
         }}
       />
-    </Stack>
+    </PageContent>
   );
 }

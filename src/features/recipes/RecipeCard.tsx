@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useColorScheme } from "@mui/material/styles";
@@ -23,10 +24,22 @@ export function RecipeCard({
   const resolvedMode = mode === "system" ? systemMode : mode;
   const tokens = resolvedMode === "dark" ? shadows.dark : shadows.light;
 
+  // See IngredientCard.tsx's identical handler for why this exists.
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.target !== event.currentTarget) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onClick();
+    }
+  }
+
   return (
     <Box
       onClick={onClick}
-      sx={{
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+      sx={(theme) => ({
         bgcolor: "background.paper",
         borderRadius: "14px",
         boxShadow: tokens.sh2,
@@ -35,7 +48,16 @@ export function RecipeCard({
         gap: 1.5,
         alignItems: "center",
         cursor: "pointer",
-      }}
+        transition: "box-shadow 150ms ease",
+        "@media (hover: hover)": {
+          "&:hover": { boxShadow: tokens.floating },
+        },
+        "&:focus": { outline: "none" },
+        "&:focus-visible": {
+          outline: `2px solid ${theme.palette.primary.main}`,
+          outlineOffset: 2,
+        },
+      })}
     >
       <PhotoThumbnail photoUrl={recipe.photo_url} alt={recipe.name} />
       <Box sx={{ flex: 1, minWidth: 0 }}>

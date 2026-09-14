@@ -10,6 +10,7 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import SwapVertIcon from "@mui/icons-material/SwapVert";
 import { useColorScheme } from "@mui/material/styles";
+import { PageContent } from "../../components/PageContent";
 import { shadows } from "../../theme/theme";
 import {
   UNIT_CATEGORIES,
@@ -54,12 +55,10 @@ export function Converter() {
     : null;
 
   return (
-    <Box
+    <PageContent
       sx={{
         p: 2,
         pb: "calc(72px + env(safe-area-inset-bottom, 0px))",
-        maxWidth: 480,
-        mx: "auto",
       }}
     >
       <ToggleButtonGroup
@@ -153,6 +152,6 @@ export function Converter() {
         Cup, tablespoon, teaspoon, and fluid ounce use US customary
         measurements.
       </Typography>
-    </Box>
+    </PageContent>
   );
 }
