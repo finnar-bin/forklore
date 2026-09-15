@@ -82,9 +82,20 @@ export function WeightChart({
             }),
         },
       ]}
+      // A fixed width plus an explicit formatter, rather than @mui/x-charts'
+      // auto-sized/auto-formatted default, avoids a large left-side gap for
+      // a near-flat trend line (a narrow or zero y-range — e.g. two logs at
+      // the same weight, as reproduced while fixing this — makes the
+      // auto-sizer both mis-estimate the label width and print extra
+      // floating-point digits, which then got truncated with an ellipsis
+      // anyway). One decimal matches Progress.tsx's own `latestWeight`/`bmi`
+      // display convention.
+      yAxis={[
+        { width: 46, valueFormatter: (value: number) => value.toFixed(1) },
+      ]}
       series={[{ dataKey: "weight", showMark: true, color }]}
       height={220}
-      margin={{ left: 40, right: 16, top: 16, bottom: 30 }}
+      margin={{ left: 8, right: 16, top: 16, bottom: 30 }}
       grid={{ horizontal: true }}
     />
   );
