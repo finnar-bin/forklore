@@ -22,6 +22,7 @@ import { EditLogEntryDialog } from "./EditLogEntryDialog";
 import { GroupMemberKcalCard } from "./GroupMemberKcalCard";
 import { LogEntryCard } from "./LogEntryCard";
 import { LogUserFilter } from "./LogUserFilter";
+import { useLogEntryPhotos } from "./useLogEntryPhotos";
 import { MEAL_TYPES, MEAL_TYPE_LABELS } from "../../types/meal";
 import type { LogEntry } from "../../types/log";
 import type { MealType } from "../../types/meal";
@@ -74,6 +75,7 @@ export function DailyLog({
   // (Ticket 12 follow-up, "logged by" name, and the later "log for a group
   // member" rework).
   const names = useProfileNames((entries ?? []).map((e) => e.logged_for));
+  const getPhotoUrl = useLogEntryPhotos(entries ?? []);
 
   // Filtered view for the meal-type sections below — GroupMemberKcalCard
   // above intentionally keeps reading the unfiltered `entries` so every
@@ -229,6 +231,7 @@ export function DailyLog({
                   minute: "2-digit",
                 })}
                 loggedForName={names[entry.logged_for]}
+                photoUrl={getPhotoUrl(entry)}
                 // Every entry surfaced by fetchTodayLogEntries is already
                 // something the update RLS lets the viewer edit — editable
                 // by any fellow group member (docs/pending-deviations.md,

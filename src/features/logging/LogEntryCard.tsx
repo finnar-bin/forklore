@@ -9,12 +9,15 @@ import { useAppStore } from "../../store/useAppStore";
 import type { LogEntry } from "../../types/log";
 
 // Card / list item pattern from design-system.md, applied to Log as
-// documented. Log entries have no photo of their own, so the thumbnail
-// always renders the generic "no photo" placeholder.
+// documented. Log entries have no photo column of their own — the photo, if
+// any, is looked up live off the still-existing source ingredient/recipe
+// (see useLogEntryPhotos.ts) and falls back to PhotoThumbnail's placeholder
+// once that source is deleted or the lookup hasn't resolved yet.
 export function LogEntryCard({
   entry,
   subtitle,
   loggedForName,
+  photoUrl,
   onClick,
 }: {
   entry: LogEntry;
@@ -26,6 +29,9 @@ export function LogEntryCard({
   // lookup can still be mid-flight when this renders, not because any
   // caller ever omits it outright now.
   loggedForName?: string;
+  // From useLogEntryPhotos.ts — undefined while the lookup is mid-flight,
+  // null once resolved with no photo (or no live source left).
+  photoUrl?: string | null;
   onClick?: () => void;
 }) {
   const { mode, systemMode } = useColorScheme();
@@ -79,7 +85,7 @@ export function LogEntryCard({
         }),
       })}
     >
-      <PhotoThumbnail photoUrl={null} alt={entry.name} />
+      <PhotoThumbnail photoUrl={photoUrl ?? null} alt={entry.name} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Box
           sx={{

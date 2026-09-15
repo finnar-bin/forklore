@@ -13,7 +13,7 @@ import { fetchAllGroupLogEntries } from "./api";
 import { EditLogEntryDialog } from "./EditLogEntryDialog";
 import { LogEntryCard } from "./LogEntryCard";
 import { LogUserFilter } from "./LogUserFilter";
-import { MEAL_TYPE_SECTIONS } from "./DailyLog";
+import { useLogEntryPhotos } from "./useLogEntryPhotos";
 import type { LogEntry } from "../../types/log";
 
 // Initial/incremental page size for the infinite-scroll load below — same
@@ -73,6 +73,7 @@ export function AllTimeLog({ groupId }: { groupId: string }) {
   const hasMore = (entries?.length ?? 0) >= visibleCount;
 
   const names = useProfileNames((entries ?? []).map((e) => e.logged_for));
+  const getPhotoUrl = useLogEntryPhotos(entries ?? []);
 
   const groups = useMemo(() => {
     const byDate = new Map<string, LogEntry[]>();
@@ -87,73 +88,45 @@ export function AllTimeLog({ groupId }: { groupId: string }) {
     return Array.from(byDate.entries());
   }, [entries]);
 
-  // Each day's entries are further split into DailyLog.tsx's own meal-type
-  // sections (MEAL_TYPE_SECTIONS), each becoming its own
-  // VirtualizedSectionedCardList section — the list has no native nested-
-  // section support, so the day header (weekday/date + day kcal total,
-  // reproducing the pre-existing outer grouping) is folded into the first
-  // non-empty meal-type section of each day instead of getting a row of its
-  // own; every later meal-type section within that same day gets just its
-  // own label. Flattened into one row list so only near-viewport rows are
-  // ever mounted, regardless of history length.
+  // One VirtualizedSectionedCardList section per day — entries within a day
+  // are no longer split into DailyLog.tsx's meal-type sub-sections, just
+  // listed flatly under the day header (weekday/date + day kcal total).
+  // Flattened into one row list so only near-viewport rows are ever mounted,
+  // regardless of history length.
   const virtualSections = useMemo<VirtualizedSection<LogEntry>[]>(() => {
-    const sections: VirtualizedSection<LogEntry>[] = [];
-    for (const [date, dayEntries] of groups) {
+    return groups.map(([date, dayEntries]) => {
       const dayTotal = dayEntries.reduce((sum, entry) => sum + entry.kcal, 0);
-      const mealSections = MEAL_TYPE_SECTIONS.map(({ key, label }) => ({
-        label,
-        items: dayEntries.filter((entry) => (entry.meal_type ?? null) === key),
-      })).filter((section) => section.items.length > 0);
-
-      mealSections.forEach((section, index) => {
-        sections.push({
-          key: `${date}:${section.label}`,
-          header: (
-            <Box>
-              {index === 0 && (
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "baseline",
-                    mb: 0.5,
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontSize: 13,
-                      fontWeight: 500,
-                      color: "text.secondary",
-                    }}
-                  >
-                    {new Date(`${date}T00:00:00`).toLocaleDateString([], {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </Typography>
-                  <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
-                    {dayTotal.toFixed(2)} kcal
-                  </Typography>
-                </Box>
-              )}
-              <Typography
-                sx={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "text.secondary",
-                  px: 0.5,
-                }}
-              >
-                {section.label}
-              </Typography>
-            </Box>
-          ),
-          items: section.items,
-        });
-      });
-    }
-    return sections;
+      return {
+        key: date,
+        header: (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: 13,
+                fontWeight: 500,
+                color: "text.secondary",
+              }}
+            >
+              {new Date(`${date}T00:00:00`).toLocaleDateString([], {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+              })}
+            </Typography>
+            <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+              {dayTotal.toFixed(2)} kcal
+            </Typography>
+          </Box>
+        ),
+        items: dayEntries,
+      };
+    });
   }, [groups]);
 
   return (
@@ -188,22 +161,15 @@ export function AllTimeLog({ groupId }: { groupId: string }) {
         <VirtualizedSectionedCardList
           sections={virtualSections}
           estimateSize={76}
-          // A section's own header is either just a meal-type label (28px,
-          // one line) or that plus the day header row above it (a second
-          // line) for the first meal-type section of each day — see
-          // virtualSections above. This only seeds the virtualizer's
-          // not-yet-measured estimate; actual heights are measured per row
-          // (measureElement), so a mixed estimate here doesn't misrender
-          // either kind, just the initial scroll math before measurement.
-          headerEstimateSize={44}
+          // Every section's header is the same one-row day header (weekday/
+          // date + day kcal total) — see virtualSections above. This only
+          // seeds the virtualizer's not-yet-measured estimate; actual
+          // heights are measured per row (measureElement).
+          headerEstimateSize={28}
           gap={12}
           // Reproduces the day-group Stack's own spacing={2} (16px) between
           // days on top of the within-day spacing={1.5} (12px) gap above —
-          // see VirtualizedSectionedCardList's extraSectionGap doc. Applied
-          // between every meal-type sub-section now (not just day
-          // boundaries), which also lightly separates same-day meal
-          // sections — an acceptable simplification, since
-          // VirtualizedSectionedCardList only exposes one uniform value.
+          // see VirtualizedSectionedCardList's extraSectionGap doc.
           extraSectionGap={4}
           getItemKey={(entry) => entry.id}
           hasMore={hasMore}
@@ -216,6 +182,7 @@ export function AllTimeLog({ groupId }: { groupId: string }) {
                 minute: "2-digit",
               })}
               loggedForName={names[entry.logged_for]}
+              photoUrl={getPhotoUrl(entry)}
               // See DailyLog's identical onClick comment — every entry
               // here is already something the update RLS lets the viewer
               // edit, group-inclusive since the "log for a group member"
