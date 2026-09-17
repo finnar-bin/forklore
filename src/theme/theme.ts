@@ -54,6 +54,20 @@ export const theme = createTheme({
         },
       },
     },
+    // Default `height: 100%` on this fixed-position root resolves against
+    // the layout viewport, which a mobile on-screen keyboard doesn't shrink
+    // — so a Dialog's flex-centered content stays centered against the old,
+    // taller height and a lower input can end up hidden behind the
+    // keyboard. --visual-viewport-height (see useVisualViewportHeightVar)
+    // tracks the actually-visible height instead; falls back to 100% where
+    // JS hasn't set it yet or window.visualViewport is unsupported.
+    MuiDialog: {
+      styleOverrides: {
+        root: {
+          height: "var(--visual-viewport-height, 100%)",
+        },
+      },
+    },
   },
 });
 
