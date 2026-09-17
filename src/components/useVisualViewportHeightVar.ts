@@ -1,15 +1,7 @@
 import { useEffect } from "react";
 
-// Keeps --visual-viewport-height in sync with window.visualViewport, so
-// MuiDialog's root (position: fixed, height: 100% against the *layout*
-// viewport) can be pinned to the *visible* viewport height instead via
-// theme.ts's MuiDialog override. Without this, an on-screen mobile keyboard
-// shrinks the visible area but not the layout viewport, so a Dialog's
-// flex-centered content stays centered against the old (taller) height and
-// a lower input ends up hidden behind the keyboard. Falls back to the
-// override's own `100%` default in browsers without window.visualViewport
-// (or where index.html's interactive-widget=resizes-content already handles
-// this natively).
+// Tracks the visible (not layout) viewport height for theme.ts's MuiDialog
+// override, so a mobile keyboard doesn't cover a dialog's lower fields.
 export function useVisualViewportHeightVar() {
   useEffect(() => {
     const viewport = window.visualViewport;

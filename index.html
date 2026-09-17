@@ -3,12 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <!-- interactive-widget=resizes-content: on Chromium/newer Safari, shrinks
-         the layout viewport (not just the visual one) when the on-screen
-         keyboard opens, so fixed-position/flex-centered content (e.g. MUI
-         Dialog) reflows above it instead of being covered. See
-         useVisualViewportHeightVar.ts for the fallback that covers browsers
-         that ignore this. -->
+    <!-- interactive-widget=resizes-content: keeps the on-screen keyboard from
+         covering fixed/centered content like MUI Dialog. -->
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
