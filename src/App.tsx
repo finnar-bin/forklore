@@ -7,6 +7,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { useVisualViewportHeightVar } from "./components/useVisualViewportHeightVar";
 import { useAuthSession } from "./features/auth/useAuthSession";
 import { useOnboardingGate } from "./features/onboarding/useOnboardingGate";
 import { useSyncEngine } from "./sync/useSyncEngine";
@@ -47,6 +48,7 @@ function App() {
   const { initializing } = useAuthSession();
   const { checking } = useOnboardingGate();
   useSyncEngine();
+  useVisualViewportHeightVar();
 
   const loading = initializing || checking;
   const [timedOut, setTimedOut] = useState(false);

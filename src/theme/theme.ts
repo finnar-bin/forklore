@@ -54,6 +54,15 @@ export const theme = createTheme({
         },
       },
     },
+    // Pins height to the visible viewport (see useVisualViewportHeightVar)
+    // so a mobile keyboard doesn't cover a lower field; falls back to 100%.
+    MuiDialog: {
+      styleOverrides: {
+        root: {
+          height: "var(--visual-viewport-height, 100%)",
+        },
+      },
+    },
   },
 });
 
