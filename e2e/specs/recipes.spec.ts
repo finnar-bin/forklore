@@ -136,4 +136,84 @@ test.describe("Recipes", () => {
     await expect(page).toHaveURL(/\/recipes$/);
     await expect(page.getByText("Doomed Casserole")).toHaveCount(0);
   });
+
+  test("keeps the last ingredient clear of the sticky Save bar on mobile", async ({
+    page,
+    loginAsSeededUser,
+    backend,
+    seededUser,
+  }) => {
+    const base = {
+      group_id: seededUser.groupId,
+      created_by: seededUser.id,
+      updated_by: null,
+      photo_url: null,
+    };
+    const names = [
+      "Oats",
+      "Milk",
+      "Honey",
+      "Banana",
+      "Almonds",
+      "Chia",
+      "Yogurt",
+      "Berries",
+    ];
+    const recipe = backend.seedRow("recipes", {
+      ...base,
+      name: "Big Bowl",
+      weight_g: 800,
+      total_kcal: 0,
+      forked_from_recipe_id: null,
+    });
+    for (const name of names) {
+      const ingredient = backend.seedRow("ingredients", {
+        ...base,
+        name,
+        brand: null,
+        quantity: 100,
+        unit: "g",
+        kcal: 100,
+        is_community: false,
+      });
+      backend.seedRow("recipe_ingredients", {
+        recipe_id: recipe.id,
+        ingredient_id: ingredient.id,
+        quantity_used: 50,
+      });
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loginAsSeededUser();
+    await page.getByRole("button", { name: "Recipes", exact: true }).click();
+    await page.getByText("Big Bowl").click();
+
+    // Mid-scroll, where the bar floats: detail screens have no bottom nav, so
+    // it must sit flush to the bottom edge (a raised bar leaves a dead gap
+    // under it and covers the last card once scrolled near the end).
+    await expect(page.getByText("Berries", { exact: true })).toBeVisible();
+    await page.waitForTimeout(800);
+    await expect
+      .poll(async () => {
+        await page.evaluate("window.scrollTo(0, 200)");
+        return page.evaluate("scrollY");
+      })
+      .toBeGreaterThan(0);
+    const floating = (await page
+      .getByRole("button", { name: "Save changes" })
+      .boundingBox())!;
+    // Inside the viewport (actually floating) and flush to its bottom edge.
+    expect(floating.y + floating.height).toBeLessThanOrEqual(844);
+    expect(floating.y + floating.height).toBeGreaterThanOrEqual(844 - 20);
+
+    // At the end of the page the last row is fully above the bar.
+    await page.evaluate("window.scrollTo(0, document.body.scrollHeight)");
+    await page.waitForTimeout(400);
+    const last = (await page
+      .getByText("Berries", { exact: true })
+      .boundingBox())!;
+    const save = (await page
+      .getByRole("button", { name: "Save changes" })
+      .boundingBox())!;
+    expect(last.y + last.height).toBeLessThanOrEqual(save.y);
+  });
 });

@@ -273,7 +273,8 @@ export function IngredientDetail({
       spacing={2}
       sx={{
         p: 2,
-        pb: 4,
+        // Keeps the last item clear of the sticky Save bar's safe-area offset.
+        pb: "calc(32px + env(safe-area-inset-bottom, 0px))",
         // Two columns on desktop: photo/metadata/stats left, form + Save right.
         width: "100%",
         "@media (min-width:900px)": {
@@ -558,11 +559,8 @@ export function IngredientDetail({
           className="detail-after"
           sx={{
             position: "sticky",
-            // Clears BottomNav on mobile; flush to the bottom beside the rail.
-            bottom: {
-              xs: "calc(56px + env(safe-area-inset-bottom, 0px))",
-              md: 0,
-            },
+            // Detail screens have no bottom nav, so sit flush above the safe area.
+            bottom: "env(safe-area-inset-bottom, 0px)",
             bgcolor: "background.default",
             py: 1,
             zIndex: 1,
