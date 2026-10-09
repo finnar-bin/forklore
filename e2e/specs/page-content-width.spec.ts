@@ -43,6 +43,8 @@ test.describe("Page content max-width", () => {
   }) => {
     await page.setViewportSize({ width: 700, height: 800 });
     await loginAsSeededUser();
+    // Profile is a form page (the narrow column); list pages use the wide one.
+    await page.goto("/profile");
 
     const content = page.getByTestId("page-content").first();
     await expect(content).toBeVisible();
@@ -72,6 +74,8 @@ test.describe("Page content max-width", () => {
     // doesn't silently stop meaning anything if that default ever changes.
     await page.setViewportSize({ width: 1280, height: 720 });
     await loginAsSeededUser();
+    // Profile is a form page (the narrow column); list pages use the wide one.
+    await page.goto("/profile");
 
     const content = page.getByTestId("page-content").first();
     await expect(content).toBeVisible();
@@ -100,5 +104,20 @@ test.describe("Page content max-width", () => {
     expect(box!.width).toBeLessThanOrEqual(PAGE_CONTENT_MAX_WIDTH.md + 2);
     expect(box!.x).toBeLessThan(expectedX + 10);
     expect(box!.x).toBeGreaterThan(naiveFullViewportX + 20);
+  });
+
+  test("list pages use the wide column at >=900px", async ({
+    page,
+    loginAsSeededUser,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await loginAsSeededUser();
+
+    const content = page.getByTestId("page-content").first();
+    // Pantry is the landing screen: it fills the area beside the 240px rail
+    // (1040px) rather than the 760px form column.
+    await expect
+      .poll(async () => (await content.boundingBox())?.width, { timeout: 3000 })
+      .toBeGreaterThan(PAGE_CONTENT_MAX_WIDTH.md + 100);
   });
 });

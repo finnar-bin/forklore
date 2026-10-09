@@ -3,7 +3,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../../theme/theme";
-import { formatKcalPerUnit } from "../../lib/kcal";
+import { formatKcalPerUnit, formatKcal } from "../../lib/kcal";
 import { PhotoThumbnail } from "../../components/PhotoThumbnail";
 import type { Ingredient } from "../../types/ingredient";
 
@@ -83,7 +83,7 @@ export function IngredientCard({
             left: 10,
             bgcolor: "secondary.main",
             color: "secondary.contrastText",
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: 600,
             lineHeight: 1,
             px: 0.75,
@@ -94,13 +94,22 @@ export function IngredientCard({
           Community
         </Box>
       )}
-      <PhotoThumbnail photoUrl={ingredient.photo_url} alt={ingredient.name} />
+      <PhotoThumbnail
+        photoUrl={ingredient.photo_url}
+        alt={ingredient.name}
+        monogram={ingredient.name}
+      />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography
-          noWrap
+          title={ingredient.name}
           sx={{
             fontSize: 14,
             fontWeight: 500,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            overflowWrap: "anywhere",
           }}
         >
           {ingredient.name}
@@ -121,14 +130,14 @@ export function IngredientCard({
           sx={{
             fontSize: 14,
             fontWeight: 500,
-            color: "primary.main",
+            color: "primary.dark",
           }}
         >
-          {ingredient.kcal.toFixed(2)} kcal
+          {formatKcal(ingredient.kcal)} kcal
         </Typography>
         <Typography
           sx={{
-            fontSize: 11,
+            fontSize: 12,
             color: "text.secondary",
           }}
         >

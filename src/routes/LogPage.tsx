@@ -33,6 +33,7 @@ export function LogPage() {
         title={`${groupName} log`}
         action={
           <Button
+            variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setAddOpen(true)}
             sx={{ display: { xs: "none", md: "inline-flex" } }}

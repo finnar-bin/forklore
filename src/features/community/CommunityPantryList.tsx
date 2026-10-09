@@ -65,6 +65,7 @@ export function CommunityPantryList({
   return (
     <Box sx={{ position: "relative", minHeight: "calc(100vh - 64px)" }}>
       <PageContent
+        variant="wide"
         spacing={1.75}
         sx={{
           p: 2,
@@ -97,7 +98,7 @@ export function CommunityPantryList({
             // See PantryList.tsx's identical prop and
             // docs/pending-deviations.md ("Multi-column card grid (issue
             // #64)").
-            columns={{ xs: 1, sm: 2, lg: 3 }}
+            columns={{ xs: 1, sm: 2, lg: 3, xl: 4 }}
             getItemKey={(ingredient) => ingredient.id}
             hasMore={hasMore}
             onEndReached={handleEndReached}

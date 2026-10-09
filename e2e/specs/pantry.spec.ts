@@ -18,7 +18,7 @@ test.describe("Pantry", () => {
     await expect(page.getByText("Rolled Oats")).toBeVisible();
     // kcalPerUnit (src/lib/kcal.ts): 389 / 100 = 3.89, .toFixed(2)-formatted
     // everywhere per CLAUDE.md's kcal display convention.
-    await expect(page.getByText("389.00 kcal")).toBeVisible();
+    await expect(page.getByText("389 kcal")).toBeVisible();
     await expect(page.getByText("3.89/g")).toBeVisible();
   });
 
@@ -50,7 +50,7 @@ test.describe("Pantry", () => {
     await expect(page.getByText("Ingredient saved")).toBeVisible();
 
     await page.goBack();
-    await expect(page.getByText("200.00 kcal")).toBeVisible();
+    await expect(page.getByText("200 kcal")).toBeVisible();
   });
 
   test("deletes an ingredient", async ({
@@ -80,5 +80,36 @@ test.describe("Pantry", () => {
 
     await expect(page).toHaveURL(/\/pantry$/);
     await expect(page.getByText("Stale Bread")).toHaveCount(0);
+  });
+});
+
+test.describe("Pantry search", () => {
+  test("matches an ingredient by brand as well as name", async ({
+    page,
+    loginAsSeededUser,
+    backend,
+    seededUser,
+  }) => {
+    for (const [name, brand] of [
+      ["Rolled Oats", "Quaker"],
+      ["Whole Milk", null],
+    ]) {
+      backend.seedRow("ingredients", {
+        group_id: seededUser.groupId,
+        created_by: seededUser.id,
+        updated_by: null,
+        name,
+        brand,
+        quantity: 100,
+        unit: "g",
+        kcal: 100,
+        photo_url: null,
+        is_community: false,
+      });
+    }
+    await loginAsSeededUser();
+    await page.getByPlaceholder("Search pantry").fill("quaker");
+    await expect(page.getByText("Rolled Oats")).toBeVisible();
+    await expect(page.getByText("Whole Milk")).toHaveCount(0);
   });
 });

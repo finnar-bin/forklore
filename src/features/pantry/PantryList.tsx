@@ -147,6 +147,7 @@ export function PantryList({
       {/* pb clears both the FAB (bottom: 80) and BottomNav below it — see
           docs/pending-deviations.md (Ticket 16). */}
       <PageContent
+        variant="wide"
         spacing={1.75}
         sx={{
           p: 2,
@@ -191,17 +192,26 @@ export function PantryList({
         )}
 
         {!loading && ingredients?.length === 0 && (
-          <Typography
-            sx={{
-              color: "text.secondary",
-              textAlign: "center",
-              py: 4,
-            }}
-          >
-            {search.trim()
-              ? "No ingredients match your search."
-              : "This group's pantry is empty. Add the first ingredient to get started."}
-          </Typography>
+          <Stack spacing={2} sx={{ alignItems: "center", py: 4 }}>
+            <Typography
+              sx={{
+                color: "text.secondary",
+                textAlign: "center",
+              }}
+            >
+              {search.trim()
+                ? "No ingredients match your search."
+                : "This group's pantry is empty."}
+            </Typography>
+            {!search.trim() && (
+              <Button
+                variant="contained"
+                onClick={() => onCreateOpenChange(true)}
+              >
+                Add your first ingredient
+              </Button>
+            )}
+          </Stack>
         )}
 
         {ingredients && ingredients.length > 0 && (
@@ -212,7 +222,7 @@ export function PantryList({
             // 2 columns from sm (600px) up, 3 from lg (1200px) up — see
             // docs/pending-deviations.md ("Multi-column card grid (issue
             // #64)") for why sm rather than PageContent's own md breakpoint.
-            columns={{ xs: 1, sm: 2, lg: 3 }}
+            columns={{ xs: 1, sm: 2, lg: 3, xl: 4 }}
             getItemKey={(ingredient) => ingredient.id}
             hasMore={hasMore}
             onEndReached={handleEndReached}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { formatKcal } from "../../lib/kcal";
 import { useLiveQuery } from "dexie-react-hooks";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -120,7 +121,7 @@ export function AllTimeLog({ groupId }: { groupId: string }) {
               })}
             </Typography>
             <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
-              {dayTotal.toFixed(2)} kcal
+              {formatKcal(dayTotal)} kcal
             </Typography>
           </Box>
         ),

@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type HTMLAttributes } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import Alert from "@mui/material/Alert";
 import Autocomplete, { createFilterOptions } from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -10,19 +12,19 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-import ToggleButton from "@mui/material/ToggleButton";
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
-import { formatKcalPerUnit } from "../../lib/kcal";
+import { useSheetAutocompleteSlotProps } from "../../components/useSheetAutocompleteSlotProps";
+import { db } from "../../lib/db";
+import { formatKcalPerUnit, formatKcal } from "../../lib/kcal";
 import { useAppStore } from "../../store/useAppStore";
 import { fetchIngredients } from "../pantry/api";
+import { ingredientSearchText } from "../pantry/ingredientSearch";
 import { IngredientAutocompleteOption } from "../pantry/IngredientAutocompleteOption";
 import { fetchRecipes } from "../recipes/api";
 import { resolveGroupLabel } from "../groups/groupLabel";
 import { useMyGroups } from "../groups/useMyGroups";
 import { useMemberKcalProfiles } from "../profiles/useMemberKcalProfiles";
 import { createLogEntry, type LogEntryInput } from "./api";
-import { formatIngredientLabel, formatRecipeLabel } from "./formatItemLabel";
 import { LogIngredientStep } from "./LogIngredientStep";
 import { LogRecipeStep } from "./LogRecipeStep";
 import type { GroupMembership } from "../../types/group";
@@ -88,7 +90,7 @@ function AddLogEntryForm({
   onLogged: (entry: LogEntry) => void;
 }) {
   const userId = useAppStore((state) => state.userId);
-  const [type, setType] = useState<"ingredient" | "recipe">("ingredient");
+  const sheetSlotProps = useSheetAutocompleteSlotProps();
 
   // Shared cache (see useMyGroups) rather than this dialog's own fetch — it
   // remounts fresh every time it opens ("selection state starts fresh each
@@ -146,6 +148,65 @@ function AddLogEntryForm({
     return resolveGroupLabel(membership?.group.name, isCommunity);
   }
 
+  // Newest-first entries on this group's log by the person logging, used for
+  // the "Recent" chips and each item's last-used quantity.
+  const recentEntries = useLiveQuery(
+    () =>
+      db.log_entries
+        .where("group_id")
+        .equals(contextGroupId)
+        .filter((e) => e.created_by === userId)
+        .toArray()
+        .then((rows) =>
+          rows.sort((a, b) =>
+            b.created_at < a.created_at
+              ? -1
+              : b.created_at > a.created_at
+                ? 1
+                : 0,
+          ),
+        ),
+    [contextGroupId, userId],
+  );
+
+  const options: PickOption[] = useMemo(
+    () =>
+      [
+        ...(ingredients ?? []).map((item): PickOption => ({
+          kind: "ingredient",
+          item,
+        })),
+        ...(recipes ?? []).map((item): PickOption => ({
+          kind: "recipe",
+          item,
+        })),
+      ].sort((a, b) => a.item.name.localeCompare(b.item.name)),
+    [ingredients, recipes],
+  );
+
+  const lastQuantity = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const e of recentEntries ?? []) {
+      const id = e.source_ingredient_id ?? e.source_recipe_id;
+      if (id && !map.has(id)) map.set(id, e.quantity);
+    }
+    return map;
+  }, [recentEntries]);
+
+  const recentOptions = useMemo(() => {
+    const byId = new Map(options.map((o) => [o.item.id, o]));
+    return [...lastQuantity.keys()]
+      .map((id) => byId.get(id))
+      .filter((o): o is PickOption => o !== undefined)
+      .slice(0, 6);
+  }, [lastQuantity, options]);
+
+  function pick(option: PickOption | null) {
+    if (!option) return;
+    if (option.kind === "ingredient") setSelectedIngredient(option.item);
+    else setSelectedRecipe(option.item);
+  }
+
   async function handleLog(input: LogEntryInput) {
     if (!userId) return;
     const entry = await createLogEntry(
@@ -157,7 +218,7 @@ function AddLogEntryForm({
     onLogged(entry);
   }
 
-  if (type === "ingredient" && selectedIngredient) {
+  if (selectedIngredient) {
     return (
       <LogIngredientStep
         ingredient={selectedIngredient}
@@ -166,13 +227,14 @@ function AddLogEntryForm({
         onLoggedForChange={setLoggedFor}
         loggedForGroupId={contextGroupId}
         mealBreakdownEnabled={mealBreakdownEnabled}
+        initialQuantity={lastQuantity.get(selectedIngredient.id)}
         onLog={handleLog}
         onCancel={() => setSelectedIngredient(null)}
       />
     );
   }
 
-  if (type === "recipe" && selectedRecipe) {
+  if (selectedRecipe) {
     return (
       <LogRecipeStep
         recipe={selectedRecipe}
@@ -181,150 +243,97 @@ function AddLogEntryForm({
         onLoggedForChange={setLoggedFor}
         loggedForGroupId={contextGroupId}
         mealBreakdownEnabled={mealBreakdownEnabled}
+        initialQuantity={lastQuantity.get(selectedRecipe.id)}
         onLog={handleLog}
         onCancel={() => setSelectedRecipe(null)}
       />
     );
   }
 
+  const loading = ingredients === null || recipes === null;
+  const empty = !loading && options.length === 0;
+
   return (
     <>
       <DialogContent sx={{ pt: "12px !important" }}>
-        <Stack spacing={2.5}>
-          <ToggleButtonGroup
-            value={type}
-            exclusive
-            onChange={(_, value) => value && setType(value)}
-            size="small"
-            fullWidth
-          >
-            <ToggleButton value="ingredient">Ingredient</ToggleButton>
-            <ToggleButton value="recipe">Recipe</ToggleButton>
-          </ToggleButtonGroup>
-
-          {type === "ingredient" ? (
-            ingredients === null ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-                <CircularProgress size={24} />
-              </Box>
-            ) : ingredients.length === 0 ? (
-              <Alert severity="info">
-                Your pantry is empty. Add an ingredient first.
-              </Alert>
-            ) : (
-              <Autocomplete
-                options={ingredients}
-                getOptionKey={(option) => option.id}
-                getOptionLabel={formatIngredientLabel}
-                onChange={(_, value) => setSelectedIngredient(value)}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                filterOptions={createFilterOptions({
-                  trim: true,
-                  stringify: (option) => option.name,
-                })}
-                renderOption={({ key, ...liProps }, option) => (
-                  <IngredientAutocompleteOption
-                    key={key}
-                    liProps={liProps}
-                    ingredient={option}
-                    groupLabel={groupLabel(option.is_community)}
-                  />
-                )}
-                renderInput={(params) => (
-                  <TextField {...params} label="Ingredient" autoFocus />
-                )}
-              />
-            )
-          ) : recipes === null ? (
+        <Stack spacing={2}>
+          {loading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
               <CircularProgress size={24} />
             </Box>
-          ) : recipes.length === 0 ? (
+          ) : empty ? (
             <Alert severity="info">
-              Your recipes are empty. Add a recipe first.
+              Nothing to log yet. Add an ingredient or recipe first.
             </Alert>
           ) : (
-            <Autocomplete
-              options={recipes}
-              getOptionKey={(option) => option.id}
-              getOptionLabel={formatRecipeLabel}
-              onChange={(_, value) => setSelectedRecipe(value)}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-              filterOptions={createFilterOptions({
-                trim: true,
-                stringify: (option) => option.name,
-              })}
-              renderOption={({ key, ...liProps }, option) => (
-                <Box
-                  component="li"
-                  key={key}
-                  {...liProps}
-                  sx={{ display: "flex", gap: 1.5, alignItems: "center" }}
-                >
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "baseline",
-                        gap: 0.5,
-                        minWidth: 0,
-                      }}
-                    >
-                      <Typography
-                        noWrap
-                        sx={{
-                          fontSize: 14,
-                          fontWeight: 500,
-                          minWidth: 0,
-                        }}
-                      >
-                        {option.name}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontSize: 14,
-                          color: "text.secondary",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {option.weight_g} g
-                      </Typography>
-                    </Box>
-                    <Typography
-                      noWrap
-                      sx={{
-                        fontSize: 12,
-                        color: "text.secondary",
-                      }}
-                    >
-                      {groupLabel()}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ textAlign: "right", flexShrink: 0 }}>
-                    <Typography
-                      sx={{
-                        fontSize: 14,
-                        fontWeight: 500,
-                        color: "primary.main",
-                      }}
-                    >
-                      {option.total_kcal.toFixed(2)} kcal
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontSize: 11,
-                        color: "text.secondary",
-                      }}
-                    >
-                      {formatKcalPerUnit(option.total_kcal, option.weight_g)}/g
-                    </Typography>
-                  </Box>
+            <>
+              <Autocomplete<PickOption>
+                slotProps={sheetSlotProps}
+                options={options}
+                value={null}
+                getOptionKey={(option) => option.item.id}
+                getOptionLabel={(option) => option.item.name}
+                onChange={(_, value) => pick(value)}
+                isOptionEqualToValue={(option, value) =>
+                  option.item.id === value.item.id
+                }
+                filterOptions={createFilterOptions({
+                  trim: true,
+                  stringify: (option) =>
+                    option.kind === "ingredient"
+                      ? ingredientSearchText(option.item)
+                      : option.item.name,
+                })}
+                renderOption={({ key, ...liProps }, option) =>
+                  option.kind === "ingredient" ? (
+                    <IngredientAutocompleteOption
+                      key={key}
+                      liProps={liProps}
+                      ingredient={option.item}
+                      groupLabel={groupLabel(option.item.is_community)}
+                    />
+                  ) : (
+                    <RecipeOption
+                      key={key}
+                      liProps={liProps}
+                      recipe={option.item}
+                      groupLabel={groupLabel()}
+                    />
+                  )
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Search ingredients & recipes"
+                    autoFocus
+                  />
+                )}
+              />
+              {recentOptions.length > 0 && (
+                <Box>
+                  <Typography
+                    sx={{ fontSize: 12, color: "text.secondary", mb: 0.75 }}
+                  >
+                    Recent
+                  </Typography>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    useFlexGap
+                    sx={{ flexWrap: "wrap" }}
+                  >
+                    {recentOptions.map((o) => (
+                      <Chip
+                        key={o.item.id}
+                        clickable
+                        label={o.item.name}
+                        onClick={() => pick(o)}
+                      />
+                    ))}
+                  </Stack>
                 </Box>
               )}
-              renderInput={(params) => (
-                <TextField {...params} label="Recipe" autoFocus />
-              )}
-            />
+            </>
           )}
         </Stack>
       </DialogContent>
@@ -332,5 +341,62 @@ function AddLogEntryForm({
         <Button onClick={onClose}>Cancel</Button>
       </DialogActions>
     </>
+  );
+}
+
+type PickOption =
+  { kind: "ingredient"; item: Ingredient } | { kind: "recipe"; item: Recipe };
+
+function RecipeOption({
+  liProps,
+  recipe,
+  groupLabel,
+}: {
+  liProps: HTMLAttributes<HTMLLIElement>;
+  recipe: Recipe;
+  groupLabel: string;
+}) {
+  return (
+    <Box
+      component="li"
+      {...liProps}
+      sx={{ display: "flex", gap: 1.5, alignItems: "center" }}
+    >
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 0.5,
+            minWidth: 0,
+          }}
+        >
+          <Typography
+            noWrap
+            sx={{ fontSize: 14, fontWeight: 500, minWidth: 0 }}
+          >
+            {recipe.name}
+          </Typography>
+          <Typography
+            sx={{ fontSize: 14, color: "text.secondary", flexShrink: 0 }}
+          >
+            {recipe.weight_g} g
+          </Typography>
+        </Box>
+        <Typography noWrap sx={{ fontSize: 12, color: "text.secondary" }}>
+          Recipe · {groupLabel}
+        </Typography>
+      </Box>
+      <Box sx={{ textAlign: "right", flexShrink: 0 }}>
+        <Typography
+          sx={{ fontSize: 14, fontWeight: 500, color: "primary.dark" }}
+        >
+          {formatKcal(recipe.total_kcal)} kcal
+        </Typography>
+        <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+          {formatKcalPerUnit(recipe.total_kcal, recipe.weight_g)}/g
+        </Typography>
+      </Box>
+    </Box>
   );
 }

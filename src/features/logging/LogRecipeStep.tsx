@@ -13,6 +13,7 @@ import type { MealType } from "../../types/log";
 import type { LogEntryInput } from "./api";
 import { LoggedForSelector } from "./LoggedForSelector";
 import { MealTypeSelector } from "./MealTypeSelector";
+import { QuantityChips } from "./QuantityChips";
 
 // Asks how many grams of this recipe were eaten, then computes kcal scaled
 // from that — mirrors the quantity-scaling pattern already established for
@@ -29,6 +30,7 @@ export function LogRecipeStep({
   onLoggedForChange,
   loggedForGroupId,
   mealBreakdownEnabled,
+  initialQuantity,
   onLog,
   onCancel,
 }: {
@@ -49,10 +51,14 @@ export function LogRecipeStep({
   // Whether `loggedFor`'s own profile has meal-type breakdown enabled — see
   // LogIngredientStep's identical prop.
   mealBreakdownEnabled: boolean;
+  // Last grams logged for this recipe, if any — prefilled.
+  initialQuantity?: number;
   onLog: (input: LogEntryInput) => Promise<void>;
   onCancel: () => void;
 }) {
-  const [gramsEaten, setGramsEaten] = useState("");
+  const [gramsEaten, setGramsEaten] = useState(
+    initialQuantity ? String(initialQuantity) : "",
+  );
   const [mealType, setMealType] = useState<MealType | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -122,11 +128,23 @@ export function LogRecipeStep({
                   : undefined
             }
             slotProps={{
-              htmlInput: { min: 0, max: recipe.weight_g, step: 0.01 },
+              htmlInput: {
+                min: 0,
+                max: recipe.weight_g,
+                step: 0.01,
+                inputMode: "decimal",
+              },
               input: {
                 endAdornment: <InputAdornment position="end">g</InputAdornment>,
               },
             }}
+          />
+          <QuantityChips
+            unit="g"
+            last={initialQuantity}
+            max={recipe.weight_g}
+            disabled={submitting}
+            onPick={(v) => setGramsEaten(String(v))}
           />
           {loggedForGroupId && (
             <LoggedForSelector

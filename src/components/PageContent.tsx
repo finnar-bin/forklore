@@ -21,6 +21,10 @@ import Stack, { type StackProps } from "@mui/material/Stack";
 // already rendered inside it.
 export const PAGE_CONTENT_MAX_WIDTH = { xs: 480, md: 760 };
 
+// List/dashboard screens (card grids) use the wider column; forms and detail
+// pages stay on the narrow one above.
+export const PAGE_CONTENT_WIDE_MAX_WIDTH = { xs: 480, sm: 720, md: 1200 };
+
 // Shared root content wrapper, replacing each screen's own near-duplicate
 // `<Stack sx={{ p: 2, maxWidth: 480, mx: "auto", ... }}>` (or a bare `Box`
 // for the single-child loading/error case — Stack with no `spacing` renders
@@ -29,7 +33,11 @@ export const PAGE_CONTENT_MAX_WIDTH = { xs: 480, md: 760 };
 // merged over the responsive default (array form, so a caller-supplied
 // array or function `sx` still composes correctly) rather than replacing
 // it, so callers keep passing their own padding/pb/etc. as before.
-export function PageContent({ sx, ...props }: StackProps) {
+export function PageContent({
+  sx,
+  variant = "form",
+  ...props
+}: StackProps & { variant?: "form" | "wide" }) {
   return (
     <Stack
       // Not used for anything role/label-based (this repo's e2e suite
@@ -41,7 +49,13 @@ export function PageContent({ sx, ...props }: StackProps) {
       // wins via {...props} below.
       data-testid="page-content"
       sx={[
-        { maxWidth: PAGE_CONTENT_MAX_WIDTH, mx: "auto" },
+        {
+          maxWidth:
+            variant === "wide"
+              ? PAGE_CONTENT_WIDE_MAX_WIDTH
+              : PAGE_CONTENT_MAX_WIDTH,
+          mx: "auto",
+        },
         ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
       ]}
       {...props}

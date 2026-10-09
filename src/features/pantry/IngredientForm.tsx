@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import { StickySubmitBar } from "../../components/StickySubmitBar";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
@@ -40,6 +41,7 @@ export function IngredientForm({
   const [photoUrl, setPhotoUrl] = useState<string | null>(
     initialValues?.photo_url ?? null,
   );
+  const [showBrand, setShowBrand] = useState(Boolean(initialValues?.brand));
   const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -89,31 +91,48 @@ export function IngredientForm({
     <Stack spacing={2.5} component="form" onSubmit={handleSubmit}>
       {error && <Alert severity="error">{error}</Alert>}
 
-      <Box sx={{ display: "flex", justifyContent: "center" }}>
+      <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start" }}>
         <DeferredPhotoUpload
           photoUrl={photoUrl}
           onChange={setPhotoUrl}
           onFileSelected={setPendingPhotoFile}
           alt={name || "ingredient"}
-          size={180}
+          size={88}
         />
-      </Box>
-
-      <TextField
-        label="Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        required
-        fullWidth
-        autoFocus
-      />
-      <TextField
-        label="Brand"
-        value={brand}
-        onChange={(e) => setBrand(e.target.value)}
-        fullWidth
-      />
-      <Stack direction="row" spacing={2}>
+        <Stack spacing={1} sx={{ flex: 1, minWidth: 0 }}>
+          <TextField
+            label="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            fullWidth
+            autoFocus
+          />
+          {showBrand ? (
+            <TextField
+              label="Brand"
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              fullWidth
+            />
+          ) : (
+            <Button
+              size="small"
+              onClick={() => setShowBrand(true)}
+              sx={{ alignSelf: "flex-start" }}
+            >
+              + Add brand
+            </Button>
+          )}
+        </Stack>
+      </Stack>
+      <Box
+        sx={{
+          display: "grid",
+          gap: 2,
+          gridTemplateColumns: { xs: "1fr 1fr", sm: "1fr 120px 1fr" },
+        }}
+      >
         <TextField
           label="Quantity"
           type="number"
@@ -121,7 +140,9 @@ export function IngredientForm({
           onChange={(e) => setQuantity(e.target.value)}
           required
           fullWidth
-          slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
+          slotProps={{
+            htmlInput: { min: 0, step: 0.01, inputMode: "decimal" },
+          }}
         />
         <TextField
           label="Unit"
@@ -137,24 +158,30 @@ export function IngredientForm({
             </MenuItem>
           ))}
         </TextField>
-      </Stack>
-      <TextField
-        label="Kcal"
-        type="number"
-        value={kcal}
-        onChange={(e) => setKcal(e.target.value)}
-        required
-        fullWidth
-        slotProps={{ htmlInput: { min: 0, step: 0.1 } }}
-      />
-      <Button
-        type="submit"
-        variant="contained"
-        size="large"
-        disabled={submitting}
-      >
-        {submitting ? "Saving…" : submitLabel}
-      </Button>
+        <TextField
+          label="Kcal"
+          type="number"
+          value={kcal}
+          onChange={(e) => setKcal(e.target.value)}
+          required
+          fullWidth
+          sx={{ gridColumn: { xs: "1 / -1", sm: "auto" } }}
+          slotProps={{
+            htmlInput: { min: 0, step: 0.1, inputMode: "decimal" },
+          }}
+        />
+      </Box>
+      <StickySubmitBar>
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          fullWidth
+          disabled={submitting}
+        >
+          {submitting ? "Saving…" : submitLabel}
+        </Button>
+      </StickySubmitBar>
     </Stack>
   );
 }

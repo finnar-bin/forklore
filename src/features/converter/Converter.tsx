@@ -118,7 +118,7 @@ export function Converter() {
               sx={{
                 fontSize: 24,
                 fontWeight: 500,
-                color: "primary.main",
+                color: "primary.dark",
                 flex: 1,
                 overflowWrap: "anywhere",
               }}

@@ -1,6 +1,8 @@
 import Box from "@mui/material/Box";
+import { formatKcal } from "../../lib/kcal";
 import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
+import LinearProgress from "@mui/material/LinearProgress";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -94,10 +96,20 @@ export function GroupMemberKcalCard({
                   }}
                 >
                   {target !== null
-                    ? `${loggedToday.toFixed(2)} / ${target.toFixed(2)} kcal`
-                    : `${loggedToday.toFixed(2)} kcal`}
+                    ? `${formatKcal(loggedToday)} / ${formatKcal(target)} kcal`
+                    : `${formatKcal(loggedToday)} kcal`}
                 </Typography>
               </Stack>
+
+              {target !== null && target > 0 && (
+                <LinearProgress
+                  variant="determinate"
+                  aria-label={`${profile?.name ?? "Member"} daily calories`}
+                  value={Math.min(100, (loggedToday / target) * 100)}
+                  color={isOverDailyTarget ? "error" : "primary"}
+                  sx={{ height: 6, borderRadius: 3 }}
+                />
+              )}
 
               {profile?.meal_breakdown_enabled && mealTargets && (
                 <Stack
@@ -129,7 +141,7 @@ export function GroupMemberKcalCard({
                       >
                         <Typography
                           sx={{
-                            fontSize: 10,
+                            fontSize: 12,
                             color: "text.secondary",
                           }}
                         >
@@ -143,8 +155,8 @@ export function GroupMemberKcalCard({
                           }}
                         >
                           {remaining >= 0
-                            ? `${remaining.toFixed(2)} left`
-                            : `${Math.abs(remaining).toFixed(2)} over`}
+                            ? `${formatKcal(remaining)} left`
+                            : `${formatKcal(Math.abs(remaining))} over`}
                         </Typography>
                       </Stack>
                     );

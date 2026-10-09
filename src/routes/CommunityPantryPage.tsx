@@ -29,6 +29,7 @@ export function CommunityPantryPage() {
         onBack={() => navigate(homePath ?? "/groups")}
         action={
           <Button
+            variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setCreateOpen(true)}
             sx={{ display: { xs: "none", md: "inline-flex" } }}

@@ -1,6 +1,6 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { formatKcalPerUnit } from "../../lib/kcal";
+import { formatKcalPerUnit, formatKcal } from "../../lib/kcal";
 import type { Ingredient } from "../../types/ingredient";
 
 // Shared header for any screen that asks "how much of this ingredient" and
@@ -84,11 +84,11 @@ export function IngredientKcalHeader({
         <Typography
           sx={{
             fontSize: 20,
-            color: "primary.main",
+            color: "primary.dark",
           }}
         >
           <Box component="span" sx={{ fontWeight: 700 }}>
-            {kcal.toFixed(2)}
+            {formatKcal(kcal)}
           </Box>{" "}
           <Box component="span" sx={{ fontWeight: 400 }}>
             kcal

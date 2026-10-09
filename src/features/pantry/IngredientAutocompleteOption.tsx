@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { formatKcalPerUnit } from "../../lib/kcal";
+import { formatKcalPerUnit, formatKcal } from "../../lib/kcal";
 import type { Ingredient } from "../../types/ingredient";
 
 // Shared `renderOption` row for every Autocomplete that lets the user pick
@@ -76,14 +76,14 @@ export function IngredientAutocompleteOption({
           sx={{
             fontSize: 14,
             fontWeight: 500,
-            color: "primary.main",
+            color: "primary.dark",
           }}
         >
-          {ingredient.kcal.toFixed(2)} kcal
+          {formatKcal(ingredient.kcal)} kcal
         </Typography>
         <Typography
           sx={{
-            fontSize: 11,
+            fontSize: 12,
             color: "text.secondary",
           }}
         >

@@ -1,13 +1,14 @@
 import { useState } from "react";
+import { formatKcal } from "../../lib/kcal";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Fab from "@mui/material/Fab";
-import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
-import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
 import { useColorScheme } from "@mui/material/styles";
@@ -119,10 +120,6 @@ export function Progress({
   const rangeCutoff = daysAgoLocalDate(rangeDays);
   const chartLogs = logs.filter((log) => log.logged_at >= rangeCutoff);
 
-  function handleRangeChange(event: SelectChangeEvent<number>) {
-    setRangeDays(Number(event.target.value) as WeightChartRangeDays);
-  }
-
   return (
     // Root box, not a nested wrapper — same FAB positioning reasoning as
     // DailyLog (fixed, wrapped in FloatingPortal so AnimatedAppShell's
@@ -138,66 +135,84 @@ export function Progress({
           },
         }}
       >
-        <Stack direction="row" spacing={1.5}>
+        {logs.length === 0 ? (
           <Paper
             sx={{
-              p: 2,
+              p: 2.5,
               borderRadius: "14px",
               boxShadow: tokens.sh2,
               textAlign: "center",
-              flex: 1,
             }}
           >
-            <Typography
-              sx={{
-                fontSize: 24,
-                fontWeight: 500,
-                color: "primary.main",
-              }}
-            >
-              {latestWeight !== null ? latestWeight.toFixed(1) : "—"}
+            <Typography sx={{ fontSize: 14, mb: 1.5 }}>
+              Log your weight to see your trend and BMI.
             </Typography>
-            <Typography
-              sx={{
-                fontSize: 12,
-                color: "text.secondary",
-              }}
-            >
-              current weight (kg)
-            </Typography>
+            <Button variant="contained" onClick={() => onLogOpenChange(true)}>
+              Log your first weight
+            </Button>
           </Paper>
+        ) : (
+          <Stack direction="row" spacing={1.5}>
+            <Paper
+              sx={{
+                p: 2,
+                borderRadius: "14px",
+                boxShadow: tokens.sh2,
+                textAlign: "center",
+                flex: 1,
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: 24,
+                  fontWeight: 500,
+                  color: "primary.dark",
+                }}
+              >
+                {latestWeight !== null ? latestWeight.toFixed(1) : "—"}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: 12,
+                  color: "text.secondary",
+                }}
+              >
+                current weight (kg)
+              </Typography>
+            </Paper>
 
-          <Paper
-            sx={{
-              p: 2,
-              borderRadius: "14px",
-              boxShadow: tokens.sh2,
-              textAlign: "center",
-              flex: 1,
-            }}
-          >
-            <Typography
+            <Paper
               sx={{
-                fontSize: 24,
-                fontWeight: 500,
-                color: "primary.main",
+                p: 2,
+                borderRadius: "14px",
+                boxShadow: tokens.sh2,
+                textAlign: "center",
+                flex: 1,
               }}
             >
-              {bmi !== null ? bmi.toFixed(1) : "—"}
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: 12,
-                color: "text.secondary",
-              }}
-            >
-              BMI
-              {bmi !== null
-                ? ` · ${BMI_CATEGORY_LABELS[getBmiCategory(bmi)]}`
-                : ""}
-            </Typography>
-          </Paper>
-        </Stack>
+              <Typography
+                sx={{
+                  fontSize: 24,
+                  fontWeight: 500,
+                  color: "primary.dark",
+                }}
+              >
+                {bmi !== null ? bmi.toFixed(1) : "—"}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: 12,
+                  color: "text.secondary",
+                }}
+              >
+                BMI
+                {bmi !== null
+                  ? ` · ${BMI_CATEGORY_LABELS[getBmiCategory(bmi)]}`
+                  : ""}
+              </Typography>
+            </Paper>
+          </Stack>
+        )}
 
         <Paper
           sx={{
@@ -228,7 +243,7 @@ export function Progress({
                   color: "text.secondary",
                 }}
               >
-                {profile.daily_kcal_target.toFixed(2)} kcal/day target
+                {formatKcal(profile.daily_kcal_target)} kcal/day target
               </Typography>
             )}
           </Stack>
@@ -253,21 +268,25 @@ export function Progress({
             >
               Weight trend
             </Typography>
-            <Select
+            <ToggleButtonGroup
               value={rangeDays}
-              onChange={handleRangeChange}
-              variant="standard"
-              disableUnderline
+              exclusive
               size="small"
-              sx={{ fontSize: 13 }}
-              inputProps={{ "aria-label": "Weight trend range" }}
+              aria-label="Weight trend range"
+              onChange={(_, value) => {
+                if (value !== null) setRangeDays(value as WeightChartRangeDays);
+              }}
             >
               {WEIGHT_CHART_RANGE_DAYS.map((days) => (
-                <MenuItem key={days} value={days} sx={{ fontSize: 13 }}>
-                  {days} days
-                </MenuItem>
+                <ToggleButton
+                  key={days}
+                  value={days}
+                  sx={{ px: 1.25, py: 0.25 }}
+                >
+                  {days}d
+                </ToggleButton>
               ))}
-            </Select>
+            </ToggleButtonGroup>
           </Stack>
           <WeightChart
             logs={chartLogs}

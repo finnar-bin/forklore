@@ -2,6 +2,7 @@ import { db } from "../../lib/db";
 import { supabase } from "../../lib/supabase";
 import { deletePhoto } from "../../lib/photoUpload";
 import { enqueueMutation } from "../../sync/outbox";
+import { ingredientSearchText } from "./ingredientSearch";
 import type { Ingredient, IngredientUnit } from "../../types/ingredient";
 
 export interface IngredientInput {
@@ -66,7 +67,7 @@ export async function fetchCommunityIngredients(
 // call), it returns everything, unchanged.
 //
 // `search` filters the merged set by a case-insensitive substring match on
-// `name`, applied before `limit` slices the result — see fetchRecipes'
+// `name` and `brand` (ingredientSearchText), applied before `limit` slices the result — see fetchRecipes'
 // identical `search` param (recipes/api.ts) for the same reasoning.
 // Omitted/empty, no filtering happens.
 export async function fetchIngredients(
@@ -80,7 +81,7 @@ export async function fetchIngredients(
   const query = search?.trim().toLowerCase();
   const merged = query
     ? [...rows, ...community].filter((i) =>
-        i.name.toLowerCase().includes(query),
+        ingredientSearchText(i).toLowerCase().includes(query),
       )
     : [...rows, ...community];
   const sorted = merged.sort((a, b) => a.name.localeCompare(b.name));

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
+import { StickySubmitBar } from "../../components/StickySubmitBar";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -74,14 +75,17 @@ function LogWeightForm({
           slotProps={{ htmlInput: { min: 20, max: 400, step: 0.1 } }}
         />
 
-        <Button
-          type="submit"
-          variant="contained"
-          size="large"
-          disabled={submitting || weight.trim() === ""}
-        >
-          {submitting ? "Saving…" : "Log weight"}
-        </Button>
+        <StickySubmitBar>
+          <Button
+            type="submit"
+            variant="contained"
+            size="large"
+            fullWidth
+            disabled={submitting || weight.trim() === ""}
+          >
+            {submitting ? "Saving…" : "Log weight"}
+          </Button>
+        </StickySubmitBar>
       </Stack>
     </DialogContent>
   );

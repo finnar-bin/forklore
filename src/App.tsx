@@ -7,7 +7,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { useScrollFocusedInputIntoView } from "./components/useScrollFocusedInputIntoView";
+import { useVisualViewportVars } from "./components/useVisualViewportVars";
 import { useAuthSession } from "./features/auth/useAuthSession";
 import { useOnboardingGate } from "./features/onboarding/useOnboardingGate";
 import { useSyncEngine } from "./sync/useSyncEngine";
@@ -48,7 +48,7 @@ function App() {
   const { initializing } = useAuthSession();
   const { checking } = useOnboardingGate();
   useSyncEngine();
-  useScrollFocusedInputIntoView();
+  useVisualViewportVars();
 
   const loading = initializing || checking;
   const [timedOut, setTimedOut] = useState(false);

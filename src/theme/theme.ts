@@ -12,19 +12,20 @@ export const theme = createTheme({
     light: {
       palette: {
         background: { default: "#F3EAD3", paper: "#FDF6E3" },
-        primary: { main: PRIMARY_LIGHT },
+        // `dark` is the text-safe shade (>=4.5:1 on paper); `main` stays for fills.
+        primary: { main: PRIMARY_LIGHT, dark: "#5F6F00" },
         secondary: { main: "#DFA000" },
         error: { main: "#F85552" },
-        text: { primary: "#4A555A", secondary: "#8A9691" },
+        text: { primary: "#4A555A", secondary: "#667370" },
       },
     },
     dark: {
       palette: {
         background: { default: "#232A2E", paper: "#2D373C" },
-        primary: { main: PRIMARY_DARK },
+        primary: { main: PRIMARY_DARK, dark: PRIMARY_DARK },
         secondary: { main: "#DBBC7F" },
         error: { main: "#E67E80" },
-        text: { primary: "#D3C6AA", secondary: "#889086" },
+        text: { primary: "#D3C6AA", secondary: "#9AA394" },
       },
     },
   },
@@ -32,9 +33,39 @@ export const theme = createTheme({
   typography: { fontFamily: '"Inter", sans-serif' },
   components: {
     MuiButtonBase: { defaultProps: { disableRipple: true } },
+    // Ripple is off globally, so keyboard focus needs its own visible ring.
+    MuiCssBaseline: {
+      styleOverrides: (theme) => ({
+        body: { fontVariantNumeric: "tabular-nums" },
+        ":focus-visible": {
+          outline: `2px solid ${theme.palette.primary.dark}`,
+          outlineOffset: 2,
+        },
+        "@media (prefers-reduced-motion: reduce)": {
+          "*, *::before, *::after": {
+            animationDuration: "0.01ms !important",
+            animationIterationCount: "1 !important",
+            transitionDuration: "0.01ms !important",
+          },
+        },
+      }),
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: { "@media (pointer: coarse)": { minWidth: 44, minHeight: 44 } },
+      },
+    },
     MuiButton: {
       styleOverrides: {
-        root: { textTransform: "none", fontWeight: 500 },
+        root: ({ ownerState, theme }) => ({
+          textTransform: "none",
+          fontWeight: 500,
+          // Text-style buttons ("View All", "Edit") render as text on paper.
+          ...(ownerState.variant === "text" &&
+            ownerState.color === "primary" && {
+              color: theme.palette.primary.dark,
+            }),
+        }),
       },
     },
     MuiPaper: {
@@ -42,6 +73,33 @@ export const theme = createTheme({
         root: {
           backgroundImage: "none",
         },
+      },
+    },
+    // Below `sm`, dialogs dock to the bottom of the visual viewport as a sheet
+    // (vars from useVisualViewportVars), so an on-screen keyboard lifts the
+    // whole sheet instead of covering its lower fields/buttons.
+    MuiDialog: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          [theme.breakpoints.down("sm")]: {
+            top: "var(--vv-top, 0px)",
+            bottom: "auto",
+            height: "var(--vv-height, 100%)",
+          },
+        }),
+        container: ({ theme }) => ({
+          [theme.breakpoints.down("sm")]: { alignItems: "flex-end" },
+        }),
+        paper: ({ theme }) => ({
+          [theme.breakpoints.down("sm")]: {
+            margin: 0,
+            width: "100%",
+            maxWidth: "100%",
+            maxHeight: "calc(100% - 16px)",
+            borderRadius: "18px 18px 0 0",
+            paddingBottom: "env(safe-area-inset-bottom)",
+          },
+        }),
       },
     },
     // AppBar is Paper-based and otherwise inherits theme.shape.borderRadius
