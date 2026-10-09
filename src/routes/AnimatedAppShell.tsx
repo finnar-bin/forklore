@@ -1,4 +1,11 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  type ReactNode,
+  useLayoutEffect,
+  useRef,
+} from "react";
 import { Box } from "@mui/material";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
@@ -71,6 +78,9 @@ interface Screen {
   // "enters from the right" and "exits to the left" (push) stay a matched
   // pair regardless of what either screen's own previous transition was.
   direction: TransitionVariant;
+  // Window scroll offset when this screen was left, so it can stay put
+  // visually while it animates out after the window scrolls back to the top.
+  scrollY?: number;
 }
 
 export function AnimatedAppShell() {
@@ -100,12 +110,32 @@ export function AnimatedAppShell() {
   // either screen's props are stale.
   if (location.pathname !== current.pathname) {
     const direction = classifyTransition(current.pathname, location.pathname);
-    setOutgoing({ ...current, direction });
+    setOutgoing({ ...current, direction, scrollY: window.scrollY });
     setCurrent({ pathname: location.pathname, node: outlet, direction });
   }
 
+  // A new screen starts at the top — the window's scroll offset otherwise
+  // carries over from the page just left (cutting off e.g. the search bar).
+  const mounted = useRef(false);
+  useLayoutEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    window.scrollTo(0, 0);
+  }, [current.pathname]);
+
   const activeTab = getBottomTab(location.pathname);
   const overlapping = outgoing !== null;
+
+  // Once the outgoing screen is gone the layout switches from overlapped
+  // (absolute) to in-flow; some browsers re-apply the old offset then, so
+  // reset again.
+  const wasOverlapping = useRef(false);
+  useLayoutEffect(() => {
+    if (wasOverlapping.current && !overlapping) window.scrollTo(0, 0);
+    wasOverlapping.current = overlapping;
+  }, [overlapping]);
 
   return (
     <>
@@ -118,7 +148,10 @@ export function AnimatedAppShell() {
       <Box
         sx={{
           position: "relative",
+          // `clip` (not `hidden`): hidden makes this box the scroll container,
+          // which breaks `position: sticky` descendants (detail pages' Save bar).
           overflowX: "hidden",
+          "@supports (overflow: clip)": { overflowX: "clip" },
           minHeight: "100vh",
           // Pushes content right of the persistent rail at md+ — inset:0 on
           // the absolutely positioned motion.div children below resolves
@@ -142,7 +175,11 @@ export function AnimatedAppShell() {
                 current?.pathname === outgoing.pathname ? null : current,
               )
             }
-            style={{ position: "absolute", inset: 0 }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              top: -(outgoing.scrollY ?? 0),
+            }}
           >
             <TransitionRoleContext.Provider value="outgoing">
               {outgoing.node}
