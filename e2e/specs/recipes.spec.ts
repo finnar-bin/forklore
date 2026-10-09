@@ -42,7 +42,7 @@ test.describe("Recipes", () => {
 
     // Client-side live preview (RecipeDetail.tsx) mirrors the server
     // trigger's formula: kcalPerUnit(364, 100) * 200 = 728.00.
-    await expect(page.getByText("728.00 kcal")).toBeVisible();
+    await expect(page.getByText("728 kcal")).toBeVisible();
 
     await page.getByRole("button", { name: "Save changes" }).click();
     await expect(page.getByText("Recipe saved")).toBeVisible();
@@ -51,6 +51,62 @@ test.describe("Recipes", () => {
       .rows("recipes")
       .find((r) => r.name === "Simple Bread");
     expect(recipe?.total_kcal).toBeCloseTo(728, 5);
+  });
+
+  test("adds several pantry ingredients back to back with Add another", async ({
+    page,
+    loginAsSeededUser,
+    backend,
+    seededUser,
+  }) => {
+    for (const name of ["Flour", "Sugar"]) {
+      backend.seedRow("ingredients", {
+        group_id: seededUser.groupId,
+        created_by: seededUser.id,
+        updated_by: null,
+        name,
+        brand: null,
+        quantity: 100,
+        unit: "g",
+        kcal: 100,
+        photo_url: null,
+        is_community: false,
+      });
+    }
+    backend.seedRow("recipes", {
+      group_id: seededUser.groupId,
+      created_by: seededUser.id,
+      updated_by: null,
+      name: "Cake",
+      weight_g: 300,
+      total_kcal: 0,
+      photo_url: null,
+      forked_from_recipe_id: null,
+    });
+    await loginAsSeededUser();
+    await page.getByRole("button", { name: "Recipes" }).click();
+    await page.getByText("Cake").click();
+
+    await page.getByRole("button", { name: "Add ingredient" }).click();
+    await page
+      .getByRole("combobox", { name: "Ingredient", exact: true })
+      .click();
+    await page.getByRole("option", { name: "Flour" }).click();
+    await page.getByLabel("Quantity").fill("100");
+    await page.getByRole("button", { name: "Add another" }).click();
+
+    // Dialog stays open with the pickers reset, ready for the next one.
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page
+      .getByRole("combobox", { name: "Ingredient", exact: true })
+      .click();
+    await page.getByRole("option", { name: "Sugar" }).click();
+    await page.getByLabel("Quantity").fill("50");
+    await page.getByLabel("Quantity").press("Enter");
+    await page.keyboard.press("Escape");
+
+    await expect(page.getByText("Flour")).toBeVisible();
+    await expect(page.getByText("Sugar")).toBeVisible();
   });
 
   test("deletes a recipe", async ({

@@ -1,4 +1,5 @@
 import Alert from "@mui/material/Alert";
+import { formatKcal } from "../../../lib/kcal";
 import Divider from "@mui/material/Divider";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Stack from "@mui/material/Stack";
@@ -109,10 +110,10 @@ export function CalorieTargetStep({
               sx={{
                 fontSize: 14,
                 fontWeight: 500,
-                color: "primary.main",
+                color: "primary.dark",
               }}
             >
-              {calorieOptions.maintenanceKcal.toFixed(2)} kcal/day
+              {formatKcal(calorieOptions.maintenanceKcal)} kcal/day
             </Typography>
           }
         />
@@ -133,10 +134,10 @@ export function CalorieTargetStep({
                 sx={{
                   fontSize: 14,
                   fontWeight: 500,
-                  color: "primary.main",
+                  color: "primary.dark",
                 }}
               >
-                {preset.kcal.toFixed(2)} kcal/day
+                {formatKcal(preset.kcal)} kcal/day
               </Typography>
             }
           />
@@ -187,7 +188,7 @@ export function CalorieTargetStep({
 
       <Typography
         sx={{
-          fontSize: 11,
+          fontSize: 12,
           color: "text.secondary",
         }}
       >
@@ -211,7 +212,7 @@ export function CalorieTargetStep({
         />
         <Typography
           sx={{
-            fontSize: 11,
+            fontSize: 12,
             color: "text.secondary",
           }}
         >

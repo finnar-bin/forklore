@@ -24,7 +24,7 @@ import { DeferredPhotoUpload } from "../../components/DeferredPhotoUpload";
 import { ItemMetadata } from "../../components/ItemMetadata";
 import { useNotification } from "../../components/NotificationProvider";
 import { PageContent } from "../../components/PageContent";
-import { formatKcalPerUnit } from "../../lib/kcal";
+import { formatKcalPerUnit, formatKcal } from "../../lib/kcal";
 import { deletePhoto, uploadPhoto } from "../../lib/photoUpload";
 import { useAppStore } from "../../store/useAppStore";
 import { PhotoThumbnail } from "../../components/PhotoThumbnail";
@@ -269,8 +269,28 @@ export function IngredientDetail({
   }
 
   return (
-    <PageContent spacing={2} sx={{ p: 2, pb: 4 }}>
+    <PageContent
+      spacing={2}
+      sx={{
+        p: 2,
+        pb: 4,
+        // Two columns on desktop: photo/metadata/stats left, form + Save right.
+        width: "100%",
+        "@media (min-width:900px)": {
+          maxWidth: 960,
+          display: "grid",
+          gridTemplateColumns: "240px minmax(0, 1fr)",
+          columnGap: 3,
+          rowGap: 2,
+          alignItems: "start",
+          "& > .detail-left": { gridColumn: 1 },
+          "& > .detail-form": { gridColumn: 2, gridRow: "1 / span 3" },
+          "& > .detail-after": { gridColumn: 2 },
+        },
+      }}
+    >
       <Box
+        className="detail-left"
         sx={{ position: "relative", display: "flex", justifyContent: "center" }}
       >
         {canEdit ? (
@@ -298,24 +318,26 @@ export function IngredientDetail({
       </Box>
 
       {(groupId || isCommunity) && (
-        <ItemMetadata
-          creatorName={profileNames[ingredient.created_by]}
-          createdAt={ingredient.created_at}
-          updaterName={
-            ingredient.updated_by
-              ? profileNames[ingredient.updated_by]
-              : undefined
-          }
-          updatedAt={ingredient.updated_at}
-          wasUpdated={wasUpdated}
-        />
+        <Box className="detail-left">
+          <ItemMetadata
+            creatorName={profileNames[ingredient.created_by]}
+            createdAt={ingredient.created_at}
+            updaterName={
+              ingredient.updated_by
+                ? profileNames[ingredient.updated_by]
+                : undefined
+            }
+            updatedAt={ingredient.updated_at}
+            wasUpdated={wasUpdated}
+          />
+        </Box>
       )}
 
       {/* Stat tiles matching RecipeDetail.tsx's total/per-gram kcal
           pattern — kcal and kcal per unit, computed live from the draft
           fields rather than the last-saved row, so it updates as the user
           edits, before anything is saved. */}
-      <Stack direction="row" spacing={1.5}>
+      <Stack direction="row" spacing={1.5} className="detail-left">
         <Paper
           sx={{
             flex: 1,
@@ -329,14 +351,14 @@ export function IngredientDetail({
             sx={{
               fontSize: 18,
               fontWeight: 500,
-              color: "primary.main",
+              color: "primary.dark",
             }}
           >
-            {parsedKcal.toFixed(2)}
+            {formatKcal(parsedKcal)}
           </Typography>
           <Typography
             sx={{
-              fontSize: 11,
+              fontSize: 12,
               color: "text.secondary",
             }}
           >
@@ -356,14 +378,14 @@ export function IngredientDetail({
             sx={{
               fontSize: 18,
               fontWeight: 500,
-              color: "primary.main",
+              color: "primary.dark",
             }}
           >
             {formatKcalPerUnit(parsedKcal, parsedQuantity)}
           </Typography>
           <Typography
             sx={{
-              fontSize: 11,
+              fontSize: 12,
               color: "text.secondary",
             }}
           >
@@ -373,7 +395,10 @@ export function IngredientDetail({
       </Stack>
 
       {canEdit ? (
-        <Paper sx={{ p: 3, borderRadius: "14px", boxShadow: tokens.sh2 }}>
+        <Paper
+          className="detail-form"
+          sx={{ p: 3, borderRadius: "14px", boxShadow: tokens.sh2 }}
+        >
           <Stack spacing={2.5}>
             <TextField
               label="Name"
@@ -432,7 +457,10 @@ export function IngredientDetail({
       ) : (
         // Read-only — only the creator may edit/delete a community
         // ingredient (docs/pending-deviations.md, "Community pantry").
-        <Paper sx={{ p: 3, borderRadius: "14px", boxShadow: tokens.sh2 }}>
+        <Paper
+          className="detail-form"
+          sx={{ p: 3, borderRadius: "14px", boxShadow: tokens.sh2 }}
+        >
           <Stack
             spacing={1}
             sx={{
@@ -463,7 +491,7 @@ export function IngredientDetail({
               }}
             >
               {ingredient.quantity} {ingredient.unit} ·{" "}
-              {ingredient.kcal.toFixed(2)} kcal
+              {formatKcal(ingredient.kcal)} kcal
             </Typography>
           </Stack>
         </Paper>
@@ -519,17 +547,37 @@ export function IngredientDetail({
         )}
       </Menu>
 
-      {saveError && <Alert severity="error">{saveError}</Alert>}
+      {saveError && (
+        <Alert severity="error" className="detail-after">
+          {saveError}
+        </Alert>
+      )}
 
       {canEdit && (
-        <Button
-          variant="contained"
-          size="large"
-          onClick={handleSave}
-          disabled={!isValid || !isDirty || saving}
+        <Box
+          className="detail-after"
+          sx={{
+            position: "sticky",
+            // Clears BottomNav on mobile; flush to the bottom beside the rail.
+            bottom: {
+              xs: "calc(56px + env(safe-area-inset-bottom, 0px))",
+              md: 0,
+            },
+            bgcolor: "background.default",
+            py: 1,
+            zIndex: 1,
+          }}
         >
-          {saving ? "Saving…" : "Save changes"}
-        </Button>
+          <Button
+            variant="contained"
+            size="large"
+            fullWidth
+            onClick={handleSave}
+            disabled={!isValid || !isDirty || saving}
+          >
+            {saving ? "Saving…" : "Save changes"}
+          </Button>
+        </Box>
       )}
 
       <DeleteIngredientDialog

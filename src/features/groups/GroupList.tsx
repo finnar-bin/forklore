@@ -98,8 +98,7 @@ export function GroupList({
               color: "text.secondary",
             }}
           >
-            Each group shares its own pantry, recipes, and log with everyone in
-            it. Tap a group to switch into it, or start a new one.
+            Tap a group to switch into it.
           </Typography>
         </Stack>
 

@@ -1,6 +1,6 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { formatKcalPerUnit } from "../../lib/kcal";
+import { formatKcalPerUnit, formatKcal } from "../../lib/kcal";
 import type { Recipe } from "../../types/recipe";
 
 // Recipe counterpart to pantry/IngredientKcalHeader.tsx — same layout,
@@ -72,11 +72,11 @@ export function RecipeKcalHeader({
         <Typography
           sx={{
             fontSize: 20,
-            color: "primary.main",
+            color: "primary.dark",
           }}
         >
           <Box component="span" sx={{ fontWeight: 700 }}>
-            {kcal.toFixed(2)}
+            {formatKcal(kcal)}
           </Box>{" "}
           <Box component="span" sx={{ fontWeight: 400 }}>
             kcal

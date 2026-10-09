@@ -9,7 +9,7 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../../theme/theme";
-import { kcalPerUnit } from "../../lib/kcal";
+import { kcalPerUnit, formatKcal } from "../../lib/kcal";
 import { AddRecipeIngredientDialog } from "./AddRecipeIngredientDialog";
 import type { RecipeIngredientDetail } from "../../types/recipe";
 import type { Ingredient } from "../../types/ingredient";
@@ -24,7 +24,9 @@ export function RecipeIngredientsList({
   onAdd,
   onQuantityChange,
   onRemove,
+  className,
 }: {
+  className?: string;
   groupId: string;
   ingredients: RecipeIngredientDetail[];
   disabled: boolean;
@@ -35,7 +37,7 @@ export function RecipeIngredientsList({
   const [addOpen, setAddOpen] = useState(false);
 
   return (
-    <Box>
+    <Box className={className}>
       <Stack
         direction="row"
         sx={{
@@ -96,6 +98,7 @@ export function RecipeIngredientsList({
           onAdd(ingredient, quantityUsed);
           setAddOpen(false);
         }}
+        onAddAnother={onAdd}
       />
     </Box>
   );
@@ -159,7 +162,7 @@ function RecipeIngredientRow({
             left: 10,
             bgcolor: "secondary.main",
             color: "secondary.contrastText",
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: 600,
             lineHeight: 1,
             px: 0.75,
@@ -181,11 +184,11 @@ function RecipeIngredientRow({
         </Typography>
         <Typography
           sx={{
-            fontSize: 11,
+            fontSize: 12,
             color: "text.secondary",
           }}
         >
-          {kcalContribution.toFixed(2)} kcal
+          {formatKcal(kcalContribution)} kcal
           {item.brand && ` · ${item.brand}`}
         </Typography>
       </Box>

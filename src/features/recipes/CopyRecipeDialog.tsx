@@ -11,7 +11,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useAppStore } from "../../store/useAppStore";
-import { formatKcalPerUnit, kcalPerUnit } from "../../lib/kcal";
+import { formatKcalPerUnit, kcalPerUnit, formatKcal } from "../../lib/kcal";
 import {
   copyRecipe,
   findIngredientMatch,
@@ -316,7 +316,7 @@ function ConflictStep({
           <Box sx={{ flex: 1 }}>
             <Typography
               sx={{
-                fontSize: 11,
+                fontSize: 12,
                 color: "text.secondary",
               }}
             >
@@ -335,7 +335,7 @@ function ConflictStep({
           <Box sx={{ flex: 1 }}>
             <Typography
               sx={{
-                fontSize: 11,
+                fontSize: 12,
                 color: "text.secondary",
               }}
             >
@@ -348,7 +348,7 @@ function ConflictStep({
                 fontWeight: 500,
               }}
             >
-              {match.kcal_per_unit.toFixed(2)} kcal/{match.unit}
+              {formatKcal(match.kcal_per_unit)} kcal/{match.unit}
             </Typography>
           </Box>
         </Stack>

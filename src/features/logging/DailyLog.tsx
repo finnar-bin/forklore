@@ -6,6 +6,8 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Fab from "@mui/material/Fab";
 import Stack from "@mui/material/Stack";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
 import { useAppStore } from "../../store/useAppStore";
@@ -16,7 +18,8 @@ import {
   type VirtualizedSection,
 } from "../../components/VirtualizedSectionedCardList";
 import { useProfileNames } from "../profiles/useProfileNames";
-import { fetchTodayLogEntries } from "./api";
+import { useNotification } from "../../components/NotificationProvider";
+import { deleteLogEntry, fetchTodayLogEntries } from "./api";
 import { AddLogEntryDialog } from "./AddLogEntryDialog";
 import { EditLogEntryDialog } from "./EditLogEntryDialog";
 import { GroupMemberKcalCard } from "./GroupMemberKcalCard";
@@ -52,6 +55,7 @@ export function DailyLog({
 }) {
   const userId = useAppStore((state) => state.userId);
   const navigate = useNavigate();
+  const { notify } = useNotification();
 
   const [editingEntry, setEditingEntry] = useState<LogEntry | null>(null);
 
@@ -127,7 +131,14 @@ export function DailyLog({
           ),
           items: sectionEntries,
         };
-      }).filter((section) => section.items.length > 0),
+      })
+        .filter((section) => section.items.length > 0)
+        // A lone "Uncategorized" bucket (meal breakdown off) needs no heading.
+        .map((section, _i, all) =>
+          all.length === 1 && section.key === "Uncategorized"
+            ? { ...section, header: null }
+            : section,
+        ),
     [filteredEntries],
   );
 
@@ -169,9 +180,18 @@ export function DailyLog({
             justifyContent: "space-between",
           }}
         >
-          <Button onClick={() => navigate(`/groups/${groupId}/logs`)}>
-            View All
-          </Button>
+          <ToggleButtonGroup
+            value="today"
+            exclusive
+            size="small"
+            aria-label="Log range"
+            onChange={(_, value) => {
+              if (value === "all") navigate(`/groups/${groupId}/logs`);
+            }}
+          >
+            <ToggleButton value="today">Today</ToggleButton>
+            <ToggleButton value="all">All time</ToggleButton>
+          </ToggleButtonGroup>
 
           <LogUserFilter
             groupId={groupId}
@@ -279,7 +299,21 @@ export function DailyLog({
         open={addOpen}
         groupId={groupId}
         onClose={() => onAddOpenChange(false)}
-        onLogged={() => onAddOpenChange(false)}
+        onLogged={(entry) => {
+          onAddOpenChange(false);
+          notify({
+            message: `Logged ${entry.name}`,
+            action: (
+              <Button
+                size="small"
+                color="inherit"
+                onClick={() => void deleteLogEntry(entry.id)}
+              >
+                Undo
+              </Button>
+            ),
+          });
+        }}
       />
 
       {editingEntry && (

@@ -126,7 +126,7 @@ export function DeferredPhotoUpload({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            bgcolor: "primary.main",
+            bgcolor: "primary.dark",
             color: "primary.contrastText",
             boxShadow: 1,
             pointerEvents: "none",

@@ -3,7 +3,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useColorScheme } from "@mui/material/styles";
 import { shadows } from "../../theme/theme";
-import { formatKcalPerUnit } from "../../lib/kcal";
+import { formatKcalPerUnit, formatKcal } from "../../lib/kcal";
 import { PhotoThumbnail } from "../../components/PhotoThumbnail";
 import type { Recipe } from "../../types/recipe";
 
@@ -59,13 +59,22 @@ export function RecipeCard({
         },
       })}
     >
-      <PhotoThumbnail photoUrl={recipe.photo_url} alt={recipe.name} />
+      <PhotoThumbnail
+        photoUrl={recipe.photo_url}
+        alt={recipe.name}
+        monogram={recipe.name}
+      />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography
-          noWrap
+          title={recipe.name}
           sx={{
             fontSize: 14,
             fontWeight: 500,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            overflowWrap: "anywhere",
           }}
         >
           {recipe.name}
@@ -85,14 +94,14 @@ export function RecipeCard({
           sx={{
             fontSize: 14,
             fontWeight: 500,
-            color: "primary.main",
+            color: "primary.dark",
           }}
         >
-          {recipe.total_kcal.toFixed(2)} kcal
+          {formatKcal(recipe.total_kcal)} kcal
         </Typography>
         <Typography
           sx={{
-            fontSize: 11,
+            fontSize: 12,
             color: "text.secondary",
           }}
         >

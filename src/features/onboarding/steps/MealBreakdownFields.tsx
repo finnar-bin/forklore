@@ -1,4 +1,5 @@
 import Stack from "@mui/material/Stack";
+import { formatKcal } from "../../../lib/kcal";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { sumMealKcalTargets } from "../calorieCalc";
@@ -45,10 +46,10 @@ export function MealBreakdownFields({
         }}
       >
         {remaining === 0
-          ? `${allocated.toFixed(2)} / ${dailyTotal.toFixed(2)} kcal allocated`
+          ? `${formatKcal(allocated)} / ${formatKcal(dailyTotal)} kcal allocated`
           : remaining > 0
-            ? `${remaining.toFixed(2)} kcal left to allocate`
-            : `${Math.abs(remaining).toFixed(2)} kcal over your daily target`}
+            ? `${formatKcal(remaining)} kcal left to allocate`
+            : `${formatKcal(Math.abs(remaining))} kcal over your daily target`}
       </Typography>
     </Stack>
   );

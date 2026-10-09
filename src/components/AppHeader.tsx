@@ -8,6 +8,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SyncIcon from "@mui/icons-material/Sync";
 import SyncProblemIcon from "@mui/icons-material/SyncProblem";
 import GroupIcon from "@mui/icons-material/Group";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { useColorScheme } from "@mui/material/styles";
 import { useLocation, useNavigate } from "react-router-dom";
 import { shadows } from "../theme/theme";
@@ -15,6 +16,7 @@ import { useAppStore } from "../store/useAppStore";
 import { useSyncStore } from "../store/useSyncStore";
 import { useMyProfile } from "../features/profiles/useMyProfile";
 import { FloatingPortal } from "./FloatingPortal";
+import { GroupSwitcherMenu } from "./GroupSwitcherMenu";
 import { PhotoThumbnail } from "./PhotoThumbnail";
 import { useNavRailWidth } from "./navTabs";
 import { useIsOutgoingScreen } from "../routes/AnimatedAppShell";
@@ -78,6 +80,16 @@ export function AppHeader({
   const userId = useAppStore((state) => state.userId);
   const profile = useMyProfile(userId);
   const isOutgoing = useIsOutgoingScreen();
+  const [groupMenuAnchor, setGroupMenuAnchor] = useState<HTMLElement | null>(
+    null,
+  );
+  // Converter is a header shortcut on mobile (not a tab), shown only where
+  // quantities/units come up.
+  const showConverter = /^\/groups\/[^/]+\/(pantry|recipes|log|logs)$/.test(
+    location.pathname,
+  );
+  const activeGroupId =
+    location.pathname.match(/^\/groups\/([^/]+)/)?.[1] ?? null;
   const navRailWidth = useNavRailWidth();
 
   // Measured (not a hardcoded Toolbar height) so the in-flow spacer below
@@ -121,10 +133,19 @@ export function AppHeader({
         {title}
       </Typography>
       {action && <Box sx={{ mr: 1 }}>{action}</Box>}
+      {showConverter && (
+        <IconButton
+          aria-label="Converter"
+          onClick={() => navigate("/converter")}
+          sx={{ display: { xs: "inline-flex", md: "none" } }}
+        >
+          <SwapHorizIcon />
+        </IconButton>
+      )}
       {location.pathname !== "/groups" && (
         <IconButton
           aria-label="Groups"
-          onClick={() => navigate("/groups")}
+          onClick={(event) => setGroupMenuAnchor(event.currentTarget)}
           // NavRail carries its own "Groups" item at md+ (see
           // docs/pending-deviations.md, "Groups moves into the desktop nav
           // rail") — this header button stays mobile-only, unchanged below
@@ -134,6 +155,11 @@ export function AppHeader({
           <GroupIcon />
         </IconButton>
       )}
+      <GroupSwitcherMenu
+        anchorEl={groupMenuAnchor}
+        activeGroupId={activeGroupId}
+        onClose={() => setGroupMenuAnchor(null)}
+      />
       {syncStatus !== "idle" && (
         <IconButton
           aria-label={
@@ -171,6 +197,7 @@ export function AppHeader({
           <PhotoThumbnail
             photoUrl={profile?.avatar_url ?? null}
             alt="Your avatar"
+            monogram={profile?.name}
             size={32}
           />
         </IconButton>

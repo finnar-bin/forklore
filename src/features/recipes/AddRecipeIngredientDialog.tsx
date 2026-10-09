@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Alert from "@mui/material/Alert";
-import Autocomplete from "@mui/material/Autocomplete";
+import Autocomplete, { createFilterOptions } from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -13,6 +13,8 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import { useSheetAutocompleteSlotProps } from "../../components/useSheetAutocompleteSlotProps";
+import { ingredientSearchText } from "../pantry/ingredientSearch";
 import { useAppStore } from "../../store/useAppStore";
 import { kcalPerUnit } from "../../lib/kcal";
 import { resolveGroupLabel } from "../groups/groupLabel";
@@ -41,12 +43,15 @@ export function AddRecipeIngredientDialog({
   excludeIngredientIds,
   onClose,
   onAdd,
+  onAddAnother,
 }: {
   open: boolean;
   groupId: string;
   excludeIngredientIds: string[];
   onClose: () => void;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
+  // Adds without closing, so several pantry items can go in back to back.
+  onAddAnother: (ingredient: Ingredient, quantityUsed: number) => void;
 }) {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
@@ -60,6 +65,7 @@ export function AddRecipeIngredientDialog({
           excludeIngredientIds={excludeIngredientIds}
           onClose={onClose}
           onAdd={onAdd}
+          onAddAnother={onAddAnother}
         />
       )}
     </Dialog>
@@ -71,11 +77,13 @@ function AddRecipeIngredientForm({
   excludeIngredientIds,
   onClose,
   onAdd,
+  onAddAnother,
 }: {
   groupId: string;
   excludeIngredientIds: string[];
   onClose: () => void;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
+  onAddAnother: (ingredient: Ingredient, quantityUsed: number) => void;
 }) {
   const [mode, setMode] = useState<"existing" | "new">("existing");
 
@@ -101,6 +109,7 @@ function AddRecipeIngredientForm({
           excludeIngredientIds={excludeIngredientIds}
           onClose={onClose}
           onAdd={onAdd}
+          onAddAnother={onAddAnother}
         />
       ) : (
         <NewIngredientForm groupId={groupId} onClose={onClose} onAdd={onAdd} />
@@ -116,13 +125,16 @@ function ExistingIngredientForm({
   excludeIngredientIds,
   onClose,
   onAdd,
+  onAddAnother,
 }: {
   groupId: string;
   excludeIngredientIds: string[];
   onClose: () => void;
   onAdd: (ingredient: Ingredient, quantityUsed: number) => void;
+  onAddAnother: (ingredient: Ingredient, quantityUsed: number) => void;
 }) {
   const userId = useAppStore((state) => state.userId);
+  const sheetSlotProps = useSheetAutocompleteSlotProps();
 
   // This recipe's own group's opt-in — see docs/pending-deviations.md
   // ("Community pantry") and PantryList.tsx's identical derivation.
@@ -166,6 +178,16 @@ function ExistingIngredientForm({
     onAdd(selected, parsedQuantity);
   }
 
+  // Resets the pickers; the key remount puts focus back on the search field.
+  const [resetKey, setResetKey] = useState(0);
+  function handleAddAnother() {
+    if (!selected || !canAdd) return;
+    onAddAnother(selected, parsedQuantity);
+    setSelected(null);
+    setQuantity("");
+    setResetKey((k) => k + 1);
+  }
+
   return (
     <>
       <DialogContent sx={{ pt: "12px !important" }}>
@@ -190,9 +212,15 @@ function ExistingIngredientForm({
                 />
               )}
               <Autocomplete
+                key={resetKey}
+                slotProps={sheetSlotProps}
                 options={availableOptions}
                 getOptionKey={(option) => option.id}
                 getOptionLabel={(option) => option.name}
+                filterOptions={createFilterOptions<Ingredient>({
+                  trim: true,
+                  stringify: ingredientSearchText,
+                })}
                 value={selected}
                 onChange={(_, value) => setSelected(value)}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
@@ -221,8 +249,14 @@ function ExistingIngredientForm({
                 required
                 fullWidth
                 disabled={!selected}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && canAdd) {
+                    e.preventDefault();
+                    handleAddAnother();
+                  }
+                }}
                 slotProps={{
-                  htmlInput: { min: 0, step: 0.01 },
+                  htmlInput: { min: 0, step: 0.01, inputMode: "decimal" },
                   input: selected
                     ? {
                         endAdornment: (
@@ -240,6 +274,9 @@ function ExistingIngredientForm({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={handleAddAnother} disabled={!canAdd}>
+          Add another
+        </Button>
         <Button variant="contained" onClick={handleAdd} disabled={!canAdd}>
           Add ingredient
         </Button>

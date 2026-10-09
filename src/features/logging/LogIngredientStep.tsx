@@ -13,6 +13,7 @@ import type { MealType } from "../../types/log";
 import type { LogEntryInput } from "./api";
 import { LoggedForSelector } from "./LoggedForSelector";
 import { MealTypeSelector } from "./MealTypeSelector";
+import { QuantityChips } from "./QuantityChips";
 
 // Asks how much of this ingredient was eaten, in the ingredient's own unit
 // (read-only, inherited — never user-selectable, same rule as recipe
@@ -24,6 +25,7 @@ export function LogIngredientStep({
   onLoggedForChange,
   loggedForGroupId,
   mealBreakdownEnabled,
+  initialQuantity,
   onLog,
   onCancel,
 }: {
@@ -46,10 +48,14 @@ export function LogIngredientStep({
   // lookup), since it's a property of whichever person this entry is for,
   // not of this component. Gates whether MealTypeSelector renders at all.
   mealBreakdownEnabled: boolean;
+  // Last amount logged for this ingredient, if any — prefilled.
+  initialQuantity?: number;
   onLog: (input: LogEntryInput) => Promise<void>;
   onCancel: () => void;
 }) {
-  const [quantity, setQuantity] = useState("");
+  const [quantity, setQuantity] = useState(
+    initialQuantity ? String(initialQuantity) : "",
+  );
   const [mealType, setMealType] = useState<MealType | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +113,7 @@ export function LogIngredientStep({
             error={isNegative}
             helperText={isNegative ? "Enter a positive amount." : undefined}
             slotProps={{
-              htmlInput: { min: 0, step: 0.01 },
+              htmlInput: { min: 0, step: 0.01, inputMode: "decimal" },
               input: {
                 endAdornment: (
                   <InputAdornment position="end">
@@ -116,6 +122,12 @@ export function LogIngredientStep({
                 ),
               },
             }}
+          />
+          <QuantityChips
+            unit={ingredient.unit}
+            last={initialQuantity}
+            disabled={submitting}
+            onPick={(v) => setQuantity(String(v))}
           />
           {loggedForGroupId && (
             <LoggedForSelector

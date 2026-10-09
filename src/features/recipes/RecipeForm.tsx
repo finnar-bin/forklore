@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import { StickySubmitBar } from "../../components/StickySubmitBar";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
@@ -117,14 +118,17 @@ export function RecipeForm({
           <MenuItem value="kg">kg</MenuItem>
         </TextField>
       </Stack>
-      <Button
-        type="submit"
-        variant="contained"
-        size="large"
-        disabled={submitting}
-      >
-        {submitting ? "Saving…" : submitLabel}
-      </Button>
+      <StickySubmitBar>
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          fullWidth
+          disabled={submitting}
+        >
+          {submitting ? "Saving…" : submitLabel}
+        </Button>
+      </StickySubmitBar>
     </Stack>
   );
 }

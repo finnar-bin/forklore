@@ -1,4 +1,5 @@
 import type { KeyboardEvent } from "react";
+import { formatKcal } from "../../lib/kcal";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
@@ -85,7 +86,11 @@ export function LogEntryCard({
         }),
       })}
     >
-      <PhotoThumbnail photoUrl={photoUrl ?? null} alt={entry.name} />
+      <PhotoThumbnail
+        photoUrl={photoUrl ?? null}
+        alt={entry.name}
+        monogram={entry.name}
+      />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Box
           sx={{
@@ -125,7 +130,7 @@ export function LogEntryCard({
               variant={isOwnEntry ? "filled" : "outlined"}
               sx={{
                 height: 18,
-                fontSize: 11,
+                fontSize: 12,
                 "& .MuiChip-label": { px: 0.75 },
                 ...(isOwnEntry
                   ? {}
@@ -149,14 +154,14 @@ export function LogEntryCard({
           sx={{
             fontSize: 14,
             fontWeight: 500,
-            color: "primary.main",
+            color: "primary.dark",
           }}
         >
-          {entry.kcal.toFixed(2)} kcal
+          {formatKcal(entry.kcal)} kcal
         </Typography>
         <Typography
           sx={{
-            fontSize: 11,
+            fontSize: 12,
             color: "text.secondary",
           }}
         >

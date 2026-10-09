@@ -29,16 +29,19 @@ test.describe("Logging", () => {
     // overlap window) — see recipes.spec.ts's own comment on the same
     // ambiguity. Target the combobox role directly with an exact name.
     await page
-      .getByRole("combobox", { name: "Ingredient", exact: true })
+      .getByRole("combobox", {
+        name: "Search ingredients & recipes",
+        exact: true,
+      })
       .click();
     await page.getByRole("option", { name: /Greek Yogurt/ }).click();
     await page.getByLabel("Quantity eaten").fill("150");
     await page.getByRole("button", { name: "Log this ingredient" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
 
-    await expect(page.getByText("Greek Yogurt")).toBeVisible();
+    await expect(page.getByText("Greek Yogurt", { exact: true })).toBeVisible();
     // kcalPerUnit(59, 100) * 150 = 88.50
-    await expect(page.getByText("88.50 kcal")).toBeVisible();
+    await expect(page.getByText("88.5 kcal")).toBeVisible();
     // No photo_url on the source ingredient -> LogEntryCard's PhotoThumbnail
     // falls back to its placeholder (no <img>), not an empty/broken one.
     await expect(page.getByRole("img", { name: "Greek Yogurt" })).toHaveCount(
@@ -73,7 +76,10 @@ test.describe("Logging", () => {
     await page.getByRole("button", { name: "Log" }).click();
     await page.getByRole("button", { name: "Log an entry" }).click();
     await page
-      .getByRole("combobox", { name: "Ingredient", exact: true })
+      .getByRole("combobox", {
+        name: "Search ingredients & recipes",
+        exact: true,
+      })
       .click();
     await page.getByRole("option", { name: /Almonds/ }).click();
     await page.getByLabel("Quantity eaten").fill("30");
@@ -86,5 +92,81 @@ test.describe("Logging", () => {
       "src",
       "https://example.com/almonds.webp",
     );
+  });
+});
+
+test.describe("Logging quick-log", () => {
+  test("offers recent items with the last quantity prefilled, and undoes a log", async ({
+    page,
+    loginAsSeededUser,
+    backend,
+    seededUser,
+  }) => {
+    backend.seedRow("ingredients", {
+      group_id: seededUser.groupId,
+      created_by: seededUser.id,
+      updated_by: null,
+      name: "Quick Oats",
+      brand: null,
+      quantity: 100,
+      unit: "g",
+      kcal: 380,
+      photo_url: null,
+      is_community: false,
+    });
+    await loginAsSeededUser();
+    await page.getByRole("button", { name: "Log" }).click();
+
+    await page.getByRole("button", { name: "Log an entry" }).click();
+    await page
+      .getByRole("combobox", { name: "Search ingredients & recipes" })
+      .click();
+    await page.getByRole("option", { name: /Quick Oats/ }).click();
+    await page.getByLabel("Quantity eaten").fill("75");
+    await page.getByRole("button", { name: "Log this ingredient" }).click();
+    await expect(page.getByText("Logged Quick Oats")).toBeVisible();
+
+    // Second time round: it's a Recent chip, and 75 is prefilled.
+    await page.getByRole("button", { name: "Log an entry" }).click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Quick Oats" })
+      .click();
+    await expect(page.getByLabel("Quantity eaten")).toHaveValue("75");
+    await page.getByRole("button", { name: "Log this ingredient" }).click();
+
+    await page.getByRole("button", { name: "Undo" }).click();
+    await expect(page.getByText("Quick Oats", { exact: true })).toHaveCount(1);
+  });
+});
+
+test.describe("Logging search", () => {
+  test("finds an ingredient by its brand", async ({
+    page,
+    loginAsSeededUser,
+    backend,
+    seededUser,
+  }) => {
+    backend.seedRow("ingredients", {
+      group_id: seededUser.groupId,
+      created_by: seededUser.id,
+      updated_by: null,
+      name: "Rolled Oats",
+      brand: "Quaker",
+      quantity: 100,
+      unit: "g",
+      kcal: 380,
+      photo_url: null,
+      is_community: false,
+    });
+    await loginAsSeededUser();
+    await page.getByRole("button", { name: "Log" }).click();
+    await page.getByRole("button", { name: "Log an entry" }).click();
+    await page
+      .getByRole("combobox", { name: "Search ingredients & recipes" })
+      .fill("quaker");
+    await expect(
+      page.getByRole("option", { name: /Rolled Oats/ }),
+    ).toBeVisible();
   });
 });

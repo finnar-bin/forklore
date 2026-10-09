@@ -22,6 +22,7 @@ export function ProgressPage() {
         title="Progress"
         action={
           <Button
+            variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setLogOpen(true)}
             sx={{ display: { xs: "none", md: "inline-flex" } }}

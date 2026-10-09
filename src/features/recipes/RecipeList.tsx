@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
 import CircularProgress from "@mui/material/CircularProgress";
 import Fab from "@mui/material/Fab";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -93,6 +95,7 @@ export function RecipeList({
       {/* pb clears both the FAB (bottom: 80) and BottomNav below it — see
           docs/pending-deviations.md (Ticket 16). */}
       <PageContent
+        variant="wide"
         spacing={1.5}
         sx={{
           p: 2,
@@ -129,17 +132,26 @@ export function RecipeList({
         )}
 
         {!loading && recipes?.length === 0 && (
-          <Typography
-            sx={{
-              color: "text.secondary",
-              textAlign: "center",
-              py: 4,
-            }}
-          >
-            {search.trim()
-              ? "No recipes match your search."
-              : "This group's recipes are empty. Add the first recipe to get started."}
-          </Typography>
+          <Stack spacing={2} sx={{ alignItems: "center", py: 4 }}>
+            <Typography
+              sx={{
+                color: "text.secondary",
+                textAlign: "center",
+              }}
+            >
+              {search.trim()
+                ? "No recipes match your search."
+                : "This group's recipes are empty."}
+            </Typography>
+            {!search.trim() && (
+              <Button
+                variant="contained"
+                onClick={() => onCreateOpenChange(true)}
+              >
+                Add your first recipe
+              </Button>
+            )}
+          </Stack>
         )}
 
         {recipes && recipes.length > 0 && (
@@ -150,7 +162,7 @@ export function RecipeList({
             // See PantryList.tsx's identical prop and
             // docs/pending-deviations.md ("Multi-column card grid (issue
             // #64)").
-            columns={{ xs: 1, sm: 2, lg: 3 }}
+            columns={{ xs: 1, sm: 2, lg: 3, xl: 4 }}
             getItemKey={(recipe) => recipe.id}
             hasMore={hasMore}
             onEndReached={handleEndReached}
