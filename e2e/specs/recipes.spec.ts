@@ -137,7 +137,7 @@ test.describe("Recipes", () => {
     await expect(page.getByText("Doomed Casserole")).toHaveCount(0);
   });
 
-  test("keeps the last ingredient clear of the sticky Save bar on mobile", async ({
+  test("keeps Save changes in page flow, below the last ingredient, on mobile", async ({
     page,
     loginAsSeededUser,
     backend,
@@ -187,9 +187,7 @@ test.describe("Recipes", () => {
     await page.getByRole("button", { name: "Recipes", exact: true }).click();
     await page.getByText("Big Bowl").click();
 
-    // Mid-scroll, where the bar floats: detail screens have no bottom nav, so
-    // it must sit flush to the bottom edge (a raised bar leaves a dead gap
-    // under it and covers the last card once scrolled near the end).
+    // Not sticky: mid-scroll the button is still off-screen, below the fold.
     await expect(page.getByText("Berries", { exact: true })).toBeVisible();
     await page.waitForTimeout(800);
     await expect
@@ -198,14 +196,12 @@ test.describe("Recipes", () => {
         return page.evaluate("scrollY");
       })
       .toBeGreaterThan(0);
-    const floating = (await page
+    const midScroll = (await page
       .getByRole("button", { name: "Save changes" })
       .boundingBox())!;
-    // Inside the viewport (actually floating) and flush to its bottom edge.
-    expect(floating.y + floating.height).toBeLessThanOrEqual(844);
-    expect(floating.y + floating.height).toBeGreaterThanOrEqual(844 - 20);
+    expect(midScroll.y).toBeGreaterThan(844);
 
-    // At the end of the page the last row is fully above the bar.
+    // At the end of the page the last row is fully above the button.
     await page.evaluate("window.scrollTo(0, document.body.scrollHeight)");
     await page.waitForTimeout(400);
     const last = (await page

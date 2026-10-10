@@ -1347,3 +1347,11 @@ That photo is resolved live off the entry's still-existing source row rather tha
 **Why:** Reported directly: the last recipe ingredient was half hidden behind Save changes on the mobile PWA; and navigating after scrolling left the next page's search bar cut off.
 
 **Not yet verified:** `e2e/specs/recipes.spec.ts` ("keeps the last ingredient clear of the sticky Save bar on mobile") fails without the fix and passes with it. The scroll carry-over could NOT be reproduced in Chromium here (it clamps the offset to 0 on its own, with or without the change), and WebKit isn't installed in this sandbox — `navigation-scroll.spec.ts` is a regression guard, not proof. A human should confirm on the installed PWA (iOS and Android): scroll Pantry, switch to Recipes/Log/Progress and confirm each opens at the top with its search/controls visible; push into a detail page and back; the outgoing page doesn't flicker or jump during the slide/fade; on recipe detail with many ingredients the last card is fully visible above Save changes, and the bar floats while scrolling.
+
+## Fix: remove Recent chips and sticky submit buttons (reported directly, 2026-10-10)
+
+**Deviation:** (1) `AddLogEntryDialog` no longer renders the "Recent" chips; with the keyboard up they squeezed the (upward-opening, `--vv-height`-capped) autocomplete dropdown to a sliver. Each item's last-used quantity is still prefilled. (2) `StickySubmitBar` is removed: `IngredientForm`, `RecipeForm` and `LogWeightDialog` buttons scroll with their content again, and `IngredientDetail`/`RecipeDetail`'s Save button is a plain in-flow row (bottom padding still clears the safe area). `AnimatedAppShell`'s `overflow-x: clip` stays, as it is harmless and avoids a scroll container.
+
+**Why:** Requested directly after hands-on use.
+
+**Not yet verified:** on a real phone, confirm the add ingredient/recipe/log-weight dialogs' buttons stay reachable by scrolling with the keyboard open, and the log dialog's dropdown has usable height.

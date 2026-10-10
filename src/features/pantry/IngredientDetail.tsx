@@ -273,7 +273,7 @@ export function IngredientDetail({
       spacing={2}
       sx={{
         p: 2,
-        // Keeps the last item clear of the sticky Save bar's safe-area offset.
+        // Keeps the Save button clear of the home-indicator safe area.
         pb: "calc(32px + env(safe-area-inset-bottom, 0px))",
         // Two columns on desktop: photo/metadata/stats left, form + Save right.
         width: "100%",
@@ -555,17 +555,7 @@ export function IngredientDetail({
       )}
 
       {canEdit && (
-        <Box
-          className="detail-after"
-          sx={{
-            position: "sticky",
-            // Detail screens have no bottom nav, so sit flush above the safe area.
-            bottom: "env(safe-area-inset-bottom, 0px)",
-            bgcolor: "background.default",
-            py: 1,
-            zIndex: 1,
-          }}
-        >
+        <Box className="detail-after" sx={{ py: 1 }}>
           <Button
             variant="contained"
             size="large"
