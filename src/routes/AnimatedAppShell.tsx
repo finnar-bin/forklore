@@ -149,7 +149,7 @@ export function AnimatedAppShell() {
         sx={{
           position: "relative",
           // `clip` (not `hidden`): hidden makes this box the scroll container,
-          // which breaks `position: sticky` descendants (detail pages' Save bar).
+          // which breaks `position: sticky` descendants.
           overflowX: "hidden",
           "@supports (overflow: clip)": { overflowX: "clip" },
           minHeight: "100vh",

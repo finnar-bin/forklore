@@ -96,7 +96,7 @@ test.describe("Logging", () => {
 });
 
 test.describe("Logging quick-log", () => {
-  test("offers recent items with the last quantity prefilled, and undoes a log", async ({
+  test("prefills the last quantity, and undoes a log", async ({
     page,
     loginAsSeededUser,
     backend,
@@ -126,12 +126,12 @@ test.describe("Logging quick-log", () => {
     await page.getByRole("button", { name: "Log this ingredient" }).click();
     await expect(page.getByText("Logged Quick Oats")).toBeVisible();
 
-    // Second time round: it's a Recent chip, and 75 is prefilled.
+    // Second time round: 75 is prefilled.
     await page.getByRole("button", { name: "Log an entry" }).click();
     await page
-      .getByRole("dialog")
-      .getByRole("button", { name: "Quick Oats" })
+      .getByRole("combobox", { name: "Search ingredients & recipes" })
       .click();
+    await page.getByRole("option", { name: /Quick Oats/ }).click();
     await expect(page.getByLabel("Quantity eaten")).toHaveValue("75");
     await page.getByRole("button", { name: "Log this ingredient" }).click();
 

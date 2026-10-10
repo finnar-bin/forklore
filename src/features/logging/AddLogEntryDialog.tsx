@@ -4,7 +4,6 @@ import Alert from "@mui/material/Alert";
 import Autocomplete, { createFilterOptions } from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -149,7 +148,7 @@ function AddLogEntryForm({
   }
 
   // Newest-first entries on this group's log by the person logging, used for
-  // the "Recent" chips and each item's last-used quantity.
+  // each item's last-used quantity.
   const recentEntries = useLiveQuery(
     () =>
       db.log_entries
@@ -192,14 +191,6 @@ function AddLogEntryForm({
     }
     return map;
   }, [recentEntries]);
-
-  const recentOptions = useMemo(() => {
-    const byId = new Map(options.map((o) => [o.item.id, o]));
-    return [...lastQuantity.keys()]
-      .map((id) => byId.get(id))
-      .filter((o): o is PickOption => o !== undefined)
-      .slice(0, 6);
-  }, [lastQuantity, options]);
 
   function pick(option: PickOption | null) {
     if (!option) return;
@@ -309,30 +300,6 @@ function AddLogEntryForm({
                   />
                 )}
               />
-              {recentOptions.length > 0 && (
-                <Box>
-                  <Typography
-                    sx={{ fontSize: 12, color: "text.secondary", mb: 0.75 }}
-                  >
-                    Recent
-                  </Typography>
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    useFlexGap
-                    sx={{ flexWrap: "wrap" }}
-                  >
-                    {recentOptions.map((o) => (
-                      <Chip
-                        key={o.item.id}
-                        clickable
-                        label={o.item.name}
-                        onClick={() => pick(o)}
-                      />
-                    ))}
-                  </Stack>
-                </Box>
-              )}
             </>
           )}
         </Stack>
